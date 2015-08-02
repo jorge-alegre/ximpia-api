@@ -12,8 +12,11 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+sys.path.append('{}/ximpia/apps/'.format(os.getcwd()))
 
 
 # Quick-start development settings - unsuitable for production
@@ -38,6 +41,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'base',
+    'document',
+    'document_definition',
+    'patterns',
+    'settings',
+    'user'
 )
 
 MIDDLEWARE_CLASSES = (
