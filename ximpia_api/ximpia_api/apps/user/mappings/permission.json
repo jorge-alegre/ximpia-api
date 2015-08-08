@@ -1,0 +1,29 @@
+{
+  "permission": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "name": {
+        "type": "string",
+        "fields": {
+          "name": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "created_on": {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}
