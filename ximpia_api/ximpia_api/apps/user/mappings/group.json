@@ -15,6 +15,18 @@
         "type": "string",
         "copy_to": "text"
       },
+      "slug": {
+        "type": "string",
+        "fields": {
+          "slug": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
       "tags": {
         "type": "nested",
         "include_in_parent": true,
@@ -24,7 +36,16 @@
             "copy_to": "text"
           },
           "slug": {
-            "type": "string"
+            "type": "string",
+            "fields": {
+              "slug": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
           },
           "is_hash": {
             "type": "boolean",
