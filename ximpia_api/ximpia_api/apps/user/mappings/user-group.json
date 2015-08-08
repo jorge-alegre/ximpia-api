@@ -1,0 +1,138 @@
+{
+  "user-group": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "user": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "email": {
+            "type": "string",
+            "analyzer": "email_analyzer"
+          },
+          "avatar": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name": {
+            "type": "string",
+            "term_vector" : "with_positions_offsets",
+            "analyzer" : "snowball"
+          },
+          "social_networks": {
+            "type": "nested",
+              "include_in_parent": true,
+              "dynamic": "false",
+              "properties": {
+                 "network": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                 },
+                "user_id": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "token": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "token_secret": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "has_auth": {
+                  "type": "boolean",
+                  "null_value": false
+                },
+                "link": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                }
+              }
+          },
+          "permissions": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "name": {
+                "type": "string",
+                "fields": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "created_on": {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
+          },
+          "groups": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "id": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "created_on" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "group": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "nested",
+            "include_in_parent": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "is_hash": {
+                "type": "boolean",
+                "null_value": false
+              }
+            }
+          }
+        }
+      },
+      "text": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
+      },
+      "created_on" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

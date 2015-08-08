@@ -1,0 +1,46 @@
+{
+  "group": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "_parent": {
+      "type": "group"
+    },
+    "properties": {
+      "name": {
+        "type": "string",
+        "copy_to": "text"
+      },
+      "tags": {
+        "type": "nested",
+        "include_in_parent": true,
+        "properties": {
+          "name": {
+            "type": "string",
+            "copy_to": "text"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "is_hash": {
+            "type": "boolean",
+            "null_value": false
+          }
+        }
+      },
+      "text": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
+      },
+      "created_on" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

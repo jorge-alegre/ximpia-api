@@ -1,0 +1,136 @@
+{
+  "index": {
+    "number_of_replicas": "1",
+    "translog": {
+      "flush_threshold_ops": "100000",
+      "interval": "10s",
+      "flush_threshold_size": "500mb"
+    },
+    "similarity": {
+      "bm25_low_frequency": {
+        "b": "0.1",
+        "type": "BM25",
+        "k1": "0.1"
+      }
+    },
+    "routing": {
+      "allocation": {
+        "total_shards_per_node": "12"
+      }
+    },
+    "auto_expand_replicas": "0",
+    "uuid": "K0TagXghRWSto3jI6NJWZA",
+    "analysis": {
+      "filter": {
+        "shingle": {
+          "type": "shingle",
+          "max_shingle_size": "3",
+          "output_unigrams": "false"
+        },
+        "any_latin": {
+          "type": "icu_transform",
+          "id": "Any-Latin"
+        },
+        "ngrams_front": {
+          "max_gram": "50",
+          "min_gram": "2",
+          "type": "edgeNGram",
+          "side": "front"
+        },
+        "ngrams_middle": {
+          "min_gram": "4",
+          "type": "nGram",
+          "max_gram": "15"
+        },
+        "ngrams_back": {
+          "max_gram": "50",
+          "min_gram": "2",
+          "type": "edgeNGram",
+          "side": "back"
+        }
+      },
+      "analyzer": {
+        "simple_whitespace": {
+          "type": "custom",
+          "filter": [
+            "icu_folding"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "transform_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "any_latin",
+            "icu_folding"
+          ],
+          "tokenizer": "standard"
+        },
+        "name_ngram_back": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding",
+            "ngrams_back"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "name_ngram_middle": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding",
+            "ngrams_middle"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "search_shingle_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "name_ngram_front": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding",
+            "ngrams_front"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "email_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "lowercase"
+          ],
+          "tokenizer": "uax_url_email"
+        },
+        "search_ngram_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "index_shingle_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "icu_folding",
+            "shingle"
+          ],
+          "tokenizer": "whitespace"
+        }
+      }
+    },
+    "number_of_shards": "5",
+    "version": {
+      "created": "1030099"
+    }
+  }
+}
