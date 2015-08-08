@@ -1,11 +1,6 @@
 {
   "index": {
     "number_of_replicas": "1",
-    "translog": {
-      "flush_threshold_ops": "100000",
-      "interval": "10s",
-      "flush_threshold_size": "500mb"
-    },
     "similarity": {
       "bm25_low_frequency": {
         "b": "0.1",
@@ -13,13 +8,6 @@
         "k1": "0.1"
       }
     },
-    "routing": {
-      "allocation": {
-        "total_shards_per_node": "12"
-      }
-    },
-    "auto_expand_replicas": "0",
-    "uuid": "K0TagXghRWSto3jI6NJWZA",
     "analysis": {
       "filter": {
         "shingle": {
@@ -128,9 +116,6 @@
         }
       }
     },
-    "number_of_shards": "5",
-    "version": {
-      "created": "1030099"
-    }
+    "number_of_shards": "5"
   }
 }
