@@ -21,6 +21,11 @@
           }
         }
       },
+      "document": {
+        "type": "object",
+        "properties": {
+        }
+      },
       "app": {
         "type": "string",
         "index": "not_analyzed"
