@@ -69,11 +69,7 @@
               "type": "string",
               "index": "not_analyzed"
             },
-            "token": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "token_secret": {
+            "access_token": {
               "type": "string",
               "index": "not_analyzed"
             },
