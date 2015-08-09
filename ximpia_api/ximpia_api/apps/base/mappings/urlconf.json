@@ -1,0 +1,38 @@
+{
+  "urlconf": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "url": {
+        "type": "string",
+        "fields": {
+          "url": {
+            "type": "string",
+            "analyzer": "url_analyzer"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "app": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "site": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "created_on" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

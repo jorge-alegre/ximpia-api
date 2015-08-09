@@ -1,6 +1,7 @@
 # from django.contrib.auth.models import User
 
 from base.views import DocumentViewSet
+from rest_framework import viewsets, views, generics
 
 __author__ = 'jorgealegre'
 
@@ -34,6 +35,16 @@ For this to work, we need already data in document_definition
 
 We will test with NewRelic, should be fast to satisfy the 50ms requirement for Python processing speed, since data
 fetch would be 10 msc. We need testing for this.
+
+How about site and app in url???
+https://{site}.ximpia.com/??? for base app, always installed
+https://{site}.ximpia.com/{app}/
+
+https://pichit.ximpia.com/v1/missions/my-mission/
+https://pichit.ximpia.com/v1/contributions/blue-eye/
+https://pichit.ximpia.com/v1/tags/my-tag/ -> app tags with home viewset
+
+The url configs map to site and app when defined in document definition
 
 Common Resolutions
 - - - - - - - - - -
@@ -74,3 +85,11 @@ class UserViewSet(DocumentViewSet):
     We would have common DocumentViewSet, which is the one that interacts with ElasticSearch needs
     """
     pass
+
+
+class SetupSite(generics.CreateAPIView):
+
+    def post(self, request, *args, **kwargs):
+        # site
+        # app
+        data = request.data
