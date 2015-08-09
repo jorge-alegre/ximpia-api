@@ -1,5 +1,6 @@
-from rest_framework import routers, serializers, viewsets
 # from django.contrib.auth.models import User
+
+from base.views import DocumentViewSet
 
 __author__ = 'jorgealegre'
 
@@ -63,5 +64,13 @@ ximpia__base: would keep general data for config
 
 
 # ViewSets define the view behavior.
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(DocumentViewSet):
+    """
+    This class will create user, update user, get user and list users. Would also search for users with Ximpia
+    query.
+
+    We need to implement all methods, create, list, retrieve, etc...
+
+    We would have common DocumentViewSet, which is the one that interacts with ElasticSearch needs
+    """
     pass
