@@ -1,7 +1,6 @@
 # from django.contrib.auth.models import User
 
 from base.views import DocumentViewSet
-from rest_framework import viewsets, views, generics, response
 
 __author__ = 'jorgealegre'
 
@@ -97,20 +96,3 @@ class UserGroup(DocumentViewSet):
 
 class Permission(DocumentViewSet):
     pass
-
-
-class SetupSite(generics.CreateAPIView):
-
-    def post(self, request, *args, **kwargs):
-        # site and app is obtained from url data
-        data = request.data
-        user_name = data['name']
-        access_token = data['access_token']
-        social_network = data['social_network']
-        # We fetch information from social network with access_token
-        response_ = {
-            "name": user_name,
-            "access_token": access_token,
-            "social_network": social_network
-        }
-        return response.Response(response_)
