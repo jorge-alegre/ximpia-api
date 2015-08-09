@@ -1,3 +1,6 @@
+from rest_framework import routers, serializers, viewsets
+# from django.contrib.auth.models import User
+
 __author__ = 'jorgealegre'
 
 """
@@ -31,6 +34,17 @@ For this to work, we need already data in document_definition
 We will test with NewRelic, should be fast to satisfy the 50ms requirement for Python processing speed, since data
 fetch would be 10 msc. We need testing for this.
 
+Common Resolutions
+- - - - - - - - - -
+user app, etc... would have common urls that we can map in main urls.py. These mappings would be for ximpia base
+features:
+* users
+* document definitions
+* query update
+
+But not for app documents for other sites, and these would need app document_definition and generation of ES
+mappings.
+
 Indices
 =======
 
@@ -39,3 +53,15 @@ ximpia__base: would keep general data for config
 {site}__{app}: Data for app
 
 """
+
+
+# Serializers define the API representation.
+"""class UserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        fields = ('url', 'username', 'email', 'is_staff')"""
+
+
+# ViewSets define the view behavior.
+class UserViewSet(viewsets.ModelViewSet):
+    pass
