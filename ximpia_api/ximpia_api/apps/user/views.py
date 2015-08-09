@@ -1,7 +1,7 @@
 # from django.contrib.auth.models import User
 
 from base.views import DocumentViewSet
-from rest_framework import viewsets, views, generics
+from rest_framework import viewsets, views, generics, response
 
 __author__ = 'jorgealegre'
 
@@ -75,7 +75,7 @@ ximpia__base: would keep general data for config
 
 
 # ViewSets define the view behavior.
-class UserViewSet(DocumentViewSet):
+class User(DocumentViewSet):
     """
     This class will create user, update user, get user and list users. Would also search for users with Ximpia
     query.
@@ -87,9 +87,25 @@ class UserViewSet(DocumentViewSet):
     pass
 
 
+class Group(DocumentViewSet):
+    pass
+
+
+class UserGroup(DocumentViewSet):
+    pass
+
+
+class Permission(DocumentViewSet):
+    pass
+
+
 class SetupSite(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
-        # site
-        # app
+        # site and app is obtained from url data
         data = request.data
+        user_name = data['name']
+        response_ = {
+            'name': user_name
+        }
+        return response.Response(response_)
