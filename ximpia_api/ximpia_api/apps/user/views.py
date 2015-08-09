@@ -105,7 +105,12 @@ class SetupSite(generics.CreateAPIView):
         # site and app is obtained from url data
         data = request.data
         user_name = data['name']
+        access_token = data['access_token']
+        social_network = data['social_network']
+        # We fetch information from social network with access_token
         response_ = {
-            'name': user_name
+            "name": user_name,
+            "access_token": access_token,
+            "social_network": social_network
         }
         return response.Response(response_)
