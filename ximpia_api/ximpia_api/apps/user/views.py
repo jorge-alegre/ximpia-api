@@ -31,4 +31,11 @@ For this to work, we need already data in document_definition
 We will test with NewRelic, should be fast to satisfy the 50ms requirement for Python processing speed, since data
 fetch would be 10 msc. We need testing for this.
 
+Indices
+=======
+
+ximpia__base: would keep general data for config
+{site}__base: General config for site
+{site}__{app}: Data for app
+
 """
