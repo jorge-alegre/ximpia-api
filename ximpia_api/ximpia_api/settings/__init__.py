@@ -108,3 +108,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+FACEBOOK_APP_ID = '940688915994814'
+FACEBOOK_APP_SECRET = '4a15b75b64be99e1749b81ce91f624a3'
+FACEBOOK_APP_TOKEN = '8da636b3369700ae73eeaa4170046d8a'
