@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter
 import json
 
 from django.conf import settings
@@ -21,12 +22,14 @@ class SocialNetworkResolution(object):
         :param kwargs:
         :return:
         """
-        response = requests.get('https://graph.facebook.com/debug_token?'
-                                'input_token={access_token}&'
-                                'access_token={app_token}'.format(
-                                    access_token=kwargs.get('access_token', ''),
-                                    app_token=settings.FACEBOOK_APP_TOKEN
-                                ))
+        req_session = requests.Session()
+        req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
+        response = req_session.get('https://graph.facebook.com/debug_token?'
+                                   'input_token={access_token}&'
+                                   'access_token={app_token}'.format(
+                                       access_token=kwargs.get('access_token', ''),
+                                       app_token=settings.FACEBOOK_APP_TOKEN
+                                    ))
         if response.status_code != 200:
             raise TypeError(u'Error in validating Facebook response')
         fb_data = json.loads(response.content)
@@ -37,18 +40,33 @@ class SocialNetworkResolution(object):
             'scopes': fb_data['data']['scopes'],
         }
         # call facebook for user name and email
-        response = requests.get('https://graph.facebook.com/v2.4/{user_id}?access_token={access_token}'.format(
-            user_id=user_data['user_id'],
-            access_token=kwargs.get('access_token', '')
-        ))
+        response = req_session.get('https://graph.facebook.com/v2.4/'
+                                   '{user_id}?'
+                                   'access_token={access_token}'.format(
+                                       user_id=user_data['user_id'],
+                                       access_token=kwargs.get('access_token', '')
+                                   ))
         if response.status_code != 200:
             raise TypeError(u'Error in validating Facebook response')
         detail_user_data = json.loads(response.content)
         user_data.update({
             'email': detail_user_data.get('email', ''),
             'name': detail_user_data.get('name', ''),
-            'avatar': detail_user_data.get('cover', '')['source'],
         })
+        response = req_session.get('https://graph.facebook.com/v2.4/'
+                                   '{user_id}/picture?'
+                                   'access_token={access_token}'.format(
+                                       user_id=user_data['user_id'],
+                                       access_token=kwargs.get('access_token', '')
+                                   ))
+        if response.status_code == 302:
+            user_data.update({
+                'profile_picture': response.url,
+            })
+        else:
+            user_data.update({
+                'profile_picture': None,
+            })
         return user_data
 
     @classmethod

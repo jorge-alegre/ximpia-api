@@ -1,0 +1,61 @@
+{
+  "settings": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "name": {
+        "type": "string",
+        "fields": {
+          "name": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "value": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "object": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "fields": {
+              "name": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "value": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "list": {
+        "type": "nested",
+        "include_in_parent": true,
+        "dynamic": "false",
+        "properties": {
+        }
+      },
+      "created_on" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

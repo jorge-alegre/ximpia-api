@@ -28,6 +28,10 @@ class SetupSite(generics.CreateAPIView):
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token)
 
+        # 1. Create groups and parametric data (permissions), settings (locale and languages)
+        # 2. Create User
+        # 3. Link to UserGroup
+
         response_ = {
             "site": site,
             "app": app,
