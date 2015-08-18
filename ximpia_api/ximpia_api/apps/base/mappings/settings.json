@@ -1,6 +1,5 @@
 {
   "settings": {
-    "dynamic": "strict",
     "_timestamp": {
       "enabled": true
     },
@@ -8,24 +7,10 @@
       "enabled": false
     },
     "properties": {
-      "name": {
-        "type": "string",
-        "fields": {
-          "name": {
-            "type": "string"
-          },
-          "raw": {
-            "type": "string",
-            "index": "not_analyzed"
-          }
-        }
-      },
-      "value": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "object": {
-        "type": "object",
+      "fields": {
+        "type": "nested",
+        "include_in_parent": true,
+        "dynamic": "false",
         "properties": {
           "name": {
             "type": "string",
@@ -45,11 +30,84 @@
           }
         }
       },
-      "list": {
+      "objects": {
         "type": "nested",
         "include_in_parent": true,
-        "dynamic": "false",
         "properties": {
+          "name": {
+            "type": "string",
+            "fields": {
+              "name": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "fields": {
+            "type": "nested",
+            "include_in_parent": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "fields": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "value": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "objects": {
+            "type": "nested",
+            "include_in_parent": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "fields": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "fields": {
+                "type": "nested",
+                "include_in_parent": true,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "fields": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "raw": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "value": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "created_on" : {
