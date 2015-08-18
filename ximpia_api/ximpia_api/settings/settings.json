@@ -97,6 +97,14 @@
           ],
           "tokenizer": "uax_url_email"
         },
+        "link_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "lowercase"
+          ],
+          "tokenizer": "uax_url_email"
+        },
         "search_ngram_analyzer": {
           "type": "custom",
           "filter": [
