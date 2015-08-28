@@ -103,11 +103,7 @@ class SetupSite(generics.CreateAPIView):
                     u'name': site,
                     u'slug': slugify(site)
                 },
-                u'app': {
-                    u'id': app_id,
-                    u'name': app,
-                    u'slug': slugify(app)
-                },
+                u'app': None,
                 u'fields': [
                     {
                         u'name': u'languages',
