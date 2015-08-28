@@ -49,7 +49,7 @@ class SetupSite(generics.CreateAPIView):
             es_response
         ))
 
-    def _create_site_app(self, index_name, site, app, now_es):
+    def _create_site_app(self, index_name, site, app, now_es, languages, location):
         """
         Create site and app
 
@@ -108,7 +108,16 @@ class SetupSite(generics.CreateAPIView):
                     u'name': app,
                     u'slug': slugify(app)
                 },
-                u'fields': None,
+                u'fields': [
+                    {
+                        u'name': u'languages',
+                        u'value': json.dumps(languages)
+                    },
+                    {
+                        u'name': u'location',
+                        u'value': json.dumps(location)
+                    }
+                ],
                 u'created_on': now_es
             })
         if es_response_raw.status_code != 200:
@@ -147,7 +156,7 @@ class SetupSite(generics.CreateAPIView):
             es_response.get('_id', '')
         ))
 
-    def _create_user_groups(self):
+    def _create_user_groups(self, groups):
         pass
 
     def post(self, request, *args, **kwargs):
@@ -183,12 +192,13 @@ class SetupSite(generics.CreateAPIView):
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # 1. create site, app and settings
-        self._create_site_app(index_name, site, app, now_es)
+        self._create_site_app(index_name, site, app, now_es, languages, location)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
+        self._create_user_groups(default_groups, social_network, social_data)
 
         response_ = {
             "site": site,
