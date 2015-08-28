@@ -60,15 +60,16 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         # site
+        site_data = {
+            u'name': site,
+            u'slug': slugify(site),
+            u'url': u'http://{site_slug}.ximpia.com/'.format(slugify(site)),
+            u'is_active': True,
+            u'created_on': now_es
+        }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'name': site,
-                u'slug': slugify(site),
-                u'url': u'http://{site_slug}.ximpia.com/'.format(slugify(site)),
-                u'is_active': True,
-                u'created_on': now_es
-            })
+            data=site_data)
         if es_response_raw.status_code != 200:
             pass
         es_response = es_response_raw.json()
@@ -77,51 +78,56 @@ class SetupSite(generics.CreateAPIView):
             site,
             site_id
         ))
+        site_data['id'] = site_id
         # app
+        app_data = {
+            u'name': app,
+            u'slug': slugify(app),
+            u'is_active': True,
+            u'created_on': now_es
+        }
         es_response_raw = requests.post(
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'name': app,
-                u'slug': slugify(app),
-                u'is_active': True,
-                u'created_on': now_es
-            })
+            data=app_data)
         if es_response_raw.status_code != 200:
             pass
         es_response = es_response_raw.json()
         app_id = es_response.get('_id', '')
+        app_data['id'] = app_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
         ))
         # settings for app and site
+        settings_data = {
+            u'site': {
+                u'id': site_id,
+                u'name': site,
+                u'slug': slugify(site)
+            },
+            u'app': None,
+            u'fields': [
+                {
+                    u'name': u'languages',
+                    u'value': json.dumps(languages)
+                },
+                {
+                    u'name': u'location',
+                    u'value': json.dumps(location)
+                }
+            ],
+            u'created_on': now_es
+        }
         es_response_raw = requests.post(
             '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'site': {
-                    u'id': site_id,
-                    u'name': site,
-                    u'slug': slugify(site)
-                },
-                u'app': None,
-                u'fields': [
-                    {
-                        u'name': u'languages',
-                        u'value': json.dumps(languages)
-                    },
-                    {
-                        u'name': u'location',
-                        u'value': json.dumps(location)
-                    }
-                ],
-                u'created_on': now_es
-            })
+            data=settings_data)
         if es_response_raw.status_code != 200:
             pass
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created settings id: {}'.format(
             es_response.get('_id', '')
         ))
+        return site_data, app_data, settings_data
 
     def _create_permissions(self, site, app, index_name, now_es):
         """
@@ -265,6 +271,7 @@ class SetupSite(generics.CreateAPIView):
         logger.info(u'SetupSite :: created user group id: {}'.format(
             es_response.get('_id', '')
         ))
+        return user_data, groups_data
 
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -299,26 +306,21 @@ class SetupSite(generics.CreateAPIView):
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # 1. create site, app and settings
-        self._create_site_app(index_name, site, app, now_es, languages, location)
+        site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
+                                                                   languages, location)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
-        self._create_user_groups(index_name, default_groups, social_network, social_data, now_es)
+        user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
+                                                          social_data, now_es)
 
         response_ = {
-            "site": site,
-            "app": app,
-            "user": {
-                'id': 0,
-                'name': social_data['name'],
-                'email': social_data['email'],
-                'avatar': social_data['avatar']
-            },
-            "access_token": access_token,
-            "social_network": social_network,
-            "languages": languages,
-            "location": location,
+            u'site': site_data,
+            u'app': app_data,
+            u'settings': settings_data,
+            u'user': user_data,
+            u'groups': groups_data
         }
         return response.Response(response_)
