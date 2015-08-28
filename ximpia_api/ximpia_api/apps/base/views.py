@@ -2,10 +2,13 @@ import requests
 import json
 import logging
 
+from datetime import datetime
+
 from rest_framework import viewsets, generics, response
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.utils.text import slugify
 
 from . import SocialNetworkResolution
 
@@ -21,6 +24,99 @@ class DocumentViewSet(viewsets.ModelViewSet):
 class SetupSite(generics.CreateAPIView):
 
     reserved_words = {'ximpia_api'}
+
+    def _create_site_index(self, index_name):
+        """
+        Create index
+
+        :param index_name:
+        :return:
+        """
+        with open('../../settings.json') as f:
+            settings_dict = json.loads(f.read())
+        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                                        data={
+                                            'settings': settings_dict
+                                        })
+        # {"acknowledged":true}
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        if not es_response['acknowledged']:
+            pass
+        logger.info(u'SetupSite :: created index {} response: {}'.format(
+            index_name,
+            es_response
+        ))
+
+    def _create_site_app(self, index_name, site, app, now_es):
+        """
+        Create site and app
+
+        :param index_name:
+        :param site:
+        :param app:
+        :param now_es:
+        :return:
+        """
+        # site
+        es_response_raw = requests.post(
+            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'name': site,
+                u'slug': slugify(site),
+                u'url': u'http://{site_slug}.ximpia.com/'.format(slugify(site)),
+                u'is_active': True,
+                u'created_on': now_es
+            })
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        site_id = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created site {} id: {}'.format(
+            site,
+            site_id
+        ))
+        # app
+        es_response_raw = requests.post(
+            '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'name': app,
+                u'slug': slugify(app),
+                u'is_active': True,
+                u'created_on': now_es
+            })
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        app_id = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created app {} id: {}'.format(
+            app,
+            app_id
+        ))
+        # settings for app and site
+        es_response_raw = requests.post(
+            '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'site': {
+                    u'id': site_id,
+                    u'name': site,
+                    u'slug': slugify(site)
+                },
+                u'app': {
+                    u'id': app_id,
+                    u'name': app,
+                    u'slug': slugify(app)
+                },
+                u'fields': None,
+                u'created_on': now_es
+            })
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created settings id: {}'.format(
+            es_response.get('_id', '')
+        ))
 
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -50,25 +146,14 @@ class SetupSite(generics.CreateAPIView):
 
         # site__base index creation
         index_name = '{site}__base'.format(site=site)
-        with open('../../settings.json') as f:
-            settings_dict = json.loads(f.read())
-        es_response_raw = requests.post('{es_host}/{index_name}'.format(
-            es_host=settings.ELASTIC_SEARCH_HOST),
-            index_name=index_name,
-            data={
-                'settings': settings_dict
-            })
-        if es_response_raw.status_code != 200:
-            pass
-        es_response = es_response_raw.json()
-        # TODO: Check es_response is OK
-        logger.info(u'SetupSite :: created index {} response: {}'.format(
-            index_name,
-            es_response
-        ))
+        self._create_site_index(index_name)
 
-        # 1. create site
-        # 2. Permissions
+        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 1. create site, app and settings
+        self._create_site_app(index_name, site, app, now_es)
+
+        # 2. Permissions????  Which???
         # 3. Groups, User, UserGroup
 
         response_ = {
