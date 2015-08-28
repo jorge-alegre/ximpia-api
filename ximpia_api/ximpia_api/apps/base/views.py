@@ -61,14 +61,15 @@ class SetupSite(generics.CreateAPIView):
         if es_response_raw.status_code != 200:
             pass
         es_response = es_response_raw.json()
+        # TODO: Check es_response is OK
         logger.info(u'SetupSite :: created index {} response: {}'.format(
             index_name,
             es_response
         ))
 
-        # 1. Create groups and parametric data (permissions), settings (locale and languages)
-        # 2. Create User
-        # 3. Link to UserGroup
+        # 1. create site
+        # 2. Permissions
+        # 3. Groups, User, UserGroup
 
         response_ = {
             "site": site,

@@ -30,6 +30,52 @@
           }
         }
       },
+      "site": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "long"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "fields": {
+              "slug": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      },
+      "app": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "long"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "fields": {
+              "slug": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      }
       "created_on" : {
         "type" : "date",
         "format" : "dateOptionalTime"
