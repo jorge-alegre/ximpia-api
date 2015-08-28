@@ -1,0 +1,35 @@
+{
+  "app": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "slug": {
+        "type": "string",
+        "fields": {
+          "slug": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "is_active": {
+        "type": "boolean"
+      },
+      "created_on" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}
