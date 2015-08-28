@@ -24,8 +24,17 @@
         "type": "nested",
         "properties": {
           "app": {
-            "type": "string",
-            "index": "not_analyzed"
+            "type": "object",
+            "properties": {
+              "site": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "app": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
           }
         }
       },

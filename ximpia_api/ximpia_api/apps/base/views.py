@@ -118,6 +118,38 @@ class SetupSite(generics.CreateAPIView):
             es_response.get('_id', '')
         ))
 
+    def _create_permissions(self, site, app, index_name, now_es):
+        """
+        Create permission can_admin
+
+        :param app:
+        :param index_name:
+        :param now_es:
+        :return:
+        """
+        es_response_raw = requests.post(
+            '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'name': u'can_admin',
+                u'apps': [
+                    {
+                        u'site': site,
+                        u'app': app
+                    }
+                ],
+                u'created_on': now_es
+            })
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
+            app['name'],
+            es_response.get('_id', '')
+        ))
+
+    def _create_user_groups(self):
+        pass
+
     def post(self, request, *args, **kwargs):
         data = request.data
         site = data['site']
@@ -153,7 +185,9 @@ class SetupSite(generics.CreateAPIView):
         # 1. create site, app and settings
         self._create_site_app(index_name, site, app, now_es)
 
-        # 2. Permissions????  Which???
+        # 2. Permissions
+        self._create_permissions(site, app, index_name, now_es)
+
         # 3. Groups, User, UserGroup
 
         response_ = {
