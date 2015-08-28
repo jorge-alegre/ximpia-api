@@ -24,10 +24,11 @@ class SocialNetworkResolution(object):
         """
         req_session = requests.Session()
         req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
+        access_token = access_token=kwargs.get('access_token', '')
         response = req_session.get('https://graph.facebook.com/debug_token?'
                                    'input_token={access_token}&'
                                    'access_token={app_token}'.format(
-                                       access_token=kwargs.get('access_token', ''),
+                                       access_token,
                                        app_token=settings.FACEBOOK_APP_TOKEN
                                     ))
         if response.status_code != 200:
@@ -38,6 +39,7 @@ class SocialNetworkResolution(object):
         user_data = {
             'user_id': fb_data['data']['user_id'],
             'scopes': fb_data['data']['scopes'],
+            'access_token': access_token
         }
         # call facebook for user name and email
         response = req_session.get('https://graph.facebook.com/v2.4/'
@@ -50,8 +52,9 @@ class SocialNetworkResolution(object):
             raise TypeError(u'Error in validating Facebook response')
         detail_user_data = json.loads(response.content)
         user_data.update({
-            'email': detail_user_data.get('email', ''),
-            'name': detail_user_data.get('name', ''),
+            'email': detail_user_data.get('email', None),
+            'name': detail_user_data.get('name', None),
+            'link': detail_user_data.get('link', None),
         })
         response = req_session.get('https://graph.facebook.com/v2.4/'
                                    '{user_id}/picture?'

@@ -135,7 +135,7 @@ class SetupSite(generics.CreateAPIView):
         es_response_raw = requests.post(
             '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data={
-                u'name': u'can_admin',
+                u'name': u'can-admin',
                 u'apps': [
                     {
                         u'site': site,
@@ -152,8 +152,119 @@ class SetupSite(generics.CreateAPIView):
             es_response.get('_id', '')
         ))
 
-    def _create_user_groups(self, groups):
-        pass
+    def _create_user_groups(self, index_name, groups, social_data, social_network, now_es):
+        """
+        Create Groups, User and User mappings to Groups
+
+        :param index_name:
+        :param groups:
+        :param social_data:
+        :param social_network:
+        :param now_es:
+        :return:
+        """
+        # group
+        permissions = {
+            u'admin': u'can-admin',
+            u'users-test': u'can-test'
+        }
+        groups_data = []
+        for group in groups:
+            group_data = {
+                u'name': group,
+                u'slug': slugify(group),
+                u'tags': None,
+                u'created_on': now_es,
+            }
+            if group in permissions:
+                group_data['permissions'] = [
+                    {
+                        u'name': permissions[group],
+                        u'created_on': now_es
+                    }
+                ]
+            es_response_raw = requests.post(
+                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=group_data)
+            if es_response_raw.status_code != 200:
+                pass
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created group {} id: {}'.format(
+                group,
+                es_response.get('_id', u'')
+            ))
+            # group_ids[group] = es_response.get('_id', '')
+            groups_data.append(group_data.update({
+                u'id': es_response.get('_id', ''),
+            }))
+        # user
+        user_data = {
+            u'alias': None,
+            u'email': social_data.get('email', None),
+            u'password': None,
+            u'avatar': social_data.get('profile_picture', None),
+            u'name': social_data.get('name', None),
+            u'social_networks': [
+                {
+                    u'network': social_network,
+                    u'user_id': social_data.get('user_id', None),
+                    u'access_token': social_data.get('access_token', None),
+                    u'state': None,
+                    u'scopes': social_data.get('scopes', None),
+                    u'has_auth': True,
+                    u'link': social_data.get('link', None),
+                }
+            ],
+            u'permissions': None,
+            u'groups': map(lambda x: {
+                u'id': x['id'],
+                u'name': x['name']
+            }, groups_data),
+            u'is_active': True,
+            u'token': None,
+            u'last_login': None,
+            u'session_id': None,
+            u'created_on': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=user_data)
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created user id: {}'.format(
+            es_response.get('_id', '')
+        ))
+        user_data['id'] = es_response.get('_id', '')
+        # users groups
+        es_response_raw = requests.post(
+            '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'user': map(lambda x: {
+                    'id': x['id'],
+                    'username': x['username'],
+                    'email': x['email'],
+                    'avatar': x['avatar'],
+                    'name': x['name'],
+                    'social_networks': x['social_networks'],
+                    'permissions': x['permissions'],
+                    'created_on': x['created_on'],
+                }, user_data),
+                u'group': map(lambda x: {
+                    'id': x['id'],
+                    'name': x['name'],
+                    'slug': x['slug'],
+                    'tags': x['tags'],
+                    'created_on': x['created_on']
+                }, groups_data),
+                u'created_on': now_es,
+            })
+        if es_response_raw.status_code != 200:
+            pass
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created user group id: {}'.format(
+            es_response.get('_id', '')
+        ))
 
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -194,12 +305,13 @@ class SetupSite(generics.CreateAPIView):
         self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
-        self._create_user_groups(default_groups, social_network, social_data)
+        self._create_user_groups(index_name, default_groups, social_network, social_data, now_es)
 
         response_ = {
             "site": site,
             "app": app,
             "user": {
+                'id': 0,
                 'name': social_data['name'],
                 'email': social_data['email'],
                 'avatar': social_data['avatar']
