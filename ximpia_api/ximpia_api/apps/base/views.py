@@ -309,24 +309,17 @@ class SetupSite(generics.CreateAPIView):
         default_groups = ['users', 'users-test', 'admin']
 
         if site in self.reserved_words:
-            # maybe raise different error
-            # XimpiaAPIException ???
-            raise TypeError(_(u'Site name not allowed'))
+            raise exceptions.XimpiaAPIException(_(u'Site name not allowed'))
 
         # We fetch information from social network with access_token, verify tokens, etc...
-        # integrate only for first version Facebook
         # social_data is same for all social networks, a dictionary with data
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token)
 
-        # create index with settings and mappings:
-        # site__base
-        # ximpia_api__base (these indices need to already be created, we need a management command for it,
-        # creating index, settings and also mappings for all system types)
-
-        # site__base index creation
         index_name = '{site}__base'.format(site=site)
         index_ximpia = 'ximpia_api__base'
+
+        # create index with settings and mappings:
         self._create_site_index(index_name)
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
