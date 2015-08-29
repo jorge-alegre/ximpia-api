@@ -1,45 +1,41 @@
+import logging
 import requests
 import json
-import logging
 
 from datetime import datetime
 
-from rest_framework import viewsets, generics, response
-
-from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
+from django.conf import settings
 
-from . import SocialNetworkResolution
-from exceptions import XimpiaAPIException
+from base import SocialNetworkResolution
+from base.exceptions import XimpiaAPIException
 
 __author__ = 'jorgealegre'
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentViewSet(viewsets.ModelViewSet):
-    pass
+class Command(BaseCommand):
+    help = 'Create document types for Ximpia API'
+    can_import_settings = True
 
-
-class SetupSite(generics.CreateAPIView):
-
-    RESERVED_WORDS = {
-        'ximpia_api__'
-    }
-
-    @classmethod
-    def _create_site_index(cls, index_name):
-        """
-        Create index
-
-        :param index_name:
-        :return:
-        """
+    def _create_index(self, index_name, **options):
+        mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/user/mappings'
-        base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
+
+        with open('{}/site.json'.format(mappings_path)) as f:
+            site_dict = json.loads(f.read())
+
+        with open('{}/_app.json'.format(mappings_path)) as f:
+            app_dict = json.loads(f.read())
+
+        with open('{}/_settings.json'.format(mappings_path)) as f:
+            settings__dict = json.loads(f.read())
 
         with open('{}/_user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
@@ -53,16 +49,11 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/_permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/_app.json'.format(base_mappings_path)) as f:
-            app_dict = json.loads(f.read())
-
-        with open('{}/_settings.json'.format(base_mappings_path)) as f:
-            settings__dict = json.loads(f.read())
-
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                                         data={
                                             'settings': settings_dict,
                                             'mappings': {
+                                                'site': site_dict,
                                                 '_app': app_dict,
                                                 '_settings': settings__dict,
                                                 '_user': user_dict,
@@ -72,7 +63,7 @@ class SetupSite(generics.CreateAPIView):
                                                 }
                                             }
                                         )
-        # {"acknowledged":true}
+
         if es_response_raw.status_code != 200:
             raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
         es_response = es_response_raw.json()
@@ -83,17 +74,14 @@ class SetupSite(generics.CreateAPIView):
             es_response
         ))
 
-    @classmethod
-    def _create_site_app(cls, index_ximpia, index_site, site, app, now_es, languages, location):
-        """
-        Create site and app
+        if 'verbosity' in options and options['verbosity'] != '0':
+            self.stdout.write(u'created index {} response: {}'.format(
+                index_name,
+                es_response
+            ))
 
-        :param index_name:
-        :param site:
-        :param app:
-        :param now_es:
-        :return:
-        """
+    @classmethod
+    def _create_site_app(cls, index_name, site, app, now_es, languages, location):
         # site
         site_data = {
             u'name': site,
@@ -103,7 +91,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
+            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=site_data)
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
@@ -122,7 +110,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_site),
+            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=app_data)
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
@@ -154,7 +142,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_site),
+            '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=settings_data)
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
@@ -312,35 +300,25 @@ class SetupSite(generics.CreateAPIView):
         ))
         return user_data, groups_data
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        site = data['site']
+    def handle(self, *args, **options):
+        access_token = options['access_token']
+        social_network = options['social_network']
+
+        index_name = 'ximpia_api__base'
+        site = 'Ximpia API'
         app = 'base'
-        access_token = data['access_token']
-        social_network = data['social_network']
-        languages = data.get('languages', ['en'])
-        location = data.get('location', 'us')
+        languages = ['en']
+        location = 'us'
         default_groups = ['users', 'users-test', 'admin']
-
-        if filter(lambda x: site.index(x) != -1, list(self.RESERVED_WORDS)):
-            raise XimpiaAPIException(_(u'Site name not allowed'))
-
-        # We fetch information from social network with access_token, verify tokens, etc...
-        # social_data is same for all social networks, a dictionary with data
-        social_data = SocialNetworkResolution.get_network_user_data(social_network,
-                                                                    access_token=access_token)
-
-        index_name = '{site}__base'.format(site=site)
-        index_ximpia = 'ximpia_api__base'
-
-        # create index with settings and mappings:
-        self._create_site_index(index_name)
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # 1. create site, app and settings
-        site_data, app_data, settings_data = self._create_site_app(index_ximpia, index_name,
-                                                                   site, app, now_es,
+        social_data = SocialNetworkResolution.get_network_user_data(social_network,
+                                                                    access_token=access_token)
+
+        self._create_index(index_name, **options)
+
+        site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
                                                                    languages, location)
 
         # 2. Permissions
@@ -349,12 +327,3 @@ class SetupSite(generics.CreateAPIView):
         # 3. Groups, User, UserGroup
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
                                                           social_data, now_es)
-
-        response_ = {
-            u'site': site_data,
-            u'app': app_data,
-            u'settings': settings_data,
-            u'user': user_data,
-            u'groups': groups_data
-        }
-        return response.Response(response_)
