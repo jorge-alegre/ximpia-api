@@ -1,5 +1,5 @@
 {
-  "permission": {
+  "_permission": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true

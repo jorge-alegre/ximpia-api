@@ -1,5 +1,5 @@
 {
-  "user": {
+  "_user": {
     "dynamic": "strict",
     "_timestamp": {
        "enabled": true

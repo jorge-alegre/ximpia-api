@@ -1,5 +1,5 @@
 {
-  "group": {
+  "_group": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true

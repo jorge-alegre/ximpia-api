@@ -10,7 +10,7 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
 
-from . import SocialNetworkResolution
+from . import SocialNetworkResolution, exceptions
 
 __author__ = 'jorgealegre'
 
@@ -25,31 +25,54 @@ class SetupSite(generics.CreateAPIView):
 
     reserved_words = {'ximpia_api'}
 
-    def _create_site_index(self, index_name):
+    @classmethod
+    def _create_site_index(cls, index_name):
         """
         Create index
 
         :param index_name:
         :return:
         """
+        user_path = '../user/mappings'
         with open('../../settings.json') as f:
             settings_dict = json.loads(f.read())
+
+        with open('{}/user.json'.format(user_path)) as f:
+            user_dict = json.loads(f.read())
+
+        with open('{}/group.json'.format(user_path)) as f:
+            group_dict = json.loads(f.read())
+
+        with open('{}/user-group.json'.format(user_path)) as f:
+            user_group_dict = json.loads(f.read())
+
+        with open('{}/permission.json'.format(user_path)) as f:
+            permissions_dict = json.loads(f.read())
+
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                                         data={
-                                            'settings': settings_dict
-                                        })
+                                            'settings': settings_dict,
+                                            'mappings': {
+                                                '_user': user_dict,
+                                                '_group': group_dict,
+                                                '_user-group': user_group_dict,
+                                                '_permissions': permissions_dict
+                                                }
+                                            }
+                                        )
         # {"acknowledged":true}
         if es_response_raw.status_code != 200:
-            pass
+            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
         es_response = es_response_raw.json()
         if not es_response['acknowledged']:
-            pass
+            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
         logger.info(u'SetupSite :: created index {} response: {}'.format(
             index_name,
             es_response
         ))
 
-    def _create_site_app(self, index_name, site, app, now_es, languages, location):
+    @classmethod
+    def _create_site_app(cls, index_name, site, app, now_es, languages, location):
         """
         Create site and app
 
@@ -129,7 +152,8 @@ class SetupSite(generics.CreateAPIView):
         ))
         return site_data, app_data, settings_data
 
-    def _create_permissions(self, site, app, index_name, now_es):
+    @classmethod
+    def _create_permissions(cls, site, app, index_name, now_es):
         """
         Create permission can_admin
 
@@ -139,7 +163,7 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         es_response_raw = requests.post(
-            '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data={
                 u'name': u'can-admin',
                 u'apps': [
@@ -158,7 +182,8 @@ class SetupSite(generics.CreateAPIView):
             es_response.get('_id', '')
         ))
 
-    def _create_user_groups(self, index_name, groups, social_data, social_network, now_es):
+    @classmethod
+    def _create_user_groups(cls, index_name, groups, social_data, social_network, now_es):
         """
         Create Groups, User and User mappings to Groups
 
@@ -190,7 +215,7 @@ class SetupSite(generics.CreateAPIView):
                     }
                 ]
             es_response_raw = requests.post(
-                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=group_data)
             if es_response_raw.status_code != 200:
                 pass
@@ -233,7 +258,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=user_data)
         if es_response_raw.status_code != 200:
             pass
@@ -244,7 +269,7 @@ class SetupSite(generics.CreateAPIView):
         user_data['id'] = es_response.get('_id', '')
         # users groups
         es_response_raw = requests.post(
-            '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data={
                 u'user': map(lambda x: {
                     'id': x['id'],
@@ -301,12 +326,13 @@ class SetupSite(generics.CreateAPIView):
 
         # site__base index creation
         index_name = '{site}__base'.format(site=site)
+        index_ximpia = 'ximpia_api__base'
         self._create_site_index(index_name)
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # 1. create site, app and settings
-        site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
+        site_data, app_data, settings_data = self._create_site_app(index_ximpia, site, app, now_es,
                                                                    languages, location)
 
         # 2. Permissions
