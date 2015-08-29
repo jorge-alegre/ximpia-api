@@ -24,7 +24,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 class SetupSite(generics.CreateAPIView):
 
-    reserved_words = {'ximpia_api'}
+    RESERVED_WORDS = {
+        'ximpia_api__'
+    }
 
     @classmethod
     def _create_site_index(cls, index_name):
@@ -311,7 +313,7 @@ class SetupSite(generics.CreateAPIView):
         location = data.get('location', 'us')
         default_groups = ['users', 'users-test', 'admin']
 
-        if site in self.reserved_words:
+        if filter(lambda x: site.index(x) != -1, list(self.RESERVED_WORDS)):
             raise XimpiaAPIException(_(u'Site name not allowed'))
 
         # We fetch information from social network with access_token, verify tokens, etc...
