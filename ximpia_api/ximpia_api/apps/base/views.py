@@ -34,8 +34,8 @@ class SetupSite(generics.CreateAPIView):
         :param index_name:
         :return:
         """
-        user_path = '../user/mappings'
-        with open('../../settings.json') as f:
+        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
 
         with open('{}/user.json'.format(user_path)) as f:
