@@ -2,12 +2,14 @@ import logging
 import requests
 import json
 import pprint
+import string
 
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
+from django.utils.crypto import get_random_string
 from django.conf import settings
 
 from base import SocialNetworkResolution
@@ -16,6 +18,8 @@ from base.exceptions import XimpiaAPIException
 __author__ = 'jorgealegre'
 
 logger = logging.getLogger(__name__)
+
+VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 
 class Command(BaseCommand):
@@ -230,6 +234,10 @@ class Command(BaseCommand):
                 u'id': es_response.get('_id', ''),
             }))
         # user
+        # generate token
+        token = get_random_string(400, VALID_KEY_CHARS)
+        # generate session
+        session_id = get_random_string(50, VALID_KEY_CHARS)
         user_data = {
             u'alias': None,
             u'email': social_data.get('email', None),
@@ -253,9 +261,9 @@ class Command(BaseCommand):
                 u'name': x['name']
             }, groups_data),
             u'is_active': True,
-            u'token': None,
-            u'last_login': None,
-            u'session_id': None,
+            u'token': token,
+            u'last_login': now_es,
+            u'session_id': session_id,
             u'created_on': now_es,
         }
         es_response_raw = requests.post(
