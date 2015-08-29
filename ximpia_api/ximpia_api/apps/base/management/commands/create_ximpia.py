@@ -1,6 +1,7 @@
 import logging
 import requests
 import json
+import pprint
 
 from datetime import datetime
 
@@ -327,3 +328,14 @@ class Command(BaseCommand):
         # 3. Groups, User, UserGroup
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
                                                           social_data, now_es)
+
+        if 'verbosity' in options and options['verbosity'] != '0':
+            self.stdout.write(u'{}'.format(
+                pprint.PrettyPrinter(indent=4).pformat({
+                    u'site': site_data,
+                    u'app': app_data,
+                    u'settings': settings_data,
+                    u'user': user_data,
+                    u'groups': groups_data
+                })
+            ))
