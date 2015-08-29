@@ -45,9 +45,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'base',
     'document',
-    'document_definition',
     'patterns',
-    'settings',
     'user'
 )
 

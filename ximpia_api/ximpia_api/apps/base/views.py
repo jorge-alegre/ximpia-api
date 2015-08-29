@@ -10,7 +10,8 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
 
-from . import SocialNetworkResolution, exceptions
+from . import SocialNetworkResolution
+from exceptions import XimpiaAPIException
 
 __author__ = 'jorgealegre'
 
@@ -62,10 +63,10 @@ class SetupSite(generics.CreateAPIView):
                                         )
         # {"acknowledged":true}
         if es_response_raw.status_code != 200:
-            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
+            raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
         es_response = es_response_raw.json()
         if not es_response['acknowledged']:
-            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
+            raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
         logger.info(u'SetupSite :: created index {} response: {}'.format(
             index_name,
             es_response
@@ -94,7 +95,7 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=site_data)
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
         es_response = es_response_raw.json()
         site_id = es_response.get('_id', '')
         logger.info(u'SetupSite :: created site {} id: {}'.format(
@@ -113,7 +114,7 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=app_data)
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
         es_response = es_response_raw.json()
         app_id = es_response.get('_id', '')
         app_data['id'] = app_id
@@ -145,7 +146,7 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=settings_data)
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created settings id: {}'.format(
             es_response.get('_id', '')
@@ -175,7 +176,7 @@ class SetupSite(generics.CreateAPIView):
                 u'created_on': now_es
             })
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write permission "can-admin"'))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
             app['name'],
@@ -218,7 +219,7 @@ class SetupSite(generics.CreateAPIView):
                 '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=group_data)
             if es_response_raw.status_code != 200:
-                pass
+                XimpiaAPIException(_(u'Could not write group "{}"'.format(group)))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created group {} id: {}'.format(
                 group,
@@ -261,7 +262,9 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=user_data)
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
+                social_network,
+                social_data.get('user_id', None))))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
@@ -291,7 +294,7 @@ class SetupSite(generics.CreateAPIView):
                 u'created_on': now_es,
             })
         if es_response_raw.status_code != 200:
-            pass
+            XimpiaAPIException(_(u'Could not write user group'))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created user group id: {}'.format(
             es_response.get('_id', '')
@@ -309,7 +312,7 @@ class SetupSite(generics.CreateAPIView):
         default_groups = ['users', 'users-test', 'admin']
 
         if site in self.reserved_words:
-            raise exceptions.XimpiaAPIException(_(u'Site name not allowed'))
+            raise XimpiaAPIException(_(u'Site name not allowed'))
 
         # We fetch information from social network with access_token, verify tokens, etc...
         # social_data is same for all social networks, a dictionary with data
