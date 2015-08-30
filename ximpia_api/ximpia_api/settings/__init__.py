@@ -46,7 +46,8 @@ INSTALLED_APPS = (
     'base',
     'document',
     'patterns',
-    'user'
+    'user',
+    'sessions'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -112,3 +113,8 @@ FACEBOOK_APP_SECRET = '4a15b75b64be99e1749b81ce91f624a3'
 FACEBOOK_APP_TOKEN = '8da636b3369700ae73eeaa4170046d8a'
 
 ELASTIC_SEARCH_HOST = 'localhost:9200'
+
+SESSION_ENGINE = 'sessions.backends.db'
+AUTHENTICATION_BACKENDS = (
+    'user.backends.ESBackend'
+)

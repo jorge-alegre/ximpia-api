@@ -1,0 +1,25 @@
+{
+  "_session": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "session_key": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "session_data": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "expire_date": {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}
