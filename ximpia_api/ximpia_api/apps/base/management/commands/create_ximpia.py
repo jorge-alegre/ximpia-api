@@ -14,6 +14,7 @@ from django.conf import settings
 
 from base import SocialNetworkResolution
 from base.exceptions import XimpiaAPIException
+from django.contrib.auth import authenticate, login
 
 __author__ = 'jorgealegre'
 
@@ -307,6 +308,7 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created user group id: {}'.format(
             es_response.get('_id', '')
         ))
+        user = authenticate(token)
         return user_data, groups_data
 
     def handle(self, *args, **options):
