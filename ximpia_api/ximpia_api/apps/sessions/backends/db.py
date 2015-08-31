@@ -69,10 +69,26 @@ class SessionStore(SessionBase):
         return self.decode(es_response['hits']['hits'][0].session_data)
 
     def exists(self, session_key):
+        # return Session.objects.filter(session_key=session_key).exists()
         return True
 
     def create(self):
-        pass
+        """
+        Create session
+
+        :return:
+        """
+        while True:
+            self._session_key = self._get_new_session_key()
+            try:
+                # Save immediately to ensure we have a unique entry in the
+                # database.
+                self.save(must_create=True)
+            except CreateError:
+                # Key wasn't unique. Try again.
+                continue
+            self.modified = True
+            return
 
     def save(self, must_create=False):
         """
