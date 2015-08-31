@@ -4,10 +4,7 @@ import logging
 import json
 
 from django.contrib.sessions.backends.base import CreateError, SessionBase
-from django.core.exceptions import SuspiciousOperation
-from django.db import IntegrityError, router, transaction
 from django.utils import timezone
-from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
 
 from django.conf import settings
