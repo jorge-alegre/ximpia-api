@@ -118,3 +118,7 @@ SESSION_ENGINE = 'sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
     'user.backends.ESBackend'
 )
+
+# This setting will be injected by middleware from request site
+SITE = 'mysite'
+SITE_BASE_INDEX = u'{}_base'.format(SITE)
