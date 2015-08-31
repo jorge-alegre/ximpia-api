@@ -17,6 +17,10 @@ __author__ = 'jorgealegre'
 
 MAX_RETRIES = 3
 
+req_session = requests.Session()
+req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+                  HTTPAdapter(max_retries=MAX_RETRIES))
+
 
 class SessionStore(SessionBase):
     """
@@ -31,10 +35,6 @@ class SessionStore(SessionBase):
 
         :return:
         """
-        req_session = requests.Session()
-        req_session.mount('https://{}'.format(settings.SEARCH_HOST),
-                          HTTPAdapter(max_retries=MAX_RETRIES))
-
         es_response = req_session.get(
             'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
@@ -69,8 +69,30 @@ class SessionStore(SessionBase):
         return self.decode(es_response['hits']['hits'][0].session_data)
 
     def exists(self, session_key):
-        # return Session.objects.filter(session_key=session_key).exists()
-        return True
+        """
+        Exists session_key
+
+        :param session_key:
+        :return:
+        """
+        es_response = req_session.get(
+            'http://{host}/{index}/{document_type}/_count?query_cache={query_cache}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                document_type='_session',
+                index=settings.SITE_BASE_INDEX,
+                query_cache=json.dumps(True)),
+            data=json.dumps({
+                'query': {
+                    'term': {
+                        'session_key': self.session_key
+                    }
+                }
+            })
+            )
+        es_response = json.loads(es_response.content)
+        if es_response.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
+            return False
+        return es_response['count'] > 0
 
     def create(self):
         """
