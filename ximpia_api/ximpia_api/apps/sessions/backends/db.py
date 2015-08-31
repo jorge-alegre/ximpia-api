@@ -8,8 +8,11 @@ from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, router, transaction
 from django.utils import timezone
 from django.utils.encoding import force_text
+from django.utils.translation import ugettext as _
 
 from django.conf import settings
+
+from base.exceptions import XimpiaAPIException
 
 
 __author__ = 'jorgealegre'
@@ -20,6 +23,8 @@ MAX_RETRIES = 3
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
+
+logger = logging.getLogger(__name__)
 
 
 class SessionStore(SessionBase):
@@ -66,7 +71,12 @@ class SessionStore(SessionBase):
             self._session_key = None
             return {}
         es_response = json.loads(es_response.content)
-        return self.decode(es_response['hits']['hits'][0].session_data)
+        try:
+            session_data = self.decode(es_response['hits']['hits'][0]['_source'].session_data)
+            session_data['_id'] = es_response['hits']['hits'][0]['_id']
+        except IndexError:
+            session_data = {}
+        return session_data
 
     def exists(self, session_key):
         """
@@ -119,7 +129,28 @@ class SessionStore(SessionBase):
         create a *new* entry (as opposed to possibly updating an existing
         entry).
         """
-        pass
+        if self.session_key is None:
+            return self.create()
+        session_data = {
+            'session_key': self._get_or_create_session_key(),
+            'session_data': self.encode(self._get_session(no_load=must_create)),
+            'expire_date': self.get_expiry_date().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        if must_create:
+            es_response_raw = requests.post('{}/{}/_session'.format(settings.ELASTIC_SEARCH_HOST,
+                                                                    settings.SITE_BASE_INDEX),
+                                            data=session_data)
+        else:
+            # get id from session_data
+            id_ = -1
+            es_response_raw = requests.put('{}/{}/_session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
+                                                                        settings.SITE_BASE_INDEX,
+                                                                        id=id_),
+                                           data=session_data)
+        if es_response_raw.status_code != 200:
+            XimpiaAPIException(_(u'Could not write session'))
+        es_response = es_response_raw.json()
+        logger.info(u'SessionStore :: es_response: {}'.format(es_response))
 
     def delete(self, session_key=None):
         pass
