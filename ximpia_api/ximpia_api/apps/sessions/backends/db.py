@@ -16,6 +16,7 @@ __author__ = 'jorgealegre'
 
 
 MAX_RETRIES = 3
+FLUSH_LIMIT = 1000
 
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.SEARCH_HOST),
@@ -193,4 +194,56 @@ class SessionStore(SessionBase):
 
     @classmethod
     def clear_expired(cls):
-        pass
+        """
+        Clear expired sessions
+
+        :return:
+        """
+        es_response_raw = req_session.get(
+            'http://{host}/{index}/{document_type}/_search?scroll=1m&search_type=scan'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                document_type='_session',
+                index=settings.SITE_BASE_INDEX),
+            data=json.dumps({
+                'query': {
+                    'range': {
+                        'expire_date': {
+                            "lt": timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                    }
+                }
+            })
+            )
+        es_response = es_response_raw.json()
+        es_response_raw = req_session.get(
+            'http://{host}/_search?scroll=1m&search_type=scan'.format(
+                host=settings.ELASTIC_SEARCH_HOST),
+            data={
+                'scroll_id': es_response['_scroll_id']
+            })
+        es_response = es_response_raw.json()
+        delete_list = []
+        while es_response['hits']['hits']:
+            # build bulk data to delete
+            for result in es_response['hits']['hits']:
+                if len(delete_list) > FLUSH_LIMIT:
+                    req_session.post('http://{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+                                     u'\n'.join(delete_list) + u'\n')
+                    delete_list = []
+                else:
+                    delete_list.append({
+                        "delete": {
+                            "_index": result['_index'],
+                            "_type": result['_type'],
+                            "_id": result['_id']
+                        }
+                    })
+            es_response_raw = req_session.get(
+                'http://{host}/_search?scroll=1m&search_type=scan'.format(
+                    host=settings.ELASTIC_SEARCH_HOST),
+                data={
+                    'scroll_id': es_response['_scroll_id']
+                })
+            es_response = es_response_raw.json()
+        req_session.post('http://{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+                         u'\n'.join(delete_list) + u'\n')
