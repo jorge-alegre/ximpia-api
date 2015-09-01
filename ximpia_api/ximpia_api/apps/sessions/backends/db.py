@@ -144,12 +144,52 @@ class SessionStore(SessionBase):
                                                                         id=raw_session_data['_id']),
                                            data=session_data)
         if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write session'))
+            XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
-        logger.info(u'SessionStore :: es_response: {}'.format(es_response))
+        logger.info(u'SessionStore :: save() :: es_response: {}'.format(es_response))
 
     def delete(self, session_key=None):
-        pass
+        """
+        Delete session
+
+        :param session_key:
+        :return:
+        """
+        if session_key is None:
+            if self.session_key is None:
+                return
+            session_key = self.session_key
+        es_response_raw = req_session.get(
+            'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                document_type='_session',
+                index=settings.SITE_BASE_INDEX,
+                query_cache=json.dumps(True)),
+            data=json.dumps({
+                'query': {
+                    'term': {
+                        'session_key': session_key
+                    }
+                }
+            })
+            )
+        if es_response_raw.status_code != 200:
+            XimpiaAPIException(_(u'Could not get session'))
+        es_response = es_response_raw.json()
+        try:
+            id_ = es_response['hits']['hits'][0]['_id']
+            es_response_raw = req_session.delete('http://{host}/{index}/{document_type}/{id_}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                document_type='_session',
+                index=settings.SITE_BASE_INDEX,
+                id_=id_))
+            if es_response_raw.status_code != 200:
+                XimpiaAPIException(_(u'Could not get session'))
+            es_response = es_response_raw.json()
+            logger.info(u'SessionStore :: delete() :: es_response: {}'.format(es_response))
+        except IndexError:
+            XimpiaAPIException(_(u'Could not get session id'))
+
 
     @classmethod
     def clear_expired(cls):
