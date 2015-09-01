@@ -174,7 +174,7 @@ class SessionStore(SessionBase):
             })
             )
         if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not get session'))
+            return
         es_response = es_response_raw.json()
         try:
             id_ = es_response['hits']['hits'][0]['_id']
@@ -188,7 +188,7 @@ class SessionStore(SessionBase):
             es_response = es_response_raw.json()
             logger.info(u'SessionStore :: delete() :: es_response: {}'.format(es_response))
         except IndexError:
-            XimpiaAPIException(_(u'Could not get session id'))
+            pass
 
 
     @classmethod
