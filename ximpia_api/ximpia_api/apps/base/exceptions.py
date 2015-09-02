@@ -15,3 +15,12 @@ class XimpiaAPIException(Exception):
         if self.code:
             return u'{} [{}]'.format(self.message, self.code)
         return u'{}'.format(self.message)
+
+
+class DocumentNotFound(Exception):
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return u'{}'.format(self.message)

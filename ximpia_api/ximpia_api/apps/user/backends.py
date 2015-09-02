@@ -86,7 +86,25 @@ class XimpiaAuthBackend(object):
         if es_response.get('hits', {'total': 0})['total'] == 0:
             raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
                                                 code=exceptions.USER_ID_NOT_FOUND)
-        return es_response['hits']['hits'][0]['_source']
+        return es_response['hits']['hits'][0]
 
-    def get_user(self, user_id):
-        pass
+    @classmethod
+    def get_user(cls, user_id):
+        """
+        Get user document by id
+
+        :param user_id:
+        :return:
+        """
+        es_response_raw = req_session.get(
+            'http://{host}/{index}/{document_type}/{user_id}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                document_type='_user',
+                index=settings.SITE_BASE_INDEX,
+                user_id=user_id))
+        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+            pass
+        es_response = es_response_raw.json()
+        if not es_response['found']:
+            raise exceptions.DocumentNotFound(_(u'User document not found for "{}"'.format(user_id)))
+        return es_response
