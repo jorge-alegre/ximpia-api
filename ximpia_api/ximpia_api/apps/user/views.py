@@ -83,16 +83,160 @@ class User(DocumentViewSet):
 
     We would have common DocumentViewSet, which is the one that interacts with ElasticSearch needs
     """
-    pass
+
+    def create(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def destroy(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def list(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def update(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
 
 
 class Group(DocumentViewSet):
-    pass
 
+    def create(self, request, *args, **kwargs):
+        """
 
-class UserGroup(DocumentViewSet):
-    pass
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def destroy(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def list(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def update(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
 
 
 class Permission(DocumentViewSet):
-    pass
+
+    def create(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def destroy(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def list(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def update(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+

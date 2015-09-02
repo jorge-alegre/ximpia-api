@@ -23,6 +23,7 @@ VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
+
     pass
 
 
