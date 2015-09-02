@@ -116,7 +116,7 @@ ELASTIC_SEARCH_HOST = 'localhost:9200'
 
 SESSION_ENGINE = 'sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
-    'user.backends.ESBackend'
+    'user.backends.XimpiaAuthBackend'
 )
 
 # This setting will be injected by middleware from request site

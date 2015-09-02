@@ -5,7 +5,7 @@ import json
 from django.conf import settings
 
 from constants import *
-from exceptions import XimpiaAPIException
+import exceptions
 
 __author__ = 'jorgealegre'
 
@@ -33,10 +33,12 @@ class SocialNetworkResolution(object):
                                        app_token=settings.FACEBOOK_APP_TOKEN
                                     ))
         if response.status_code != 200:
-            raise XimpiaAPIException(u'Error in validating Facebook response')
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = json.loads(response.content)
         if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
-            raise XimpiaAPIException(u'Error in validating Facebook response')
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
             'user_id': fb_data['data']['user_id'],
             'scopes': fb_data['data']['scopes'],
@@ -50,7 +52,8 @@ class SocialNetworkResolution(object):
                                        access_token=kwargs.get('access_token', '')
                                    ))
         if response.status_code != 200:
-            raise XimpiaAPIException(u'Error in validating Facebook response')
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         detail_user_data = json.loads(response.content)
         user_data.update({
             'email': detail_user_data.get('email', None),

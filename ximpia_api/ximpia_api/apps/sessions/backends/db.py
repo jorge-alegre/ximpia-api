@@ -9,7 +9,7 @@ from django.utils.translation import ugettext as _
 
 from django.conf import settings
 
-from base.exceptions import XimpiaAPIException
+from base import exceptions
 
 
 __author__ = 'jorgealegre'
@@ -145,7 +145,7 @@ class SessionStore(SessionBase):
                                                                         id=raw_session_data['_id']),
                                            data=session_data)
         if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
+            exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
         logger.info(u'SessionStore :: save() :: es_response: {}'.format(es_response))
 
@@ -185,7 +185,7 @@ class SessionStore(SessionBase):
                 index=settings.SITE_BASE_INDEX,
                 id_=id_))
             if es_response_raw.status_code != 200:
-                XimpiaAPIException(_(u'Could not get session'))
+                exceptions.XimpiaAPIException(_(u'Could not get session'))
             es_response = es_response_raw.json()
             logger.info(u'SessionStore :: delete() :: es_response: {}'.format(es_response))
         except IndexError:
