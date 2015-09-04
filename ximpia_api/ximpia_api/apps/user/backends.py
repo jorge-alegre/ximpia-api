@@ -4,6 +4,7 @@ import logging
 import json
 
 from django.utils.translation import ugettext as _
+from django.contrib.auth.models import User
 
 from django.conf import settings
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class XimpiaAuthBackend(object):
 
     @classmethod
-    def authenticate(cls, access_token, provider):
+    def authenticate(cls, access_token=None, provider=None):
         """
         Authenticate for all providers given access token
 
@@ -86,7 +87,17 @@ class XimpiaAuthBackend(object):
         if es_response.get('hits', {'total': 0})['total'] == 0:
             raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
                                                 code=exceptions.USER_ID_NOT_FOUND)
-        return es_response['hits']['hits'][0]
+        user_data = es_response['hits']['hits'][0]
+        user = User()
+        user.id = user_data.get('_id', '')
+        user.email = user_data.get('email', '')
+        user.pk = user.id
+        user.username = user_data.get('username', '')
+        user.first_name = user_data.get('first_name', '')
+        user.last_name = user_data.get('last_name', '')
+        user.last_login = user_data.get('last_login', '')
+        user.document = user_data
+        return user
 
     @classmethod
     def get_user(cls, user_id):

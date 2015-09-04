@@ -88,3 +88,18 @@ class SocialNetworkResolution(object):
         """
         if social_network == SOCIAL_NETWORK_FACEBOOK:
             return cls._process_facebook(*args, **kwargs)
+
+
+def get_path_by_id(document_type, id_):
+    """
+    Get ES path by index, document type and id
+
+    :param document_type:
+    :param id_:
+    :return:
+    """
+    return 'http://{host}/{index}/{document_type}/{_id}'.format(
+        host=settings.ELASTIC_SEARCH_HOST,
+        index=settings.SITE_BASE_INDEX,
+        document_type=document_type,
+        _id=id_)

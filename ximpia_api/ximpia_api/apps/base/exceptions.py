@@ -7,7 +7,7 @@ SOCIAL_NETWORK_AUTH_ERROR = 'SOCIAL_NETWORK_AUTH_ERROR'
 
 class XimpiaAPIException(Exception):
 
-    def __init__(self, message, code):
+    def __init__(self, message, code=''):
         self.message = message
         self.code = code
 

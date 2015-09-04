@@ -122,3 +122,4 @@ AUTHENTICATION_BACKENDS = (
 # This setting will be injected by middleware from request site
 SITE = 'mysite'
 SITE_BASE_INDEX = u'{}_base'.format(SITE)
+SCHEME = 'http'
