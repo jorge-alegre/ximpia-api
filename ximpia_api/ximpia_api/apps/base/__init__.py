@@ -106,7 +106,7 @@ def get_path_by_id(document_type, id_):
         _id=id_)
 
 
-def get_es_response(request_object):
+def get_es_response(request_object, skip_exception=False):
     """
     Process request, get json and parse errors
 
@@ -115,5 +115,8 @@ def get_es_response(request_object):
     """
     es_response_raw = request_object
     if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
-        raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
+        if skip_exception:
+            pass
+        else:
+            raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
     return es_response_raw.json()
