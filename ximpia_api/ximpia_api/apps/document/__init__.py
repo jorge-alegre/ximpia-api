@@ -1,7 +1,11 @@
+from collections import OrderedDict
+
+from base import exceptions
+
 __author__ = 'jorgealegre'
 
 
-def walk(node, is_logical=None, is_physical=True):
+def walk(node, **kwargs):
     """
     Walk through dictionary
 
@@ -14,22 +18,47 @@ def walk(node, is_logical=None, is_physical=True):
     :return:
     """
     data = {}
+    versions_map = {}
+    is_physical = kwargs.get('is_physical', False)
+    is_logical = kwargs.get('is_logical', False)
+    version = kwargs.get('version', None)
+    if is_physical is False and is_logical is False:
+        raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
     for key, item in node.items():
         # key might have version, or key should strip version
-        if isinstance(item, (list, tuple)):
-            data[key] = ''
+        if isinstance(item, (list, tuple)) and isinstance(item[0], dict):
+            data[key] = map(lambda x: walk(x, **kwargs), item)
         elif isinstance(item, dict):
-            pass
+            data[key] = walk(item, **kwargs)
         else:
-            pass
+            if is_physical:
+                field, version = key.split('__')
+                version_int = int(version[1:])
+                versions_map.setdefault(field, {})
+                versions_map[field][version_int] = item
+            elif is_logical:
+                # we need to generate version
+                # we need to know latest field version from index to know
+                # we have this info from mappings
+                pass
+    if is_physical:
+        for field in versions_map:
+            if not version:
+                target_version = max(versions_map[field].keys())
+            else:
+                target_version = version
+            data[field] = versions_map[field][target_version]
+    elif is_logical:
+        pass
     return data
 
 
-def to_logical_doc(document):
+def to_logical_doc(document, version=''):
     """
     Physical documents will have versioned fields
 
     :param document:
+    :param version: Version to build document on. If none, we build latest version
     :return:
     """
     # we need to go through tree
@@ -45,6 +74,7 @@ def to_physical_doc(document):
     :param document:
     :return:
     """
+    # we need to get mappings from index
     physical_document = {}
     fields = document.keys()
 
