@@ -65,7 +65,7 @@ def to_logical_doc(document, version=None):
     return walk(document, is_physical=True, version=version)
 
 
-def to_physical_doc(document, version=None):
+def to_physical_doc(doc_type, document, version=None):
     """
     Logical document will have fields without version
 
@@ -73,4 +73,5 @@ def to_physical_doc(document, version=None):
     :param version: Version to build document on. If none, we build latest version
     :return:
     """
+    # We need to get mappings for doc_type
     return walk(document, is_logical=True, version=version)

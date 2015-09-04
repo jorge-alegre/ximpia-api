@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 from base import exceptions
-from base import SocialNetworkResolution
+from base import SocialNetworkResolution, get_es_response
 
 
 __author__ = 'jorgealegre'
@@ -45,45 +45,44 @@ class XimpiaAuthBackend(object):
             raise
 
         # 2. Check user_id exists for provider
-        es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_user',
-                index=settings.SITE_BASE_INDEX,
-                query_cache=json.dumps(True)),
-            data=json.dumps({
-                'query': {
-                    'bool': {
-                        'must': [
-                            {
-                                "nested": {
-                                    "path": "social_networks",
-                                    "filter": {
-                                        "bool": {
-                                            "must": [
-                                                {
-                                                    "term": {
-                                                        "social_networks.user_id": social_data.get('user_id', '')
+        es_response = get_es_response(
+            req_session.get(
+                'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    document_type='_user',
+                    index=settings.SITE_BASE_INDEX,
+                    query_cache=json.dumps(True)),
+                data=json.dumps({
+                    'query': {
+                        'bool': {
+                            'must': [
+                                {
+                                    "nested": {
+                                        "path": "social_networks",
+                                        "filter": {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "social_networks.user_id": social_data.get('user_id', '')
+                                                        }
+                                                    },
+                                                    {
+                                                        "term": {
+                                                            "social_networks.network": provider
+                                                        }
                                                     }
-                                                },
-                                                {
-                                                    "term": {
-                                                        "social_networks.network": provider
-                                                    }
-                                                }
-                                            ]
+                                                ]
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
-                }
-            })
+                })
             )
-        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
-            pass
-        es_response = es_response_raw.json()
+        )
         if es_response.get('hits', {'total': 0})['total'] == 0:
             raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
                                                 code=exceptions.USER_ID_NOT_FOUND)

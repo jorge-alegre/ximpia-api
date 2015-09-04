@@ -2,6 +2,7 @@ import requests
 from requests.adapters import HTTPAdapter
 import json
 
+from django.utils.translation import ugettext as _
 from django.conf import settings
 
 from constants import *
@@ -103,3 +104,16 @@ def get_path_by_id(document_type, id_):
         index=settings.SITE_BASE_INDEX,
         document_type=document_type,
         _id=id_)
+
+
+def get_es_response(request_object):
+    """
+    Process request, get json and parse errors
+
+    :param request_object:
+    :return:
+    """
+    es_response_raw = request_object
+    if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+        raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
+    return es_response_raw.json()
