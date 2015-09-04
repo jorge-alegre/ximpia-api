@@ -11,10 +11,10 @@
       "type": "group"
     },
     "properties": {
-      "name": {
+      "name__v1": {
         "type": "string",
         "fields": {
-          "completion": {
+          "completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": false,
@@ -22,79 +22,79 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "name": {
+          "name__v1": {
             "type": "string",
             "copy_to": "text"
           }
         }
       },
-      "slug": {
+      "slug__v1": {
         "type": "string",
         "fields": {
-          "slug": {
+          "slug__v1": {
             "type": "string"
           },
-          "raw": {
+          "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "tags": {
+      "tags__v1": {
         "type": "nested",
         "include_in_parent": true,
         "properties": {
-          "name": {
+          "name__v1": {
             "type": "string",
             "copy_to": "text"
           },
-          "slug": {
+          "slug__v1": {
             "type": "string",
             "fields": {
-              "slug": {
+              "slug__v1": {
                 "type": "string"
               },
-              "raw": {
+              "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
             }
           },
-          "is_hash": {
+          "is_hash__v1": {
             "type": "boolean",
             "null_value": false
           }
         }
       },
-      "permissions": {
+      "permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name": {
+          "name__v1": {
             "type": "string",
             "fields": {
-              "name": {
+              "name__v1": {
                 "type": "string"
               },
-              "raw": {
+              "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
             }
           },
-          "created_on": {
+          "created_on__v1": {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
         }
       },
-      "text": {
+      "text__v1": {
         "type": "string",
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "created_on" : {
+      "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

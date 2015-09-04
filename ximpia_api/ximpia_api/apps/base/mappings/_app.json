@@ -8,25 +8,25 @@
       "enabled": false
     },
     "properties": {
-      "name": {
+      "name__v1": {
         "type": "string"
       },
-      "slug": {
+      "slug__v1": {
         "type": "string",
         "fields": {
-          "slug": {
+          "slug__v1": {
             "type": "string"
           },
-          "raw": {
+          "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "is_active": {
+      "is_active__v1": {
         "type": "boolean"
       },
-      "created_on" : {
+      "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }
