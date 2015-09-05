@@ -1,0 +1,61 @@
+{
+  "_field_version": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "doc_type__v1": {
+        "type": "string"
+      },
+      "field__v1": {
+        "type": "string",
+        "fields": {
+          "field__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "tag__v1": {
+        "properties": {
+          "name__v1": {
+            "type": "string"
+          },
+          "slug__v1": {
+            "type": "string",
+            "fields": {
+              "slug__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "is_active__v1": {
+        "type": "boolean"
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}
