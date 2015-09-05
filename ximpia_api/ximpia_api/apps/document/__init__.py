@@ -2,8 +2,6 @@ import requests
 import json
 from requests.adapters import HTTPAdapter
 
-from collections import OrderedDict
-
 from django.conf import settings
 
 from base import exceptions, get_es_response, get_path_search
@@ -37,14 +35,17 @@ def walk(node, **kwargs):
     is_physical = kwargs.get('is_physical', False)
     is_logical = kwargs.get('is_logical', False)
     fields_version = kwargs.get('fields_version', [])
+    fields_data = kwargs.get('fields_data', [])
+    tag = kwargs.get('tag', None)
     if is_physical is False and is_logical is False:
         raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
-    for key, item in node.items():
-        # key might have version, or key should strip version
-        field, version_str = key.split('__')
-        version_int = int(version_str[1:])
-        versions_map.setdefault(field, {})
-        versions_map[field][version_int] = item
+    if is_physical:
+        for key, item in node.items():
+            # key might have version, or key should strip version
+            field, version_str = key.split('__')
+            version_int = int(version_str[1:])
+            versions_map.setdefault(field, {})
+            versions_map[field][version_int] = item
     print versions_map
     if is_physical:
         for field in versions_map:
@@ -63,7 +64,26 @@ def walk(node, **kwargs):
             else:
                 data[field] = item
     elif is_logical:
-        pass
+        for key, item in node.items():
+            # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
+            if tag:
+                # like status__v7
+                field = map(lambda x: x,
+                            filter(lambda y: y['field__v1'] == key, fields_data))[0]
+            else:
+                fields = map(lambda x: x['field__v1'], fields_data)
+                # field: {version}
+                versions_map = map(lambda x: (x['field__v1'].split('__')[0], {x['field__v1'].split('__')[1]}),
+                                   fields_data)
+                # like status__v7
+                field = map(lambda y: max(list(versions_map[y.split('__')[0]])),
+                            filter(lambda x: x.split('__')[0] == key, fields))
+            if isinstance(item, dict):
+                data[field] = walk(item, **kwargs)
+            elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):
+                data[field] = map(lambda x: walk(x, **kwargs), item)
+            else:
+                data[field] = item
     return data
 
 
@@ -71,7 +91,9 @@ def to_logical_doc(doc_type, document, tag=None):
     """
     Physical documents will have versioned fields
 
+    :param doc_type:
     :param document:
+    :param tag:
     :return:
     """
     fields_version = None
@@ -114,9 +136,38 @@ def to_physical_doc(doc_type, document, tag=None):
     """
     Logical document will have fields without version
 
+    :param doc_type:
     :param document:
-    :param version: Version to build document on. If none, we build latest version
+    :param tag:
     :return:
     """
-    # We need to get mappings for doc_type
-    return walk(document, is_logical=True)
+    query = {
+        'query': {
+            'bool': {
+                'must': [
+                    {
+                        "term": {
+                            "doc_type__v1": doc_type
+                        }
+                    },
+                    {
+                        "term": {
+                            "is_active__v1": True
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    if tag:
+        query['query']['bool']['must'].append(
+            {
+                'term': {
+                    "tag__v1": tag
+                }
+            }
+        )
+    es_response = get_es_response(
+        req_session.get(get_path_search('_field_version'),
+                        data=json.dumps(query)))
+    return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
