@@ -1,11 +1,12 @@
 import requests
+import json
 from requests.adapters import HTTPAdapter
 
 from collections import OrderedDict
 
 from django.conf import settings
 
-from base import exceptions, get_es_response
+from base import exceptions, get_es_response, get_path_search
 
 __author__ = 'jorgealegre'
 
@@ -35,7 +36,7 @@ def walk(node, **kwargs):
     versions_map = {}
     is_physical = kwargs.get('is_physical', False)
     is_logical = kwargs.get('is_logical', False)
-    version = kwargs.get('version', None)
+    fields_version = kwargs.get('fields_version', [])
     if is_physical is False and is_logical is False:
         raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
     for key, item in node.items():
@@ -48,10 +49,11 @@ def walk(node, **kwargs):
     if is_physical:
         for field in versions_map:
             print field
-            if not version:
+            if not fields_version:
                 target_version = max(versions_map[field].keys())
             else:
-                target_version = int(version.split('v')[1])
+                target_version = int(filter(lambda x: x.split('__')[0] == field,
+                                            fields_version)[0].split('__')[1][1:])
             print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
             if isinstance(item, dict):
@@ -72,14 +74,40 @@ def to_logical_doc(doc_type, document, tag=None):
     :param document:
     :return:
     """
-    # get fields active for doc_type and tag
+    fields_version = None
     if tag:
         es_response = get_es_response(
             req_session.get(
-                '',
+                get_path_search('_field_version'),
+                data=json.dumps(
+                    {
+                        'query': {
+                            'bool': {
+                                'must': [
+                                    {
+                                        'term': {
+                                            "tag__v1": tag
+                                        }
+                                    },
+                                    {
+                                        "term": {
+                                            "doc_type__v1": doc_type
+                                        }
+                                    },
+                                    {
+                                        "term": {
+                                            "is_active__v1": True
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                )
             )
         )
-    return walk(document, is_physical=True)
+        fields_version = map(lambda x: x['field__v1'], es_response['hits']['hits'])
+    return walk(document, is_physical=True, fields_version=fields_version)
 
 
 def to_physical_doc(doc_type, document, tag=None):
