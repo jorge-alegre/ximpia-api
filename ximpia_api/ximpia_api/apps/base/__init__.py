@@ -106,6 +106,23 @@ def get_path_by_id(document_type, id_):
         _id=id_)
 
 
+def get_path_search(document_type, **kwargs):
+    """
+    Get ES path by index, document type for search
+
+    :param document_type:
+    :param id_:
+    :param query_cache:
+    :return:
+    """
+    query_cache = kwargs.get('query_cache', True)
+    return 'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+        host=settings.ELASTIC_SEARCH_HOST,
+        index=settings.SITE_BASE_INDEX,
+        document_type=document_type,
+        query_cache=query_cache)
+
+
 def get_es_response(request_object, skip_exception=False):
     """
     Process request, get json and parse errors

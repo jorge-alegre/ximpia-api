@@ -1,8 +1,19 @@
+import requests
+from requests.adapters import HTTPAdapter
+
 from collections import OrderedDict
 
-from base import exceptions
+from django.conf import settings
+
+from base import exceptions, get_es_response
 
 __author__ = 'jorgealegre'
+
+MAX_RETRIES = 3
+
+req_session = requests.Session()
+req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+                  HTTPAdapter(max_retries=MAX_RETRIES))
 
 
 def walk(node, **kwargs):
@@ -54,18 +65,24 @@ def walk(node, **kwargs):
     return data
 
 
-def to_logical_doc(document, version=None):
+def to_logical_doc(doc_type, document, tag=None):
     """
     Physical documents will have versioned fields
 
     :param document:
-    :param version: Version to build document on. If none, we build latest version
     :return:
     """
-    return walk(document, is_physical=True, version=version)
+    # get fields active for doc_type and tag
+    if tag:
+        es_response = get_es_response(
+            req_session.get(
+                '',
+            )
+        )
+    return walk(document, is_physical=True)
 
 
-def to_physical_doc(doc_type, document, version=None):
+def to_physical_doc(doc_type, document, tag=None):
     """
     Logical document will have fields without version
 
@@ -74,4 +91,4 @@ def to_physical_doc(doc_type, document, version=None):
     :return:
     """
     # We need to get mappings for doc_type
-    return walk(document, is_logical=True, version=version)
+    return walk(document, is_logical=True)
