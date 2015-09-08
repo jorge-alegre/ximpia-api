@@ -10,6 +10,7 @@ from django.utils.translation import ugettext as _
 from django.conf import settings
 
 from base import exceptions
+from document import to_logical_doc, to_physical_doc, get_es_response
 
 
 __author__ = 'jorgealegre'
@@ -38,7 +39,7 @@ class SessionStore(SessionBase):
 
         :return:
         """
-        es_response = req_session.get(
+        es_response_raw = req_session.get(
             'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='_session',
@@ -50,12 +51,12 @@ class SessionStore(SessionBase):
                         'must': [
                             {
                                 'term': {
-                                    'session_key': self.session_key
+                                    'session_key__v1': self.session_key
                                 }
                             },
                             {
                                 'range': {
-                                    'expire_date': {
+                                    'expire_date__v1': {
                                         "gt": timezone.now().strftime("%Y-%m-%d %H:%M:%S")
                                     }
                                 }
@@ -65,12 +66,13 @@ class SessionStore(SessionBase):
                 }
             })
             )
-        if es_response.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
+        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
             self._session_key = None
             return {}
-        es_response = json.loads(es_response.content)
+        es_response = es_response_raw.json()
         try:
-            session_data = self.decode(es_response['hits']['hits'][0]['_source'].session_data)
+            session_data = self.decode(to_logical_doc('_session',
+                                                      es_response['hits']['hits'][0]['_source'])['session_data'])
             session_data['_id'] = es_response['hits']['hits'][0]['_id']
         except IndexError:
             session_data = {}
@@ -92,7 +94,7 @@ class SessionStore(SessionBase):
             data=json.dumps({
                 'query': {
                     'term': {
-                        'session_key': self.session_key
+                        'session_key__v1': self.session_key
                     }
                 }
             })
@@ -138,12 +140,12 @@ class SessionStore(SessionBase):
         if must_create:
             es_response_raw = requests.post('{}/{}/_session'.format(settings.ELASTIC_SEARCH_HOST,
                                                                     settings.SITE_BASE_INDEX),
-                                            data=session_data)
+                                            data=to_physical_doc('_session', session_data))
         else:
             es_response_raw = requests.put('{}/{}/_session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
                                                                         settings.SITE_BASE_INDEX,
                                                                         id=raw_session_data['_id']),
-                                           data=session_data)
+                                           data=to_physical_doc('_session', session_data))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
@@ -169,7 +171,7 @@ class SessionStore(SessionBase):
             data=json.dumps({
                 'query': {
                     'term': {
-                        'session_key': session_key
+                        'session_key__v1': session_key
                     }
                 }
             })
@@ -207,7 +209,7 @@ class SessionStore(SessionBase):
             data=json.dumps({
                 'query': {
                     'range': {
-                        'expire_date': {
+                        'expire_date__v1': {
                             "lt": timezone.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
                     }
