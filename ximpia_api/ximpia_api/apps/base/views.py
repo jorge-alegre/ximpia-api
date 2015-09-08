@@ -16,7 +16,7 @@ from django.utils.crypto import get_random_string
 from . import SocialNetworkResolution
 from exceptions import XimpiaAPIException
 
-from document import to_physical_doc
+from document import to_physical_doc, to_logical_doc
 
 __author__ = 'jorgealegre'
 
@@ -307,21 +307,21 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=to_physical_doc('_user-group', {
                 u'user': map(lambda x: {
-                    'id': x['id'],
-                    'username': x['username'],
-                    'email': x['email'],
-                    'avatar': x['avatar'],
-                    'name': x['name'],
-                    'social_networks': x['social_networks'],
-                    'permissions': x['permissions'],
-                    'created_on': x['created_on'],
+                    u'id': x['id'],
+                    u'username': x['username'],
+                    u'email': x['email'],
+                    u'avatar': x['avatar'],
+                    u'name': x['name'],
+                    u'social_networks': x['social_networks'],
+                    u'permissions': x['permissions'],
+                    u'created_on': x['created_on'],
                 }, user_data),
                 u'group': map(lambda x: {
-                    'id': x['id'],
-                    'name': x['name'],
-                    'slug': x['slug'],
-                    'tags': x['tags'],
-                    'created_on': x['created_on']
+                    u'id': x['id'],
+                    u'name': x['name'],
+                    u'slug': x['slug'],
+                    u'tags': x['tags'],
+                    u'created_on': x['created_on']
                 }, groups_data),
                 u'created_on': now_es,
             }))
