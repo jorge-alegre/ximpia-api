@@ -150,6 +150,12 @@ class Connect(generics.CreateAPIView):
             }
 
 
+class UserSignup(generics.CreateAPIView):
+
+    def create(self, request, *args, **kwargs):
+        pass
+
+
 class User(DocumentViewSet):
     """
     This class will create user, update user, get user and list users. Would also search for users with Ximpia

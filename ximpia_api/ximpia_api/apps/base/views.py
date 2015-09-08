@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter
 import json
 import logging
 import string
@@ -22,6 +23,10 @@ __author__ = 'jorgealegre'
 logger = logging.getLogger(__name__)
 
 VALID_KEY_CHARS = string.ascii_lowercase + string.digits
+
+req_session = requests.Session()
+req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+                  HTTPAdapter(max_retries=3))
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -69,20 +74,20 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                                        data={
-                                            'settings': settings_dict,
-                                            'mappings': {
-                                                '_app': app_dict,
-                                                '_settings': settings__dict,
-                                                '_user': user_dict,
-                                                '_group': group_dict,
-                                                '_user-group': user_group_dict,
-                                                '_permissions': permissions_dict,
-                                                '_session': session_dict
-                                                }
-                                            }
-                                        )
+        es_response_raw = req_session.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                                           data={
+                                               'settings': settings_dict,
+                                               'mappings': {
+                                                   '_app': app_dict,
+                                                   '_settings': settings__dict,
+                                                   '_user': user_dict,
+                                                   '_group': group_dict,
+                                                   '_user-group': user_group_dict,
+                                                   '_permissions': permissions_dict,
+                                                   '_session': session_dict
+                                               }
+                                               }
+                                           )
         # {"acknowledged":true}
         if es_response_raw.status_code != 200:
             raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
@@ -114,7 +119,7 @@ class SetupSite(generics.CreateAPIView):
             u'is_active': True,
             u'created_on': now_es
         }
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
             data=to_physical_doc('site', site_data))
         if es_response_raw.status_code != 200:
@@ -133,7 +138,7 @@ class SetupSite(generics.CreateAPIView):
             u'is_active': True,
             u'created_on': now_es
         }
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_site),
             data=to_physical_doc('_app', app_data))
         if es_response_raw.status_code != 200:
@@ -165,7 +170,7 @@ class SetupSite(generics.CreateAPIView):
             ],
             u'created_on': now_es
         }
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_site),
             data=to_physical_doc('_settings', settings_data))
         if es_response_raw.status_code != 200:
@@ -186,7 +191,7 @@ class SetupSite(generics.CreateAPIView):
         :param now_es:
         :return:
         """
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=to_physical_doc('_permission', {
                 u'name': u'can-admin',
@@ -238,7 +243,7 @@ class SetupSite(generics.CreateAPIView):
                         u'created_on': now_es
                     }
                 ]
-            es_response_raw = requests.post(
+            es_response_raw = req_session.post(
                 '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=to_physical_doc('_group', group_data))
             if es_response_raw.status_code != 200:
@@ -285,7 +290,7 @@ class SetupSite(generics.CreateAPIView):
             u'session_id': session_id,
             u'created_on': now_es,
         }
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=to_physical_doc('_user', user_data))
         if es_response_raw.status_code != 200:
@@ -298,7 +303,7 @@ class SetupSite(generics.CreateAPIView):
         ))
         user_data['id'] = es_response.get('_id', '')
         # users groups
-        es_response_raw = requests.post(
+        es_response_raw = req_session.post(
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=to_physical_doc('_user-group', {
                 u'user': map(lambda x: {
