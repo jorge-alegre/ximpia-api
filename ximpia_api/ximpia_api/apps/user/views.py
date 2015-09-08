@@ -3,17 +3,21 @@ import requests
 import json
 from requests.adapters import HTTPAdapter
 import logging
+from datetime import datetime
 
 # from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext as _
+from django.utils.text import slugify
 from django.conf import settings
 
 from rest_framework import viewsets, generics, response
+from rest_framework.response import Response
 
 from base.views import DocumentViewSet
-from base import exceptions, get_path_by_id
+from base import exceptions, get_path_by_id, SocialNetworkResolution
+from document import to_logical_doc, to_physical_doc
 
 __author__ = 'jorgealegre'
 
@@ -125,16 +129,16 @@ class Connect(generics.CreateAPIView):
                 # create user
                 token = get_random_string(400, VALID_KEY_CHARS)
                 user_raw = req_session.post(
-                    '{scheme}://{site}.ximpia.com/user'.format(settings.SCHEME, settings.SITE),
+                    '{scheme}://{site}.ximpia.com/user-signup'.format(settings.SCHEME, settings.SITE),
                     data={
                         'token': token,
                         'access_token': access_token,
-                        'provider': provider
+                        'social_network': provider
                     }
                 )
                 if user_raw.status_code != 200:
                     raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-                user = json.loads(user_raw.content)
+                user = json.loads(user_raw.content)['user']
                 logger.info(u'Connect :: user: '.format(user))
                 return {
                     'status': 'ok',
@@ -153,7 +157,122 @@ class Connect(generics.CreateAPIView):
 class UserSignup(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
-        pass
+        token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
+        groups = ['users', 'users-test', 'admin']
+        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        index_name = '{site}__base'.format(site=settings.SITE)
+        social_data = SocialNetworkResolution.get_network_user_data(request.data['social_network'],
+                                                                    access_token=request.data['access_token'])
+
+        permissions = {
+            u'admin': u'can-admin',
+            u'users-test': u'can-test'
+        }
+        groups_data = []
+        for group in groups:
+            group_data = {
+                u'name': group,
+                u'slug': slugify(group),
+                u'tags': None,
+                u'created_on': now_es,
+            }
+            if group in permissions:
+                group_data['permissions'] = [
+                    {
+                        u'name': permissions[group],
+                        u'created_on': now_es
+                    }
+                ]
+            es_response_raw = req_session.post(
+                '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=to_physical_doc('_group', group_data))
+            if es_response_raw.status_code != 200:
+                exceptions.XimpiaAPIException(_(u'Could not write group "{}"'.format(group)))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created group {} id: {}'.format(
+                group,
+                es_response.get('_id', u'')
+            ))
+            # group_ids[group] = es_response.get('_id', '')
+            groups_data.append(group_data.update({
+                u'id': es_response.get('_id', ''),
+            }))
+        # user
+        # generate session
+        session_id = get_random_string(50, VALID_KEY_CHARS)
+        user_data = {
+            u'alias': None,
+            u'email': social_data.get('email', None),
+            u'password': None,
+            u'avatar': social_data.get('profile_picture', None),
+            u'name': social_data.get('name', None),
+            u'social_networks': [
+                {
+                    u'network': request.data['social_network'],
+                    u'user_id': social_data.get('user_id', None),
+                    u'access_token': social_data.get('access_token', None),
+                    u'state': None,
+                    u'scopes': social_data.get('scopes', None),
+                    u'has_auth': True,
+                    u'link': social_data.get('link', None),
+                }
+            ],
+            u'permissions': None,
+            u'groups': map(lambda x: {
+                u'id': x['id'],
+                u'name': x['name']
+            }, groups_data),
+            u'is_active': True,
+            u'token': token,
+            u'last_login': now_es,
+            u'session_id': session_id,
+            u'created_on': now_es,
+        }
+        es_response_raw = req_session.post(
+            '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=to_physical_doc('_user', user_data))
+        if es_response_raw.status_code != 200:
+            exceptions.XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
+                request.data['social_network'],
+                social_data.get('user_id', None))))
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created user id: {}'.format(
+            es_response.get('_id', '')
+        ))
+        user_data['id'] = es_response.get('_id', '')
+        # users groups
+        es_response_raw = req_session.post(
+            '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=to_physical_doc('_user-group', {
+                u'user': map(lambda x: {
+                    u'id': x['id'],
+                    u'username': x['username'],
+                    u'email': x['email'],
+                    u'avatar': x['avatar'],
+                    u'name': x['name'],
+                    u'social_networks': x['social_networks'],
+                    u'permissions': x['permissions'],
+                    u'created_on': x['created_on'],
+                }, user_data),
+                u'group': map(lambda x: {
+                    u'id': x['id'],
+                    u'name': x['name'],
+                    u'slug': x['slug'],
+                    u'tags': x['tags'],
+                    u'created_on': x['created_on']
+                }, groups_data),
+                u'created_on': now_es,
+            }))
+        if es_response_raw.status_code != 200:
+            exceptions.XimpiaAPIException(_(u'Could not write user group'))
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created user group id: {}'.format(
+            es_response.get('_id', '')
+        ))
+        return Response({
+            'user': user_data,
+            'groups': groups_data,
+        })
 
 
 class User(DocumentViewSet):
