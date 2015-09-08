@@ -15,6 +15,8 @@ from django.utils.crypto import get_random_string
 from . import SocialNetworkResolution
 from exceptions import XimpiaAPIException
 
+from document import to_physical_doc
+
 __author__ = 'jorgealegre'
 
 logger = logging.getLogger(__name__)
@@ -97,7 +99,8 @@ class SetupSite(generics.CreateAPIView):
         """
         Create site and app
 
-        :param index_name:
+        :param index_ximpia:
+        :param index_site:
         :param site:
         :param app:
         :param now_es:
@@ -113,7 +116,7 @@ class SetupSite(generics.CreateAPIView):
         }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
-            data=site_data)
+            data=to_physical_doc('site', site_data))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
         es_response = es_response_raw.json()
@@ -132,7 +135,7 @@ class SetupSite(generics.CreateAPIView):
         }
         es_response_raw = requests.post(
             '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_site),
-            data=app_data)
+            data=to_physical_doc('_app', app_data))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
         es_response = es_response_raw.json()
@@ -164,7 +167,7 @@ class SetupSite(generics.CreateAPIView):
         }
         es_response_raw = requests.post(
             '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_site),
-            data=settings_data)
+            data=to_physical_doc('_settings', settings_data))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
         es_response = es_response_raw.json()
@@ -185,7 +188,7 @@ class SetupSite(generics.CreateAPIView):
         """
         es_response_raw = requests.post(
             '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
+            data=to_physical_doc('_permission', {
                 u'name': u'can-admin',
                 u'apps': [
                     {
@@ -194,7 +197,7 @@ class SetupSite(generics.CreateAPIView):
                     }
                 ],
                 u'created_on': now_es
-            })
+            }))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write permission "can-admin"'))
         es_response = es_response_raw.json()
@@ -237,7 +240,7 @@ class SetupSite(generics.CreateAPIView):
                 ]
             es_response_raw = requests.post(
                 '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=group_data)
+                data=to_physical_doc('_group', group_data))
             if es_response_raw.status_code != 200:
                 XimpiaAPIException(_(u'Could not write group "{}"'.format(group)))
             es_response = es_response_raw.json()
@@ -284,7 +287,7 @@ class SetupSite(generics.CreateAPIView):
         }
         es_response_raw = requests.post(
             '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=user_data)
+            data=to_physical_doc('_user', user_data))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
                 social_network,
@@ -297,7 +300,7 @@ class SetupSite(generics.CreateAPIView):
         # users groups
         es_response_raw = requests.post(
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
+            data=to_physical_doc('_user-group', {
                 u'user': map(lambda x: {
                     'id': x['id'],
                     'username': x['username'],
@@ -316,7 +319,7 @@ class SetupSite(generics.CreateAPIView):
                     'created_on': x['created_on']
                 }, groups_data),
                 u'created_on': now_es,
-            })
+            }))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write user group'))
         es_response = es_response_raw.json()
