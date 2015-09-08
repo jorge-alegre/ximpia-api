@@ -8,8 +8,8 @@ from django.contrib.auth.models import User
 
 from django.conf import settings
 
-from base import exceptions
-from base import SocialNetworkResolution, get_es_response
+from base import SocialNetworkResolution, get_es_response, exceptions
+from document import to_logical_doc, to_physical_doc
 
 
 __author__ = 'jorgealegre'
@@ -58,18 +58,19 @@ class XimpiaAuthBackend(object):
                             'must': [
                                 {
                                     "nested": {
-                                        "path": "social_networks",
+                                        "path": "social_networks__v1",
                                         "filter": {
                                             "bool": {
                                                 "must": [
                                                     {
                                                         "term": {
-                                                            "social_networks.user_id": social_data.get('user_id', '')
+                                                            "social_networks__v1.user_id__v1":
+                                                                social_data.get('user_id', '')
                                                         }
                                                     },
                                                     {
                                                         "term": {
-                                                            "social_networks.network": provider
+                                                            "social_networks__v1.network__v1": provider
                                                         }
                                                     }
                                                 ]
@@ -86,7 +87,8 @@ class XimpiaAuthBackend(object):
         if es_response.get('hits', {'total': 0})['total'] == 0:
             raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
                                                 code=exceptions.USER_ID_NOT_FOUND)
-        user_data = es_response['hits']['hits'][0]
+        db_data = es_response['hits']['hits'][0]
+        user_data = to_logical_doc('_user', db_data['_source'])
         user = User()
         user.id = user_data.get('_id', '')
         user.email = user_data.get('email', '')

@@ -10,7 +10,7 @@ from django.utils.translation import ugettext as _
 from django.conf import settings
 
 from base import exceptions
-from document import to_logical_doc, to_physical_doc, get_es_response
+from document import to_logical_doc, to_physical_doc
 
 
 __author__ = 'jorgealegre'
