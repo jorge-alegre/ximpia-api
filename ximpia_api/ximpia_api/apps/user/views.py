@@ -276,20 +276,18 @@ class UserSignup(generics.CreateAPIView):
 
 
 class User(DocumentViewSet):
-    """
-    This class will create user, update user, get user and list users. Would also search for users with Ximpia
-    query.
 
-    We need to implement all methods, create, list, retrieve, etc...
-
-    We would have common DocumentViewSet, which is the one that interacts with ElasticSearch needs
-    """
-    pass
+    document_type = '_user'
+    app = 'base'
 
 
 class Group(DocumentViewSet):
-    pass
+
+    document_type = '_group'
+    app = 'base'
 
 
 class Permission(DocumentViewSet):
-    pass
+
+    document_type = '_permission'
+    app = 'base'

@@ -7,11 +7,11 @@ import string
 from datetime import datetime
 
 from rest_framework import viewsets, generics, response
+from rest_framework.response import Response
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
-from django.utils.crypto import get_random_string
 
 from . import SocialNetworkResolution
 import exceptions
@@ -31,7 +31,93 @@ req_session.mount('https://{}'.format(settings.SEARCH_HOST),
 
 class DocumentViewSet(viewsets.ModelViewSet):
 
-    pass
+    document_type = ''
+    app = ''
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create document
+
+        Class attributes:
+        - document_type
+        - app
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        es_response_raw = req_session.post(
+            '{}/{}/_{document_type}'.format(
+                settings.ELASTIC_SEARCH_HOST,
+                '{site}__{app}'.format(site=settings.SITE, app=self.app),
+                document_type=self.document_type),
+            data=to_physical_doc(self.document_type, request.data))
+        if es_response_raw.status_code != 200:
+            exceptions.XimpiaAPIException(_(u'Could not save "{doc_type}"'.format(
+                doc_type=self.document_type)))
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentViewSet.create :: created document "{document_type}" id_:{id}'.format(
+            id=es_response.get('_id', ''),
+            document_type=self.document_type
+        ))
+        return Response(es_response)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update document
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        id_ = args[0]
+        es_response_raw = req_session.put(
+            '{}/{}/_{document_type}/{id}'.format(
+                settings.ELASTIC_SEARCH_HOST,
+                '{site}__{app}'.format(site=settings.SITE, app=self.app),
+                document_type=self.document_type,
+                id=id_),
+            data=to_physical_doc(self.document_type, request.data))
+        if es_response_raw.status_code != 200:
+            exceptions.XimpiaAPIException(_(u'Could not update document'))
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentViewSet.update :: updated document "{document_type}" id_:{id}'.format(
+            id=es_response.get('_id', ''),
+            document_type=self.document_type
+        ))
+        return Response(es_response)
+
+    def list(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def destroy(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
 
 
 class SetupSite(generics.CreateAPIView):
