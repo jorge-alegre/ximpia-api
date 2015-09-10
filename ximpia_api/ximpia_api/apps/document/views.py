@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.utils.translation import ugettext as _
 
-import exceptions
+from base import exceptions
 
 from document import to_physical_doc, to_logical_doc
 
