@@ -142,13 +142,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :return:
         """
         id_ = args[0]
+        tag = kwargs.get('tag', 'v1')
         es_response_raw = req_session.get(
             '{}/{}/_{document_type}/{id}'.format(
                 settings.ELASTIC_SEARCH_HOST,
                 '{site}__{app}'.format(site=settings.SITE, app=self.app),
                 document_type=self.document_type,
                 id=id_),
-            data=to_physical_doc(self.document_type, request.data))
+            data=to_physical_doc(self.document_type, request.data, tag=tag, user=request.user))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'Could not get document'))
         es_response = es_response_raw.json()
