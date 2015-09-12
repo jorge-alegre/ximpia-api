@@ -107,8 +107,23 @@ class Connect(generics.CreateAPIView):
             if len(args) != 2:
                 raise exceptions.XimpiaAPIException(_(u'access_token and provider are required'))
             access_token, provider = args
-
-            user = authenticate(access_token=access_token, provider=provider)
+            if settings.SITE == 'XimpiaApi':
+                if not hasattr(settings, '{}_APP_ID'.format(provider.upper())):
+                    app_id = getattr(settings, 'XIMPIA_{}_APP_ID'.format(provider.upper()))
+                    app_secret = getattr(settings, 'XIMPIA_{}_APP_SECRET'.format(provider.upper()))
+                else:
+                    app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
+                    app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
+            else:
+                app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
+                app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
+            auth_data = {
+                'access_token': access_token,
+                'provider': provider,
+                'app_id': app_id,
+                'app_secret': app_secret,
+            }
+            user = authenticate(**auth_data)
             if user:
                 login(request, user)
                 token = get_random_string(400, VALID_KEY_CHARS)
@@ -127,6 +142,20 @@ class Connect(generics.CreateAPIView):
                 }
             else:
                 # create user
+                # we need to check user exists at provider!!!!!
+                response = req_session.get('https://graph.facebook.com/debug_token?'
+                                           'input_token={access_token}&'
+                                           'access_token={app_token}'.format(
+                                               access_token=access_token,
+                                               app_token=app_access_token))
+                if response.status_code != 200:
+                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+                fb_data = json.loads(response.content)
+                if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
+                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+
                 token = get_random_string(400, VALID_KEY_CHARS)
                 user_raw = req_session.post(
                     '{scheme}://{site}.ximpia.com/user-signup'.format(settings.SCHEME, settings.SITE),

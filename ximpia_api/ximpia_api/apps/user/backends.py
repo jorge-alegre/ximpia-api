@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 class XimpiaAuthBackend(object):
 
     @classmethod
-    def authenticate(cls, access_token=None, provider=None):
+    def authenticate(cls, access_token=None, provider=None, app_id=settings.XIMPIA_FACEBOOK_APP_ID,
+                     app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET):
         """
         Authenticate for all providers given access token
 
@@ -40,7 +41,9 @@ class XimpiaAuthBackend(object):
         # 1. get social data for user
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
-                                                                        access_token=access_token)
+                                                                        access_token=access_token,
+                                                                        app_id=app_id,
+                                                                        app_secret=app_secret)
         except exceptions.XimpiaAPIException:
             raise
 
