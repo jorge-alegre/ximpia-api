@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter
 import json
+import logging
 
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -8,9 +9,11 @@ from django.conf import settings
 from constants import *
 import exceptions
 
-from apps.document import get_document_by_id
+from apps.document import Document
 
 __author__ = 'jorgealegre'
+
+logger = logging.getLogger(__name__)
 
 
 class SocialNetworkResolution(object):
@@ -32,7 +35,7 @@ class SocialNetworkResolution(object):
         req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 
         # this is executed in case we don't have app access token in ximpia app data
-        app = get_document_by_id('', settings.APP_ID)
+        app = Document.objects.get('_app', id=settings.APP_ID)
         if not app['social']['facebook']['access_token']:
             response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
                                            'client_id={app_id}&'
@@ -46,8 +49,12 @@ class SocialNetworkResolution(object):
                 raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                     code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
             app_access_token = response_raw.content.split('|')[1]
+            app['social']['facebook']['access_token'] = app_access_token
+            response = Document.objects.update('_app', settings.APP_ID, app)
+            logger.info('SocialNetworkResolution :: update access token: {}'.format(response))
         else:
             app_access_token = app['social']['facebook']['access_token']
+        logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
         response = req_session.get('https://graph.facebook.com/debug_token?'
                                    'input_token={access_token}&'

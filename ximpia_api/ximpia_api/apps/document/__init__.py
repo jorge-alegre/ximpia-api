@@ -1,5 +1,6 @@
 import requests
 import json
+import logging
 from requests.adapters import HTTPAdapter
 
 from django.utils.translation import ugettext as _
@@ -14,6 +15,8 @@ MAX_RETRIES = 3
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
+
+logger = logging.getLogger(__name__)
 
 
 def walk(node, **kwargs):
