@@ -8,6 +8,8 @@ from django.conf import settings
 from constants import *
 import exceptions
 
+from apps.document import get_document_by_id
+
 __author__ = 'jorgealegre'
 
 
@@ -20,17 +22,37 @@ class SocialNetworkResolution(object):
         1. Verify access token
         2. Get user data
 
+        We need to get app access token
+
         :param args:
         :param kwargs:
         :return:
         """
         req_session = requests.Session()
         req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
-        access_token = kwargs.get('access_token', '')
+
+        # this is executed in case we don't have app access token in ximpia app data
+        app = get_document_by_id('', settings.APP_ID)
+        if not app['social']['facebook']['access_token']:
+            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                           'client_id={app_id}&'
+                                           'client_secret={app_secret}&'
+                                           'grant_type=client_credentials'.format(
+                                               app_id=kwargs.get('app_id', settings.XIMPIA_FACEBOOK_APP_ID),
+                                               app_secret=kwargs.get('app_secret',
+                                                                     settings.XIMPIA_FACEBOOK_APP_SECRET),
+                                           ))
+            if response_raw.status_code != 200:
+                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+            app_access_token = response_raw.content.split('|')[1]
+        else:
+            app_access_token = app['social']['facebook']['access_token']
+
         response = req_session.get('https://graph.facebook.com/debug_token?'
                                    'input_token={access_token}&'
                                    'access_token={app_token}'.format(
-                                       access_token,
+                                       access_token=app_access_token,
                                        app_token=settings.FACEBOOK_APP_TOKEN
                                     ))
         if response.status_code != 200:
@@ -43,14 +65,14 @@ class SocialNetworkResolution(object):
         user_data = {
             'user_id': fb_data['data']['user_id'],
             'scopes': fb_data['data']['scopes'],
-            'access_token': access_token
+            'access_token': app_access_token
         }
         # call facebook for user name and email
         response = req_session.get('https://graph.facebook.com/v2.4/'
                                    '{user_id}?'
                                    'access_token={access_token}'.format(
                                        user_id=user_data['user_id'],
-                                       access_token=kwargs.get('access_token', '')
+                                       access_token=app_access_token
                                    ))
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
@@ -65,7 +87,7 @@ class SocialNetworkResolution(object):
                                    '{user_id}/picture?'
                                    'access_token={access_token}'.format(
                                        user_id=user_data['user_id'],
-                                       access_token=kwargs.get('access_token', '')
+                                       access_token=app_access_token
                                    ))
         if response.status_code == 302:
             user_data.update({

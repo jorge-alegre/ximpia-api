@@ -19,8 +19,9 @@ class XimpiaAPIException(Exception):
 
 class DocumentNotFound(Exception):
 
-    def __init__(self, message):
+    def __init__(self, message, document_type=''):
         self.message = message
+        self.document_type=document_type
 
     def __str__(self):
-        return u'{}'.format(self.message)
+        return u'{} [{}]'.format(self.message, self.document_type)

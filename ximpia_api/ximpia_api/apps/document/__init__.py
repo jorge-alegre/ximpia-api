@@ -2,6 +2,7 @@ import requests
 import json
 from requests.adapters import HTTPAdapter
 
+from django.utils.translation import ugettext as _
 from django.conf import settings
 
 from base import exceptions, get_es_response, get_path_search
@@ -171,3 +172,88 @@ def to_physical_doc(doc_type, document, tag=None):
         req_session.get(get_path_search('_field_version'),
                         data=json.dumps(query)))
     return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
+
+
+class DocumentManager(object):
+
+    @classmethod
+    def get(cls, document_type, **kwargs):
+        """
+        Get document
+
+        :param document_type:
+        :param kwargs:
+        :return:
+        """
+        if len(kwargs) == 1 and 'id' in kwargs:
+            # do logic for get by id
+            es_response_raw = req_session.get(
+                'http://{host}/{index}/{document_type}/{id_}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=settings.SITE_BASE_INDEX,
+                    document_type=document_type,
+                    id_=kwargs['id']),
+            )
+            if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+                raise exceptions.DocumentNotFound(_(u'Document does not exist'))
+            es_response = es_response_raw.json()
+            return es_response['_source']
+
+    @classmethod
+    def update_partial(cls, document_type, id_, partial_document):
+        """
+        Update partial document
+
+        :param document_type:
+        :param id_:
+        :param partial_document:
+        :return:
+        """
+        es_response_raw = req_session.post(
+            'http://{host}/{index}/{document_type}/{id_}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type=document_type,
+                id_=id_),
+            data=json.dumps({
+                'doc': partial_document
+            })
+        )
+        if es_response_raw.status_code != 200:
+            raise exceptions.XimpiaAPIException(_(u'Could no partially update document {} '
+                                                  u'with id {} doc: {}'.format(
+                                                      document_type,
+                                                      id_,
+                                                      partial_document)))
+        return es_response_raw.json()
+
+    @classmethod
+    def update(cls, document_type, id_, document):
+        """
+        Update partial document
+
+        :param document_type:
+        :param id_:
+        :param document:
+        :return:
+        """
+        es_response_raw = req_session.put(
+            'http://{host}/{index}/{document_type}/{id_}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type=document_type,
+                id_=id_),
+            data=json.dumps(document)
+        )
+        if es_response_raw.status_code != 200:
+            raise exceptions.XimpiaAPIException(_(u'Could no update document {} '
+                                                  u'with id {} doc: {}'.format(
+                                                      document_type,
+                                                      id_,
+                                                      document)))
+        return es_response_raw.json()
+
+
+class Document(object):
+
+    objects = DocumentManager()
