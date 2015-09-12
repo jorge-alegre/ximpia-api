@@ -34,6 +34,8 @@ class SocialNetworkResolution(object):
         req_session = requests.Session()
         req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 
+        request_access_token = kwargs.get('access_token', '')
+
         # this is executed in case we don't have app access token in ximpia app data
         app = Document.objects.get('_app', id=settings.APP_ID)
         if not app['social']['facebook']['access_token']:
@@ -59,9 +61,8 @@ class SocialNetworkResolution(object):
         response = req_session.get('https://graph.facebook.com/debug_token?'
                                    'input_token={access_token}&'
                                    'access_token={app_token}'.format(
-                                       access_token=app_access_token,
-                                       app_token=settings.FACEBOOK_APP_TOKEN
-                                    ))
+                                       access_token=request_access_token,
+                                       app_token=app_access_token))
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
@@ -79,7 +80,7 @@ class SocialNetworkResolution(object):
                                    '{user_id}?'
                                    'access_token={access_token}'.format(
                                        user_id=user_data['user_id'],
-                                       access_token=app_access_token
+                                       access_token=request_access_token
                                    ))
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
@@ -94,7 +95,7 @@ class SocialNetworkResolution(object):
                                    '{user_id}/picture?'
                                    'access_token={access_token}'.format(
                                        user_id=user_data['user_id'],
-                                       access_token=app_access_token
+                                       access_token=request_access_token
                                    ))
         if response.status_code == 302:
             user_data.update({
