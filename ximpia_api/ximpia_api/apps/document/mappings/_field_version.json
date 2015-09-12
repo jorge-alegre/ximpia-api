@@ -43,6 +43,55 @@
           "is_active__v1": {
             "type": "boolean"
           },
+          "permissions__v1": {
+            "users__v1": {
+              "type": "nested",
+              "include_in_parent": true,
+              "dynamic": "false",
+              "properties": {
+                "id__v1": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "name__v1": {
+                  "type": "string",
+                  "fields": {
+                    "name__v1": {
+                      "term_vector" : "with_positions_offsets",
+                      "analyzer" : "snowball",
+                      "copy_to": "text"
+                    }
+                  }
+                }
+              }
+            },
+            "groups__v1": {
+              "type": "nested",
+              "include_in_parent": true,
+              "dynamic": "false",
+              "properties": {
+                "id_v1": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "name__v1": {
+                  "type": "string",
+                  "fields": {
+                    "name__v1": {
+                      "type": "string"
+                    },
+                    "raw__v1": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "public__v1": {
+            "type": "boolean"
+          },
           "created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"

@@ -91,58 +91,91 @@ def walk(node, **kwargs):
     return data
 
 
-def to_logical_doc(doc_type, document, tag=None):
+def to_logical_doc(doc_type, document, tag=None, user=None):
     """
     Physical documents will have versioned fields
 
     :param doc_type:
     :param document:
     :param tag:
+    :param user: User document requesting tag for visibility check
     :return:
     """
     fields_version = None
     if tag:
-        es_response = get_es_response(
-            req_session.get(
-                get_path_search('_field_version'),
-                data=json.dumps(
-                    {
-                        'query': {
-                            'bool': {
-                                'must': [
-                                    {
-                                        'term': {
-                                            "tag__v1": tag
-                                        }
-                                    },
-                                    {
-                                        "term": {
-                                            "doc_type__v1": doc_type
-                                        }
-                                    },
-                                    {
-                                        "term": {
-                                            "is_active__v1": True
-                                        }
-                                    }
-                                ]
+        query_dsl = {
+            'query': {
+                'bool': {
+                    'must': [
+                        {
+                            'term': {
+                                "tag__v1": tag
+                            }
+                        },
+                        {
+                            "term": {
+                                "doc_type__v1": doc_type
+                            }
+                        },
+                        {
+                            "term": {
+                                "is_active__v1": True
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        if user:
+            query_dsl['query']['bool']['should'] = [
+                {
+                    'nested': {
+                        'path': 'tag__v1.permissions__v1.users__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'tag__v1.permissions__v1.users__v1.id': user['id']
+                                }
                             }
                         }
                     }
-                )
+                },
+                {
+                    'nested': {
+                        'path': 'tag__v1.permissions__v1.groups__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'tag__v1.permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    'term': {
+                        'tag__v1.public__v1': True
+                    }
+                }
+            ]
+        es_response = get_es_response(
+            req_session.get(
+                get_path_search('_field_version'),
+                data=json.dumps(query_dsl)
             )
         )
         fields_version = map(lambda x: x['field__v1'], es_response['hits']['hits'])
     return walk(document, is_physical=True, fields_version=fields_version)
 
 
-def to_physical_doc(doc_type, document, tag=None):
+def to_physical_doc(doc_type, document, tag=None, user=None):
     """
     Logical document will have fields without version
 
     :param doc_type:
     :param document:
     :param tag:
+    :param user:
     :return:
     """
     query = {
@@ -171,6 +204,38 @@ def to_physical_doc(doc_type, document, tag=None):
                 }
             }
         )
+        if user:
+            query['query']['bool']['should'] = [
+                {
+                    'nested': {
+                        'path': 'permissions__v1.users__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'permissions__v1.users__v1.id': user['id']
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    'nested': {
+                        'path': 'permissions__v1.groups__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    'term': {
+                        'tag.public': True
+                    }
+                }
+            ]
     es_response = get_es_response(
         req_session.get(get_path_search('_field_version'),
                         data=json.dumps(query)))
