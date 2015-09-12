@@ -143,16 +143,18 @@ class Connect(generics.CreateAPIView):
             else:
                 # create user
                 # we need to check user exists at provider!!!!!
-                response = req_session.get('https://graph.facebook.com/debug_token?'
-                                           'input_token={access_token}&'
-                                           'access_token={app_token}'.format(
-                                               access_token=access_token,
-                                               app_token=app_access_token))
-                if response.status_code != 200:
+                response_provider = req_session.get('https://graph.facebook.com/debug_token?'
+                                                    'input_token={access_token}&'
+                                                    'access_token={app_token}'.format(
+                                                        access_token=access_token,
+                                                        app_token=SocialNetworkResolution.get_app_access_token(
+                                                            app_id, app_secret
+                                                        )))
+                if response_provider.status_code != 200:
                     raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                         code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                fb_data = json.loads(response.content)
-                if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
+                fb_data = json.loads(response_provider.content)
+                if not fb_data['data']['is_valid']:
                     raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                         code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
 
