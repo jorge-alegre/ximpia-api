@@ -99,6 +99,30 @@ class DocumentViewSet(viewsets.ModelViewSet):
         We would have default collection for document, no need to define query_name, default query with
         order by default
 
+         query can be text or dictionary with key -> value. Depending on value, we map to right ES query
+
+        payload
+        {
+          "query": "cat",
+          "filters": {
+            "mode": "AND",
+            "fields": {
+              "user.username": "james"
+            }
+          },
+          "excludes": {
+            "user.id": 34
+          },
+          "sort": [
+            "name",
+            {
+              "post_date": {
+                "order": "asc"
+              }
+            }
+          ]
+        }
+
 
         :param request:
         :param args:
