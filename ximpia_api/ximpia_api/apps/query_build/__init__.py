@@ -146,15 +146,13 @@ def get_query_request(payload):
         query_dsl['query']['filtered']['filters']['bool']['should'] = should_list
     # excludes
     if 'excludes' in payload:
-        query_dsl['query']['filtered']['filters']['not'] = {
-            "bool": {
-                "must": map(lambda x: {
-                    "term": {
-                        x[1]: x[2]
-                    }
-                }, payload['excludes'].items())
+        query_dsl['query']['filtered'].setdefault('filters', {})
+        query_dsl['query']['filtered']['filters'].setdefault('bool', {})
+        query_dsl['query']['filtered']['filters']['bool']['must_not'] = map(lambda x: {
+            "term": {
+                x[1]: x[2]
             }
-        }
+        }, payload['excludes'].items())
     # sort
     # group_by: term aggregation
     return query_dsl
