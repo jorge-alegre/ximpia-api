@@ -66,19 +66,24 @@ def get_query_request(payload):
             }
         }
     }
-    # TODO: integrate ngrams, edgengrams. How? multimatch???
-    # We could have pattern index settings to define chunks. StartEnd StartMiddleEnd
-    # text_start, text_middle, text_end
     # query
+    query_match_type = 'best_fields'
+    if 'query' in payload and isinstance(payload['query'], (str, unicode)) and '"' in payload['query']:
+        query_match_type = 'phrase'
     if 'query' in payload and isinstance(payload['query'], (str, unicode)):
         # query is string
         query_dsl['query']['filtered'] = {
-            'match': {
-                'text': {
-                    "query": payload['query'],
-                    "cutoff_frequency": 0.1,
-                    "fuzziness": "AUTO"
-                }
+            'multi_match': {
+                "query": payload['query'],
+                "type": query_match_type,
+                "fields": [
+                    'text',
+                    'text.text_front^0.5',
+                    'text.text_middle^0.25',
+                    'text.text_back^0.25',
+                ],
+                "cutoff_frequency": 0.2,
+                "fuzziness": "AUTO"
             }
         }
     elif 'query' in payload and isinstance(payload['query'], (tuple, list)):
@@ -86,13 +91,17 @@ def get_query_request(payload):
         query_dsl['query']['filtered'] = {
             'bool': {
                 'should': map(lambda x: {
-                    'match': {
-                        'text': {
-                            "query": x,
-                            "operator": "and",
-                            "cutoff_frequency": 0.1,
-                            "fuzziness": "AUTO"
-                        }
+                    'multi_match': {
+                        "query": x,
+                        "cutoff_frequency": 0.2,
+                        "fuzziness": "AUTO",
+                        "type": "phrase",
+                        'fields': [
+                            'text',
+                            'text.text_front^0.5',
+                            'text.text_middle^0.25',
+                            'text.text_back^0.25',
+                        ]
                     }
                 }, payload['query'])
             }

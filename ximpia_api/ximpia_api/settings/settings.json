@@ -19,18 +19,18 @@
           "type": "icu_transform",
           "id": "Any-Latin"
         },
-        "ngrams_front": {
+        "text_front": {
           "max_gram": "50",
           "min_gram": "2",
           "type": "edgeNGram",
           "side": "front"
         },
-        "ngrams_middle": {
+        "text_middle": {
           "min_gram": "4",
           "type": "nGram",
           "max_gram": "15"
         },
-        "ngrams_back": {
+        "text_back": {
           "max_gram": "50",
           "min_gram": "2",
           "type": "edgeNGram",
