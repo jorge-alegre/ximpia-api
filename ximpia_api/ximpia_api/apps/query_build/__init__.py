@@ -12,9 +12,13 @@ def get_query_request(payload):
         "must": {
            name: value
         },
-        "should": {
-           name: value
-        }
+        "should": [
+           {
+             "field": "",
+             "value": "",
+             "rating": 5
+           }
+        ]
       },
       "excludes": {
         "user.id": 34
