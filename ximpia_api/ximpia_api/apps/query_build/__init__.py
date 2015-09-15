@@ -31,12 +31,13 @@ def get_query_request(payload):
           }
         }
       ],
-      "group_by": [
-          {
-          },
-          {
-          }
-      ]
+      "group_by_counter": {
+        "items": [
+         "field1",
+         "field2"
+        ],
+        "size": 20
+      }
     }
 
     {
@@ -154,5 +155,16 @@ def get_query_request(payload):
             }
         }, payload['excludes'].items())
     # sort
+    if 'sort' in payload:
+        query_dsl['sort'] = payload['sort']
     # group_by: term aggregation
+    if 'group_by_counter' in payload:
+        query_dsl['aggs'] = {}
+        for field in payload['group_by_counter']['items']:
+            query_dsl['aggs']['group_' + field] = {
+                "terms": {
+                    "field": field,
+                    "size": payload['group_by_counter'].get('size', 20)
+                }
+            }
     return query_dsl
