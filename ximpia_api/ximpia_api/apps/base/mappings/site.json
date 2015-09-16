@@ -30,6 +30,30 @@
       "is_active__v1": {
         "type": "boolean"
       },
+      "invites": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean",
+            "null_value": false
+          },
+          "created_on": {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          },
+          "updated_on": {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "text__v1": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
+      },
       "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
