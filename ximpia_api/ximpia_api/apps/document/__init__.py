@@ -253,17 +253,21 @@ class DocumentManager(object):
         :param kwargs:
         :return:
         """
+        if 'es_path' in kwargs:
+            es_path = kwargs.pop('es_path')
+        else:
+            es_path = 'http://{host}/{index}/{document_type}/{id_}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type=document_type,
+                id_=kwargs['id'])
         if len(kwargs) == 1 and 'id' in kwargs:
             # do logic for get by id
-            es_response_raw = req_session.get(
-                'http://{host}/{index}/{document_type}/{id_}'.format(
-                    host=settings.ELASTIC_SEARCH_HOST,
-                    index=settings.SITE_BASE_INDEX,
-                    document_type=document_type,
-                    id_=kwargs['id']),
-            )
+            es_response_raw = req_session.get(es_path)
             if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
-                raise exceptions.DocumentNotFound(_(u'Document does not exist'))
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with id "{}" does not exist'.format(
+                    document_type, kwargs['id']
+                )))
             es_response = es_response_raw.json()
             return es_response['_source']
 

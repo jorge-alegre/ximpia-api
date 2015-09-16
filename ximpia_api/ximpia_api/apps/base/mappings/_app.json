@@ -35,25 +35,6 @@
           }
         }
       },
-      "invites": {
-        "properties": {
-          "age": {
-            "type": "integer"
-          },
-          "active": {
-            "type": "boolean",
-            "null_value": false
-          },
-          "created_on": {
-            "type" : "date",
-            "format" : "dateOptionalTime"
-          },
-          "updated_on": {
-            "type" : "date",
-            "format" : "dateOptionalTime"
-          }
-        }
-      },
       "is_active__v1": {
         "type": "boolean"
       },

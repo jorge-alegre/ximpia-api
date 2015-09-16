@@ -15,9 +15,9 @@ from django.conf import settings
 from rest_framework import viewsets, generics, response
 from rest_framework.response import Response
 
-from base.views import DocumentViewSet
-from base import exceptions, get_path_by_id, SocialNetworkResolution
-from document import to_logical_doc, to_physical_doc
+from document.views import DocumentViewSet
+from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site
+from document import to_logical_doc, to_physical_doc, Document
 
 __author__ = 'jorgealegre'
 
@@ -141,6 +141,16 @@ class Connect(generics.CreateAPIView):
                     'token': es_response['_source']['token']
                 }
             else:
+                # invite checking if active at site
+                site = Document.objects.get('site',
+                                            id=settings.SITE_ID,
+                                            es_path=get_path_site(settings.SITE_ID))
+                if site['_source']['invites'] and site['_source']['invites']['active'] and \
+                        'invite_id' not in request.REQUEST:
+                    raise exceptions.XimpiaAPIException(_(u'Site requests an invite'))
+                invite = None
+                if site['_source']['invites'] and site['_source']['invites']['active']:
+                    invite = Document.objects.get('_invite', id=request.REQUEST.get('invite_id', ''))
                 # create user
                 # we need to check user exists at provider!!!!!
                 response_provider = req_session.get('https://graph.facebook.com/debug_token?'
@@ -171,13 +181,21 @@ class Connect(generics.CreateAPIView):
                     raise exceptions.XimpiaAPIException(_(u'Error creating user'))
                 user = json.loads(user_raw.content)['user']
                 logger.info(u'Connect :: user: '.format(user))
+                # link invite with user
+                if site['_source']['invites'] and site['_source']['invites']['active']:
+                    invite['_source']['user__v1'] = {
+                        'id__v1': user['_id'],
+                        'name__v1': user['_source']['name']
+                    }
+                    invite['_source']['consumed_on__v1'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    Document.objects.update('_invite', invite['_id'], invite['_source'])
                 return {
                     'status': 'ok',
                     'action': 'create_user',
                     'token': token
                 }
 
-        except exceptions.XimpiaAPIException as e:
+        except (exceptions.XimpiaAPIException, exceptions.DocumentNotFound) as e:
             # error_code = e.code
             return {
                 'status': 'error',
@@ -321,4 +339,10 @@ class Group(DocumentViewSet):
 class Permission(DocumentViewSet):
 
     document_type = '_permission'
+    app = 'base'
+
+
+class Invite(DocumentViewSet):
+
+    document_type = '_invite'
     app = 'base'

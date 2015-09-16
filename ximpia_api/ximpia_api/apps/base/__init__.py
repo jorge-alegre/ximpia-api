@@ -167,6 +167,20 @@ def get_path_by_id(document_type, id_):
         _id=id_)
 
 
+def get_path_site(id_):
+    """
+    Get site by id
+
+    :param id_:
+    :return:
+    """
+    return 'http://{host}/{index}/{document_type}/{_id}'.format(
+        host=settings.ELASTIC_SEARCH_HOST,
+        index='ximpia_api__base',
+        document_type='site',
+        _id=id_)
+
+
 def get_path_search(document_type, **kwargs):
     """
     Get ES path by index, document type for search

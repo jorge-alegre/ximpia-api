@@ -1,5 +1,5 @@
 {
-  "_invites": {
+  "_invite": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -24,14 +24,6 @@
             }
           }
         }
-      },
-      "site_invite__v1": {
-        "type": "boolean",
-        "null_value": false
-      },
-      "app_invite__v1": {
-        "type": "boolean",
-        "null_value": false
       },
       "group__v1": {
         "properties": {
