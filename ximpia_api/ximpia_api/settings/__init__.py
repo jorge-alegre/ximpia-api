@@ -125,6 +125,7 @@ SITE_BASE_INDEX = u'{}_base'.format(SITE)
 SCHEME = 'http'
 APP_ID = ''
 SITE_ID = ''
+INDEX_NAME = ''
 
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''

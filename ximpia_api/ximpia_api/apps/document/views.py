@@ -2,11 +2,8 @@ import requests
 from requests.adapters import HTTPAdapter
 import json
 import logging
-import string
 
-from datetime import datetime
-
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from rest_framework.response import Response
 
 from django.conf import settings
@@ -14,7 +11,7 @@ from django.utils.translation import ugettext as _
 
 from base import exceptions
 
-from document import to_physical_doc, to_logical_doc
+from document import to_physical_doc
 from base import get_es_response, get_path_search
 
 __author__ = 'jorgealegre'
@@ -318,3 +315,84 @@ class DocumentViewSet(viewsets.ModelViewSet):
             document_type=self.document_type
         ))
         return Response(es_response)
+
+
+class Completion(generics.RetrieveAPIView):
+
+    def get(self, request, *args, **kwargs):
+        """
+        Make autocomplete request
+
+        attributes
+        - query
+
+        {
+            "_shards" : {
+              "total" : 5,
+              "successful" : 5,
+              "failed" : 0
+            },
+            "document_type-suggest" : [ {
+                "text" : "n",
+                "offset" : 0,
+                "length" : 1,
+                "options" : [ {
+                    "text" : "New collection",
+                    "score" : 13.0,
+                    "payload":{"id":34,"slug":"34-new-collection"}
+                }, {
+                    "text" : "NEW",
+                    "score" : 1.0,
+                    "payload":{"id":152,"slug":"152-new"}
+                }, {
+                    "text" : "Nature",
+                    "score" : 1.0,
+                    "payload":{"id":58,"slug":"58-nature"}
+                }, {
+                    "text" : "New collection for approval",
+                    "score" : 1.0,
+                    "payload":{"id":350,"slug":"350-new-collection-for-approval"}
+                }, {
+                    "text" : "New test",
+                    "score" : 1.0,
+                    "payload":{"id":337,"slug":"337-new-test"}
+                } ]
+            } ]
+        }
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        # TODO: Integrate document visibility for user when doing document app
+        payload = request.data
+        size = payload.get('size', 10)
+        index = settings.IMDEX_NAME
+        document_types = payload.get('document_types', [])
+        query = payload.get('query', '')
+        responses = {}
+        for document_type in document_types:
+            query_suggest = {
+                "{}-suggest".format(document_type): {
+                    "text": query,
+                    "completion": {
+                        "field": 'suggest',
+                        "size": size,
+                        "fuzzy": {
+                            "fuzziness": 'AUTO'
+                        }
+                    }
+                }
+            }
+            es_response = req_session.post(
+                'http://{host}:9200/{index}/_suggest'.format(
+                    host=settings.SEARCH_HOST,
+                    index=index),
+                data=json.dumps(query_suggest)
+                )
+            if es_response.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
+                raise exceptions.XimpiaAPIException(es_response.json())
+            es_response = es_response.json()
+            responses[document_type] = es_response
+        return Response(responses)
