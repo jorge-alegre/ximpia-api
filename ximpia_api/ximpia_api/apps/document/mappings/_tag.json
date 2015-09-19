@@ -10,6 +10,19 @@
     "properties": {
       "name__v1": {
         "type": "string"
+        "fields": {
+          "name__v1": {
+            "type": "string"
+          },
+          "completion__v1": {
+            "type": "completion",
+            "analyzer": "simple_whitespace",
+            "payloads": true,
+            "preserve_separators": true,
+            "preserve_position_increments": true,
+            "max_input_length": 50
+          }
+        }
       },
       "slug__v1": {
         "type": "string",
