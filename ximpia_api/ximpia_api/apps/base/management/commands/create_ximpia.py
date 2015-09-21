@@ -73,7 +73,7 @@ class Command(BaseCommand):
                                             'settings': settings_dict,
                                             'mappings': {
                                                 'site': site_dict,
-                                                'urlconf': urlconf_dict
+                                                'urlconf': urlconf_dict,
                                                 '_app': app_dict,
                                                 '_settings': settings__dict,
                                                 '_user': user_dict,
@@ -104,15 +104,23 @@ class Command(BaseCommand):
             ))
 
     @classmethod
-    def _create_site_app(cls, index_name, site, app, now_es, languages, location):
+    def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
+                         access_token):
         # site
         site_data = {
-            u'name': site,
-            u'slug': slugify(site),
-            u'url': u'http://{site_slug}.ximpia.com/'.format(slugify(site)),
-            u'is_active': True,
-            u'created_on': now_es
+            u'name__v1': site,
+            u'slug__v1': slugify(site),
+            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
+            u'is_active__v1': True,
+            u'created_on__v1': now_es
         }
+        if invite_only:
+            site_data[u'invites'] = {
+                u'age_days__v1': 2,
+                u'active__v1': True,
+                u'created_on__v1': now_es,
+                u'updated_on__v1': now_es,
+            }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=site_data)
@@ -127,10 +135,15 @@ class Command(BaseCommand):
         site_data['id'] = site_id
         # app
         app_data = {
-            u'name': app,
-            u'slug': slugify(app),
-            u'is_active': True,
-            u'created_on': now_es
+            u'name__v1': app,
+            u'slug__v1': slugify(app),
+            u'is_active__v1': True,
+            u'social__v1': {
+                u'facebook__v1': {
+                    u'access_token__v1': access_token
+                }
+            },
+            u'created_on__v1': now_es
         }
         es_response_raw = requests.post(
             '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -146,23 +159,23 @@ class Command(BaseCommand):
         ))
         # settings for app and site
         settings_data = {
-            u'site': {
-                u'id': site_id,
-                u'name': site,
-                u'slug': slugify(site)
+            u'site__v1': {
+                u'id__v1': site_id,
+                u'name__v1': site,
+                u'slug__v1': slugify(site)
             },
-            u'app': None,
-            u'fields': [
+            u'app__v1': None,
+            u'fields__v1': [
                 {
-                    u'name': u'languages',
-                    u'value': json.dumps(languages)
+                    u'name__v1': u'languages',
+                    u'value__v1': json.dumps(languages)
                 },
                 {
-                    u'name': u'location',
-                    u'value': json.dumps(location)
+                    u'name__v1': u'location',
+                    u'value__v1': json.dumps(location)
                 }
             ],
-            u'created_on': now_es
+            u'created_on__v1': now_es
         }
         es_response_raw = requests.post(
             '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -331,6 +344,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         access_token = options['access_token']
         social_network = options['social_network']
+        invite_only = options['invite_only']
 
         index_name = 'ximpia_api__base'
         site = 'Ximpia API'
@@ -347,7 +361,8 @@ class Command(BaseCommand):
         self._create_index(index_name, **options)
 
         site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
-                                                                   languages, location)
+                                                                   languages, location, invite_only,
+                                                                   access_token)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)

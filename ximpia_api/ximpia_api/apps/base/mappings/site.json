@@ -45,7 +45,7 @@
       },
       "invites": {
         "properties": {
-          "age": {
+          "age_days": {
             "type": "integer"
           },
           "active": {
