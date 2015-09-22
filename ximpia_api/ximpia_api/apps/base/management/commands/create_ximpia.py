@@ -3,6 +3,7 @@ import requests
 import json
 import pprint
 import string
+import base64
 
 from datetime import datetime
 
@@ -168,11 +169,11 @@ class Command(BaseCommand):
             u'fields__v1': [
                 {
                     u'name__v1': u'languages',
-                    u'value__v1': json.dumps(languages)
+                    u'value__v1': base64.urlsafe_b64encode(json.dumps(languages))
                 },
                 {
                     u'name__v1': u'location',
-                    u'value__v1': json.dumps(location)
+                    u'value__v1': base64.urlsafe_b64encode(json.dumps(location))
                 }
             ],
             u'created_on__v1': now_es
