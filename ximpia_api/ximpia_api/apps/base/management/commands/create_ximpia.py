@@ -29,6 +29,13 @@ class Command(BaseCommand):
     can_import_settings = True
 
     def _create_index(self, index_name, **options):
+        """
+        Create index with document types mappings
+
+        :param index_name:
+        :param options:
+        :return:
+        """
         mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
@@ -113,26 +120,42 @@ class Command(BaseCommand):
         :param now_es:
         :return:
         """
+        tag_data = {
+            u'name__v1': u'v1',
+            u'slug__v1': u'v1',
+            u'is_active__v1': True,
+            u'permissions__v1': None,
+            u'public__v1': True,
+            u'created_on__v1': now_es,
+        }
         es_response_raw = requests.post(
             '{}/{}/_tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'name__v1': u'v1',
-                u'slug__v1': u'v1',
-                u'is_active__v1': True,
-                u'permissions__v1': None,
-                u'public__v1': True,
-                u'created_on__v1': now_es,
-            })
+            data=json.dumps(tag_data))
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write tag v1'))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
+        return tag_data
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
-                         access_token):
+                         access_token, tag_data):
+        """
+        Create site, settings and app
+
+        :param index_name:
+        :param site:
+        :param app:
+        :param now_es:
+        :param languages:
+        :param location:
+        :param invite_only:
+        :param access_token:
+        :param tag_data:
+        :return:
+        """
         # site
         site_data = {
             u'name__v1': site,
@@ -185,6 +208,9 @@ class Command(BaseCommand):
             app_id
         ))
         # settings for app and site
+        settings_input = [
+            (u'languages', json.dumps(languages)),
+            (u'location', json.dumps(location))]
         settings_data = {
             u'site__v1': {
                 u'id__v1': site_id,
@@ -192,27 +218,27 @@ class Command(BaseCommand):
                 u'slug__v1': slugify(site)
             },
             u'app__v1': None,
-            u'fields__v1': [
-                {
-                    u'name__v1': u'languages',
-                    u'value__v1': base64.urlsafe_b64encode(json.dumps(languages))
-                },
-                {
-                    u'name__v1': u'location',
-                    u'value__v1': base64.urlsafe_b64encode(json.dumps(location))
-                }
-            ],
+            u'tag__v1': tag_data,
+            u'fields__v1': None,
             u'created_on__v1': now_es
         }
-        es_response_raw = requests.post(
-            '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=settings_data)
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created settings id: {}'.format(
-            es_response.get('_id', '')
-        ))
+        settings_output = []
+        for setting_item in settings_input:
+            db_settings = settings_data.update({
+                u'name': setting_item[0],
+                u'value': setting_item[1]
+            })
+            es_response_raw = requests.post(
+                '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=db_settings)
+            if es_response_raw.status_code != 200:
+                XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created settings id: {}'.format(
+                es_response.get('_id', '')
+            ))
+            settings_output.append(settings_data)
+
         return site_data, app_data, settings_data
 
     @classmethod
@@ -387,11 +413,11 @@ class Command(BaseCommand):
 
         self._create_index(index_name, **options)
 
-        self._create_tag(index_name, now_es)
+        tag_data = self._create_tag(index_name, now_es)
 
         site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
                                                                    languages, location, invite_only,
-                                                                   access_token)
+                                                                   access_token, tag_data)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
@@ -400,6 +426,7 @@ class Command(BaseCommand):
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
                                                           social_data, now_es)
 
+        # TODO: we need logical data for these
         if 'verbosity' in options and options['verbosity'] != '0':
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
