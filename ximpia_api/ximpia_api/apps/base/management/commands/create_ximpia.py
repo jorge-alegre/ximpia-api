@@ -105,6 +105,32 @@ class Command(BaseCommand):
             ))
 
     @classmethod
+    def _create_tag(cls, index_name, now_es):
+        """
+        Create tag v1
+
+        :param index_name:
+        :param now_es:
+        :return:
+        """
+        es_response_raw = requests.post(
+            '{}/{}/_tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data={
+                u'name__v1': u'v1',
+                u'slug__v1': u'v1',
+                u'is_active__v1': True,
+                u'permissions__v1': None,
+                u'public__v1': True,
+                u'created_on__v1': now_es,
+            })
+        if es_response_raw.status_code != 200:
+            XimpiaAPIException(_(u'Could not write tag v1'))
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
+            es_response.get('_id', '')
+        ))
+
+    @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
                          access_token):
         # site
@@ -360,6 +386,8 @@ class Command(BaseCommand):
                                                                     access_token=access_token)
 
         self._create_index(index_name, **options)
+
+        self._create_tag(index_name, now_es)
 
         site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
                                                                    languages, location, invite_only,
