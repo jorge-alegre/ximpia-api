@@ -7,6 +7,14 @@
       "enabled": false
     },
     "properties": {
+      "name__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "value__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
       "fields__v1": {
         "type": "nested",
         "include_in_parent": true,
@@ -35,6 +43,148 @@
           "value__v1": {
             "type": "string",
             "index": "not_analyzed"
+          },
+          "locale__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "condition__v1": {
+            "properties": {
+              "gte__v1": {
+                "properties": {
+                  "int__v1": {
+                    "type": "integer"
+                  },
+                  "date__v1": {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                  }
+                }
+              },
+              "lte__v1": {
+                "properties": {
+                  "int__v1": {
+                    "type": "integer"
+                  },
+                  "date__v1": {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                  }
+                }
+              },
+              "gt__v1": {
+                "properties": {
+                  "int__v1": {
+                    "type": "integer"
+                  },
+                  "date__v1": {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                  }
+                }
+              },
+              "lt__v1": {
+                "properties": {
+                  "int__v1": {
+                    "type": "integer"
+                  },
+                  "date__v1": {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                  }
+                }
+              },
+              "in__v1": {
+                "properties": {
+                  "str__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "int__v1": {
+                    "type": "integer"
+                  },
+                  "date__v1": {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tag__v1": {
+        "properties": {
+          "name__v1": {
+            "type": "string"
+          },
+          "slug__v1": {
+            "type": "string",
+            "fields": {
+              "slug__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "permissions__v1": {
+            "users__v1": {
+              "type": "nested",
+              "include_in_parent": true,
+              "dynamic": "false",
+              "properties": {
+                "id__v1": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "name__v1": {
+                  "type": "string",
+                  "fields": {
+                    "name__v1": {
+                      "term_vector" : "with_positions_offsets",
+                      "analyzer" : "snowball",
+                      "copy_to": "text"
+                    }
+                  }
+                }
+              }
+            },
+            "groups__v1": {
+              "type": "nested",
+              "include_in_parent": true,
+              "dynamic": "false",
+              "properties": {
+                "id_v1": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "name__v1": {
+                  "type": "string",
+                  "fields": {
+                    "name__v1": {
+                      "type": "string"
+                    },
+                    "raw__v1": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "public__v1": {
+            "type": "boolean"
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
           }
         }
       },
