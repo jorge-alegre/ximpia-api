@@ -324,10 +324,6 @@ class Command(BaseCommand):
                 u'id': es_response.get('_id', ''),
             }))
         # user
-        # generate token
-        token = get_random_string(400, VALID_KEY_CHARS)
-        # generate session
-        session_id = get_random_string(50, VALID_KEY_CHARS)
         user_data = {
             u'alias': None,
             u'email': social_data.get('email', None),
@@ -351,9 +347,9 @@ class Command(BaseCommand):
                 u'name': x['name']
             }, groups_data),
             u'is_active': True,
-            u'token': token,
-            u'last_login': now_es,
-            u'session_id': session_id,
+            u'token': None,
+            u'last_login': None,
+            u'session_id': None,
             u'created_on': now_es,
         }
         es_response_raw = requests.post(
