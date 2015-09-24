@@ -74,6 +74,9 @@ class Command(BaseCommand):
         with open('{}/_field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
+        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
+            session_dict = json.loads(f.read())
+
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                                         data={
                                             'settings': settings_dict,
@@ -88,7 +91,8 @@ class Command(BaseCommand):
                                                 '_permissions': permissions_dict,
                                                 '_tag': tag_dict,
                                                 '_field_version': field_version_dict,
-                                                '_invite': invite_dict
+                                                '_invite': invite_dict,
+                                                '_session': session_dict,
                                                 }
                                             }
                                         )

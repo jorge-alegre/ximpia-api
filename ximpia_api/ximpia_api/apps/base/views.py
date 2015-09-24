@@ -43,8 +43,10 @@ class SetupSite(generics.CreateAPIView):
         :param index_name:
         :return:
         """
-        user_path = settings.BASE_DIR + 'apps/user/mappings'
         base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        document_path = settings.BASE_DIR + 'apps/document/mappings'
+
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
 
@@ -69,6 +71,18 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
+        with open('{}/_invite.json'.format(user_path)) as f:
+            invite_dict = json.loads(f.read())
+
+        with open('{}/_tag.json'.format(document_path)) as f:
+            tag_dict = json.loads(f.read())
+
+        with open('{}/_branch.json'.format(document_path)) as f:
+            branch_dict = json.loads(f.read())
+
+        with open('{}/_field_version.json'.format(document_path)) as f:
+            field_version_dict = json.loads(f.read())
+
         es_response_raw = req_session.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                                            data={
                                                'settings': settings_dict,
@@ -78,8 +92,12 @@ class SetupSite(generics.CreateAPIView):
                                                    '_user': user_dict,
                                                    '_group': group_dict,
                                                    '_user-group': user_group_dict,
-                                                   '_permissions': permissions_dict,
-                                                   '_session': session_dict
+                                                   '_permission': permissions_dict,
+                                                   '_session': session_dict,
+                                                   '_invite': invite_dict,
+                                                   '_tag': tag_dict,
+                                                   '_branch': branch_dict,
+                                                   '_field_version': field_version_dict,
                                                }
                                                }
                                            )
