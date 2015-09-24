@@ -208,7 +208,7 @@ class Command(BaseCommand):
         # settings for app and site
         settings_input = [
             (u'languages', json.dumps(languages)),
-            (u'location', json.dumps(location))]
+            (u'location', location)]
         settings_data = {
             u'site__v1': {
                 u'id__v1': site_id,
