@@ -251,25 +251,34 @@ class Command(BaseCommand):
         :param now_es:
         :return:
         """
-        es_response_raw = requests.post(
-            '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'name': u'can-admin',
-                u'apps': [
+        permissions = [
+            u'can-admin'
+        ]
+        output_permissions = []
+        for permission in permissions:
+            db_permission = {
+                u'name__v1': permission,
+                u'apps__v1': [
                     {
-                        u'site': site,
-                        u'app': app
+                        u'site__v1': site,
+                        u'app__v1': app
                     }
                 ],
-                u'created_on': now_es
-            })
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write permission "can-admin"'))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
-            app['name'],
-            es_response.get('_id', '')
-        ))
+                u'data__v1': None,
+                u'created_on__v1': now_es
+            }
+            es_response_raw = requests.post(
+                '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(db_permission))
+            if es_response_raw.status_code != 200:
+                XimpiaAPIException(_(u'Could not write permission "can-admin"'))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
+                app['name'],
+                es_response.get('_id', '')
+            ))
+            output_permissions.append(db_permission)
+        return output_permissions
 
     @classmethod
     def _create_user_groups(cls, index_name, groups, social_data, social_network, now_es):
@@ -420,7 +429,7 @@ class Command(BaseCommand):
                                                                    access_token, tag_data)
 
         # 2. Permissions
-        self._create_permissions(site, app, index_name, now_es)
+        permissions_data = self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
@@ -434,6 +443,7 @@ class Command(BaseCommand):
                     u'app': app_data,
                     u'settings': settings_data,
                     u'user': user_data,
-                    u'groups': groups_data
+                    u'groups': groups_data,
+                    u'permissions': permissions_data
                 })
             ))
