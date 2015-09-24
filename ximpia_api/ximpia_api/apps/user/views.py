@@ -52,7 +52,7 @@ URL Resolutions
 ===============
 
 1. We create a middleware, which sets request.urlconf with all urls for application and site. Site will be in url, like
-{site}.ximpia.com and application would be placed at a header probably XIMPIA-APP:myapp
+{site}.ximpia.io and application would be placed at a header probably XIMPIA-APP:myapp
 2. We get all urls for it and paste into urlconf dynamically
 
 We would get all routes related to an app and use that.
@@ -63,12 +63,12 @@ We will test with NewRelic, should be fast to satisfy the 50ms requirement for P
 fetch would be 10 msc. We need testing for this.
 
 How about site and app in url???
-https://{site}.ximpia.com/??? for base app, always installed
-https://{site}.ximpia.com/{app}/
+https://{site}.ximpia.io/??? for base app, always installed
+https://{site}.ximpia.io/{app}/
 
-https://pichit.ximpia.com/v1/missions/my-mission/
-https://pichit.ximpia.com/v1/contributions/blue-eye/
-https://pichit.ximpia.com/v1/tags/my-tag/ -> app tags with home viewset
+https://pichit.ximpia.io/v1/missions/my-mission/
+https://pichit.ximpia.io/v1/contributions/blue-eye/
+https://pichit.ximpia.io/v1/tags/my-tag/ -> app tags with home viewset
 
 The url configs map to site and app when defined in document definition
 
@@ -170,7 +170,7 @@ class Connect(generics.CreateAPIView):
 
                 token = get_random_string(400, VALID_KEY_CHARS)
                 user_raw = req_session.post(
-                    '{scheme}://{site}.ximpia.com/user-signup'.format(settings.SCHEME, settings.SITE),
+                    '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
                     data={
                         'token': token,
                         'access_token': access_token,

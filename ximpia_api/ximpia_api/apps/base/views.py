@@ -113,12 +113,13 @@ class SetupSite(generics.CreateAPIView):
         ))
 
     @classmethod
-    def _create_site_app(cls, index_ximpia, index_site, site, app, now_es, languages, location):
+    def _create_site_app(cls, index_ximpia, index_name, site, app, now_es, languages, location,
+                         invite_only, access_token, tag_data):
         """
         Create site and app
 
         :param index_ximpia:
-        :param index_site:
+        :param index_name:
         :param site:
         :param app:
         :param now_es:
@@ -126,15 +127,22 @@ class SetupSite(generics.CreateAPIView):
         """
         # site
         site_data = {
-            u'name': site,
-            u'slug': slugify(site),
-            u'url': u'http://{site_slug}.ximpia.com/'.format(slugify(site)),
-            u'is_active': True,
-            u'created_on': now_es
+            u'name__v1': site,
+            u'slug__v1': slugify(site),
+            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
+            u'is_active__v1': True,
+            u'created_on__v1': now_es
         }
-        es_response_raw = req_session.post(
+        if invite_only:
+            site_data[u'invites'] = {
+                u'age_days__v1': 2,
+                u'active__v1': True,
+                u'created_on__v1': now_es,
+                u'updated_on__v1': now_es,
+            }
+        es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
-            data=to_physical_doc('site', site_data))
+            data=site_data)
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
         es_response = es_response_raw.json()
@@ -146,14 +154,19 @@ class SetupSite(generics.CreateAPIView):
         site_data['id'] = site_id
         # app
         app_data = {
-            u'name': app,
-            u'slug': slugify(app),
-            u'is_active': True,
-            u'created_on': now_es
+            u'name__v1': app,
+            u'slug__v1': slugify(app),
+            u'is_active__v1': True,
+            u'social__v1': {
+                u'facebook__v1': {
+                    u'access_token__v1': access_token
+                }
+            },
+            u'created_on__v1': now_es
         }
-        es_response_raw = req_session.post(
-            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_site),
-            data=to_physical_doc('_app', app_data))
+        es_response_raw = requests.post(
+            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=app_data)
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
         es_response = es_response_raw.json()
@@ -164,34 +177,37 @@ class SetupSite(generics.CreateAPIView):
             app_id
         ))
         # settings for app and site
+        settings_input = [
+            (u'languages', json.dumps(languages)),
+            (u'location', location)]
         settings_data = {
-            u'site': {
-                u'id': site_id,
-                u'name': site,
-                u'slug': slugify(site)
+            u'site__v1': {
+                u'id__v1': site_id,
+                u'name__v1': site,
+                u'slug__v1': slugify(site)
             },
-            u'app': None,
-            u'fields': [
-                {
-                    u'name': u'languages',
-                    u'value': json.dumps(languages)
-                },
-                {
-                    u'name': u'location',
-                    u'value': json.dumps(location)
-                }
-            ],
-            u'created_on': now_es
+            u'app__v1': None,
+            u'tag__v1': tag_data,
+            u'fields__v1': None,
+            u'created_on__v1': now_es
         }
-        es_response_raw = req_session.post(
-            '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_site),
-            data=to_physical_doc('_settings', settings_data))
-        if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created settings id: {}'.format(
-            es_response.get('_id', '')
-        ))
+        settings_output = []
+        for setting_item in settings_input:
+            db_settings = settings_data.update({
+                u'name': setting_item[0],
+                u'value': setting_item[1]
+            })
+            es_response_raw = requests.post(
+                '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=db_settings)
+            if es_response_raw.status_code != 200:
+                exceptions.XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created settings id: {}'.format(
+                es_response.get('_id', '')
+            ))
+            settings_output.append(settings_data)
+
         return site_data, app_data, settings_data
 
     @classmethod
@@ -297,7 +313,7 @@ class SetupSite(generics.CreateAPIView):
 
         # 3. Groups, User, UserGroup
         user_raw = req_session.post(
-            '{scheme}://{site}.ximpia.com/user-signup'.format(settings.SCHEME, settings.SITE),
+            '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
             data={
                 'access_token': access_token,
                 'social_network': social_network
