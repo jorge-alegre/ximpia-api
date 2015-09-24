@@ -1,5 +1,5 @@
 {
-  "_tag": {
+  "_branch": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -21,18 +21,6 @@
             "preserve_separators": true,
             "preserve_position_increments": true,
             "max_input_length": 50
-          }
-        }
-      },
-      "slug__v1": {
-        "type": "string",
-        "fields": {
-          "slug__v1": {
-            "type": "string"
-          },
-          "raw__v1": {
-            "type": "string",
-            "index": "not_analyzed"
           }
         }
       },

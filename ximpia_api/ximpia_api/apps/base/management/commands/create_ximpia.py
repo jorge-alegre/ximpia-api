@@ -3,7 +3,6 @@ import requests
 import json
 import pprint
 import string
-import base64
 
 from datetime import datetime
 
@@ -15,7 +14,6 @@ from django.conf import settings
 
 from base import SocialNetworkResolution
 from base.exceptions import XimpiaAPIException
-from django.contrib.auth import authenticate, login
 
 __author__ = 'jorgealegre'
 
@@ -295,18 +293,17 @@ class Command(BaseCommand):
         # group
         permissions = {
             u'admin': u'can-admin',
-            u'users-test': u'can-test'
         }
         groups_data = []
         for group in groups:
             group_data = {
-                u'name': group,
-                u'slug': slugify(group),
-                u'tags': None,
-                u'created_on': now_es,
+                u'name__v1': group,
+                u'slug__v1': slugify(group),
+                u'tags__v1': None,
+                u'created_on__v1': now_es,
             }
             if group in permissions:
-                group_data['permissions'] = [
+                group_data[u'permissions'] = [
                     {
                         u'name': permissions[group],
                         u'created_on': now_es
@@ -376,21 +373,21 @@ class Command(BaseCommand):
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data={
                 u'user': map(lambda x: {
-                    'id': x['id'],
-                    'username': x['username'],
-                    'email': x['email'],
-                    'avatar': x['avatar'],
-                    'name': x['name'],
-                    'social_networks': x['social_networks'],
-                    'permissions': x['permissions'],
-                    'created_on': x['created_on'],
+                    u'id': x[u'id'],
+                    u'username': x[u'username'],
+                    u'email': x[u'email'],
+                    u'avatar': x[u'avatar'],
+                    u'name': x[u'name'],
+                    u'social_networks': x[u'social_networks'],
+                    u'permissions': x[u'permissions'],
+                    u'created_on': x[u'created_on'],
                 }, user_data),
                 u'group': map(lambda x: {
-                    'id': x['id'],
-                    'name': x['name'],
-                    'slug': x['slug'],
-                    'tags': x['tags'],
-                    'created_on': x['created_on']
+                    u'id': x[u'id'],
+                    u'name': x[u'name'],
+                    u'slug': x[u'slug'],
+                    u'tags': x[u'tags'],
+                    u'created_on': x[u'created_on']
                 }, groups_data),
                 u'created_on': now_es,
             })
@@ -400,7 +397,6 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created user group id: {}'.format(
             es_response.get('_id', '')
         ))
-        user = authenticate(token)
         return user_data, groups_data
 
     def handle(self, *args, **options):
@@ -413,7 +409,12 @@ class Command(BaseCommand):
         app = 'base'
         languages = ['en']
         location = 'us'
-        default_groups = ['users', 'users-test', 'admin']
+        default_groups = [
+            u'users',
+            u'users-test',
+            u'admin',
+            u'staff'
+        ]
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
