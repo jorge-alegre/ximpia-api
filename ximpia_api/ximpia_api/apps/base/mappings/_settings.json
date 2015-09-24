@@ -13,7 +13,20 @@
       },
       "value__v1": {
         "type": "string",
-        "index": "not_analyzed"
+        "index": "not_analyzed",
+        "fields": {
+          "value__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "int__v1": {
+            "type": "integer"
+          },
+          "date__v1": {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
       },
       "fields__v1": {
         "type": "nested",
@@ -42,7 +55,20 @@
           },
           "value__v1": {
             "type": "string",
-            "index": "not_analyzed"
+            "index": "not_analyzed",
+            "fields": {
+              "value__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "int__v1": {
+                "type": "integer"
+              },
+              "date__v1": {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
           },
           "locale__v1": {
             "type": "string",
