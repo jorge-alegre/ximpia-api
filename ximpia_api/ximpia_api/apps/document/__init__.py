@@ -1,5 +1,6 @@
 import requests
 import json
+import datetime
 import logging
 from requests.adapters import HTTPAdapter
 
@@ -304,6 +305,8 @@ class DocumentManager(object):
                 value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
             if op and op not in ['in']:
                 raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
+            if isinstance(value, (datetime.date, datetime.datetime)):
+                value = value.strftime('"%Y-%m-%dT%H:%M:%S"')
             filter_data[field_name] = value
 
         query_dsl = {
