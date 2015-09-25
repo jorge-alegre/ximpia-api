@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'base',
     'document',
     'patterns',
+    'query_build',
     'user',
     'sessions'
 )
@@ -60,6 +61,13 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'user.backends.XimpiaAuthBackend',
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}
 
 ROOT_URLCONF = 'ximpia.urls'
 

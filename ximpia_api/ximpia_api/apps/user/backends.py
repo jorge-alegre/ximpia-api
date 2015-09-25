@@ -3,6 +3,8 @@ from requests.adapters import HTTPAdapter
 import logging
 import json
 
+from rest_framework import authentication
+
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 
@@ -25,7 +27,7 @@ req_session.mount('https://{}'.format(settings.SEARCH_HOST),
 logger = logging.getLogger(__name__)
 
 
-class XimpiaAuthBackend(object):
+class XimpiaAuthBackend(authentication.BaseAuthentication):
 
     @classmethod
     def authenticate(cls, access_token=None, provider=None, app_id=settings.XIMPIA_FACEBOOK_APP_ID,
@@ -101,7 +103,7 @@ class XimpiaAuthBackend(object):
         user.last_name = user_data.get('last_name', '')
         user.last_login = user_data.get('last_login', '')
         user.document = user_data
-        return user
+        return user, None
 
     @classmethod
     def get_user(cls, user_id):
