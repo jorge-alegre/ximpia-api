@@ -239,7 +239,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                     settings.ELASTIC_SEARCH_HOST,
                     '{site}__{app}'.format(site=settings.SITE, app=self.app),
                     document_type=self.document_type),
-                data=query_dsl)
+                data=json.dumps(query_dsl))
         else:
             es_response_raw = req_session.get(
                 '{}/{}/_{document_type}/_search'.format(

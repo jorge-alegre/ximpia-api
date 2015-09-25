@@ -270,6 +270,62 @@ class DocumentManager(object):
                 )))
             es_response = es_response_raw.json()
             return es_response['_source']
+        else:
+            raise exceptions.XimpiaAPIException(u'We only support get document by id')
+
+    @classmethod
+    def filter(cls, document_type, **kwargs):
+        """
+        Filter document. We use ES filters without queries
+
+        We support IN operator
+
+        :param document_type:
+        :param kwargs:
+        :return:
+        """
+        if 'es_path' in kwargs:
+            es_path = kwargs.pop('es_path')
+        else:
+            es_path = 'http://{host}/{index}/{document_type}/_search'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type=document_type)
+
+        filter_data = {}
+        for field in kwargs:
+            op = None
+            field_name = field
+            value = kwargs[field]
+            if '__' in field:
+                op = field.split('__')[1]
+                field_name = field.split('__')[0]
+            if op == 'in':
+                value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
+            if op and op not in ['in']:
+                raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
+            filter_data[field_name] = value
+
+        query_dsl = {
+            'query': {
+                'filtered': {
+                    'filter': {
+                        {
+                            'and': map(lambda x: {
+                                'term': {
+                                    x[0]: x[1]
+                                }
+                            }, filter_data)
+                        }
+                    }
+                }
+            }
+        }
+
+        es_response_raw = req_session.get(es_path,
+                                          data=json.dumps(query_dsl))
+        es_response = es_response_raw.json()
+        return es_response['hits']['hits']
 
     @classmethod
     def update_partial(cls, document_type, id_, partial_document):

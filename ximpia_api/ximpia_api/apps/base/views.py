@@ -16,7 +16,7 @@ from django.utils.text import slugify
 from . import SocialNetworkResolution
 import exceptions
 
-from document import to_physical_doc, to_logical_doc
+from document import to_physical_doc, to_logical_doc, Document
 
 __author__ = 'jorgealegre'
 
@@ -283,51 +283,60 @@ class SetupSite(generics.CreateAPIView):
         app = 'base'
         access_token = data['access_token']
         social_network = data['social_network']
+        invite_only = data['invite_only']
+
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
-        default_groups = ['users', 'users-test', 'admin']
+
+        default_groups = [
+            u'users',
+            u'users-test',
+            u'admin',
+            u'staff'
+        ]
 
         if filter(lambda x: site.index(x) != -1, list(self.RESERVED_WORDS)):
             raise exceptions.XimpiaAPIException(_(u'Site name not allowed'))
 
-        # We fetch information from social network with access_token, verify tokens, etc...
-        # social_data is same for all social networks, a dictionary with data
-        social_data = SocialNetworkResolution.get_network_user_data(social_network,
-                                                                    access_token=access_token)
-
+        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site)
         index_ximpia = 'ximpia_api__base'
 
         # create index with settings and mappings:
         self._create_site_index(index_name)
 
-        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        tag_data = self._create_tag(index_name, now_es)
 
         # 1. create site, app and settings
-        site_data, app_data, settings_data = self._create_site_app(index_ximpia, index_name,
-                                                                   site, app, now_es,
-                                                                   languages, location)
+        site_data, app_data, settings_data = \
+            self._create_site_app(index_ximpia, index_name, site, app, now_es, languages, location,
+                                  invite_only, access_token, tag_data)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
+
+        # search for group data
+        groups = Document.objects.filter('_group',
+                                         name__in=default_groups)
 
         # 3. Groups, User, UserGroup
         user_raw = req_session.post(
             '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
             data={
                 'access_token': access_token,
-                'social_network': social_network
+                'social_network': social_network,
+                'groups': groups
             }
         )
         if user_raw.status_code != 200:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-        user = json.loads(user_raw.content)['user']
+        user = user_raw.json()
 
         response_ = {
-            u'site': site_data,
-            u'app': app_data,
-            u'settings': settings_data,
-            u'user': user['user'],
-            u'groups': user['groups_data']
+            u'site': to_logical_doc('site', site_data),
+            u'app': to_logical_doc('_app', app_data),
+            u'settings': to_logical_doc('_settings', settings_data),
+            u'user': to_logical_doc('_user', user),
+            u'groups': groups
         }
         return response.Response(response_)
