@@ -327,6 +327,13 @@ class DocumentManager(object):
             else:
                 fields_generated.extend(field_name.split('__'))
         # get field data for versions
+        fields_query = {}
+        es_response = get_es_response(
+            req_session.get(get_path_search('_field_version'),
+                            data=json.dumps(fields_query)))
+        field_map = {}
+        for field_data in es_response['hits']['hits']:
+            pass
 
         filter_data = {}
         for field in kwargs:

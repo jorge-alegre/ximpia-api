@@ -134,6 +134,7 @@ SCHEME = 'http'
 APP_ID = ''
 SITE_ID = ''
 INDEX_NAME = ''
+XIMPIA_DOMAIN = 'ximpia.io'
 
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''
