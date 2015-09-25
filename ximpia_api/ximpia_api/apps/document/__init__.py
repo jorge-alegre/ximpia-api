@@ -246,6 +246,28 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
 class DocumentManager(object):
 
     @classmethod
+    def __get_op(cls, field):
+        """
+        Get op from field
+
+        :param field:
+        :return:
+        """
+        ops = ['in']
+        op = None
+        field_name = field
+        if '__' in field:
+            op_fields = field.split('__')
+            for op_guess in ops:
+                if op_guess in op_fields and op_fields[-1] in ops:
+                    op = op_fields[-1]
+            if op:
+                field_name = field.split('__' + op)[0]
+            else:
+                field_name = field
+        return op, field_name
+
+    @classmethod
     def get(cls, document_type, **kwargs):
         """
         Get document
@@ -281,6 +303,9 @@ class DocumentManager(object):
 
         We support IN operator
 
+        field1__field2 = 78
+        field1__field2__in=[78, 34]
+
         :param document_type:
         :param kwargs:
         :return:
@@ -293,14 +318,20 @@ class DocumentManager(object):
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type)
 
+        # expand fields from arguments
+        fields_generated = []
+        for field in kwargs:
+            op, field_name = cls.__get_op(field)
+            if '__' not in field_name:
+                fields_generated.append(field_name)
+            else:
+                fields_generated.extend(field_name.split('__'))
+        # get field data for versions
+
         filter_data = {}
         for field in kwargs:
-            op = None
-            field_name = field
             value = kwargs[field]
-            if '__' in field:
-                op = field.split('__')[1]
-                field_name = field.split('__')[0]
+            op, field_name = cls.__get_op(field)
             if op == 'in':
                 value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
             if op and op not in ['in']:
