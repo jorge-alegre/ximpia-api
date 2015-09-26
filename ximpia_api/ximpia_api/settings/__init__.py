@@ -60,6 +60,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'base.middleware.XimpiaSettingsMiddleware',
+    'base.middleware.XimpiaUrlsMiddleware',
 )
 
 REST_FRAMEWORK = {
@@ -69,7 +71,7 @@ REST_FRAMEWORK = {
     )
 }
 
-ROOT_URLCONF = 'ximpia.urls'
+ROOT_URLCONF = 'ximpia_api.urls'
 
 TEMPLATES = [
     {

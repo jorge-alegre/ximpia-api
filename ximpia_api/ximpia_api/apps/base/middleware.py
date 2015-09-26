@@ -63,3 +63,20 @@ class XimpiaSettingsMiddleware(object):
                 setattr(settings,
                         setting_doc['_source']['name'],
                         cls._get_setting_value(setting_doc['_source']['value']))
+
+
+class XimpiaUrlsMiddleware(object):
+
+    @classmethod
+    def process_request(cls, request):
+        """
+        Process request
+
+        1. Get all urlconf data for site
+        2. Check all, until we find a match with request.path
+        3. Then we can extract app, inject into request.app_id, and resolve document and view
+
+        :param request:
+        :return:
+        """
+        pass
