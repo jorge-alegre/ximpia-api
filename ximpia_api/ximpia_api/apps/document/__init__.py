@@ -243,10 +243,11 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
     return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
 
 
+
 class DocumentManager(object):
 
     @classmethod
-    def __get_op(cls, field):
+    def get_op(cls, field):
         """
         Get op from field
 
@@ -266,6 +267,23 @@ class DocumentManager(object):
             else:
                 field_name = field
         return op, field_name
+
+    @classmethod
+    def fields_to_es_format(cls, fields):
+        """
+        Fields to ElasticSearch format. We receive
+
+        :param fields: dictionary with kwargs received in filter type of methods
+        :return: List of fields like ['field1', 'field1.field2', ... ]
+        """
+        fields_generated = []
+        for field in fields:
+            op, field_name = DocumentManager.get_op(field)
+            if '__' not in field_name:
+                fields_generated.append(field_name)
+            else:
+                fields_generated.append(field_name.replace('__', '.'))
+        return fields_generated
 
     @classmethod
     def get(cls, document_type, **kwargs):
@@ -318,14 +336,30 @@ class DocumentManager(object):
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type)
 
+        """document_dict = {}
+        for field in kwargs:
+            op, field_name = cls.__get_op(field)
+            if '__' in field_name:
+                final_field = field_name.split('__')[-1]
+                path = ''
+                for subfield in field_name.split('__'):
+                    if subfield != final_field:
+                        path
+                    else:
+                        document_dict[]
+            else:
+                document_dict[field_name] = kwargs[field]
+        physical_fields = to_physical_doc(document_type, document_dict)"""
+
         # expand fields from arguments
         fields_generated = []
         for field in kwargs:
-            op, field_name = cls.__get_op(field)
+            op, field_name = cls.get_op(field)
             if '__' not in field_name:
                 fields_generated.append(field_name)
             else:
-                fields_generated.extend(field_name.split('__'))
+                # fields_generated.extend(field_name.split('__'))
+                fields_generated.append(field_name.replace('__', '.'))
         # get field data for versions
         fields_query = {}
         es_response = get_es_response(
@@ -338,7 +372,7 @@ class DocumentManager(object):
         filter_data = {}
         for field in kwargs:
             value = kwargs[field]
-            op, field_name = cls.__get_op(field)
+            op, field_name = cls.get_op(field)
             if op == 'in':
                 value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
             if op and op not in ['in']:
