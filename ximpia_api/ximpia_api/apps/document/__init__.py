@@ -423,39 +423,6 @@ class DocumentManager(object):
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type)
 
-        """document_dict = {}
-        for field in kwargs:
-            op, field_name = cls.__get_op(field)
-            if '__' in field_name:
-                final_field = field_name.split('__')[-1]
-                path = ''
-                for subfield in field_name.split('__'):
-                    if subfield != final_field:
-                        path
-                    else:
-                        document_dict[]
-            else:
-                document_dict[field_name] = kwargs[field]
-        physical_fields = to_physical_doc(document_type, document_dict)"""
-
-        # expand fields from arguments
-        fields_generated = []
-        for field in kwargs:
-            op, field_name = cls.get_op(field)
-            if '__' not in field_name:
-                fields_generated.append(field_name)
-            else:
-                # fields_generated.extend(field_name.split('__'))
-                fields_generated.append(field_name.replace('__', '.'))
-        # get field data for versions
-        fields_query = {}
-        es_response = get_es_response(
-            req_session.get(get_path_search('_field_version'),
-                            data=json.dumps(fields_query)))
-        field_map = {}
-        for field_data in es_response['hits']['hits']:
-            pass
-
         filter_data = {}
         for field in kwargs:
             value = kwargs[field]
