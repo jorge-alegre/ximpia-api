@@ -243,6 +243,89 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
     return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
 
 
+def to_physical_fields(document_type, fields, tag=None, user=None):
+    """
+    Get physical fields
+
+    :param document_type:
+    :param fields: List of fields expanded in a query
+    :param tag:
+    :param user:
+    :return:
+    """
+    query = {
+        'query': {
+            'bool': {
+                'must': [
+                    {
+                        "term": {
+                            "doc_type__v1": document_type
+                        }
+                    },
+                    {
+                        "term": {
+                            "is_active__v1": True
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    if tag:
+        query['query']['bool']['must'].append(
+            {
+                'term': {
+                    "tag__v1": tag
+                }
+            }
+        )
+        if user:
+            query['query']['bool']['should'] = [
+                {
+                    'nested': {
+                        'path': 'permissions__v1.users__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'permissions__v1.users__v1.id': user['id']
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    'nested': {
+                        'path': 'permissions__v1.groups__v1',
+                        'filter': {
+                            {
+                                'term': {
+                                    'permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    'term': {
+                        'tag.public': True
+                    }
+                }
+            ]
+    es_response = get_es_response(
+        req_session.get(get_path_search('_field_version'),
+                        data=json.dumps(query)))
+    # here we have all physical fields for document
+    field_dict = {}
+    for field_db in es_response['hits']['hits']:
+        try:
+            if field_db.split('__')[0] in fields:
+                target_field = filter(lambda x: x == u'{}'.format(field_db.split('__')[0]),
+                                      fields)[0]
+                field_dict[target_field] = field_db
+        except (IndexError, KeyError):
+            pass
+    return field_dict
+
 
 class DocumentManager(object):
 
@@ -269,20 +352,24 @@ class DocumentManager(object):
         return op, field_name
 
     @classmethod
-    def fields_to_es_format(cls, fields):
+    def fields_to_es_format(cls, fields_dict, expand=False):
         """
         Fields to ElasticSearch format. We receive
 
-        :param fields: dictionary with kwargs received in filter type of methods
+        :param fields_dict: dictionary with kwargs received in filter type of methods
         :return: List of fields like ['field1', 'field1.field2', ... ]
         """
         fields_generated = []
-        for field in fields:
+        for field in fields_dict:
             op, field_name = DocumentManager.get_op(field)
             if '__' not in field_name:
                 fields_generated.append(field_name)
             else:
-                fields_generated.append(field_name.replace('__', '.'))
+                if not expand:
+                    fields_generated.append(field_name.replace('__', '.'))
+                else:
+                    for field_item in field_name.split('__'):
+                        fields_generated.append(field_item)
         return fields_generated
 
     @classmethod
