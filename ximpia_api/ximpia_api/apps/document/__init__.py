@@ -423,6 +423,11 @@ class DocumentManager(object):
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type)
 
+        # we have like ['status', 'user.value, ... ]
+        # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
+        field_dict = to_physical_fields(document_type,
+                                        cls.fields_to_es_format(**kwargs, expand=True))
+
         filter_data = {}
         for field in kwargs:
             value = kwargs[field]
@@ -433,6 +438,14 @@ class DocumentManager(object):
                 raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
             if isinstance(value, (datetime.date, datetime.datetime)):
                 value = value.strftime('"%Y-%m-%dT%H:%M:%S"')
+
+            # field_name is like 'status', but on db we have like status__v1, status__v1.value__v1
+            if '__' in field:
+                # field1__field2 or field1__field2__field3 to field1__v1.field2__v1 , ...
+                field_name = u'.'.join(map(lambda x: field_dict[x], field_name.split('__')))
+            else:
+                field_name = field_dict[field_name]
+
             filter_data[field_name] = value
 
         query_dsl = {
