@@ -105,8 +105,10 @@ class XimpiaUrlsMiddleware(object):
             data = to_logical_doc('urlconf', data_db)
             for mode in ['create', 'update', 'list', 'get', 'delete']:
                 url_data = dict(map(lambda x: (x['name'], x['value']), data['data']))
-                url_data['site'] = data['site']
-                url_data['app'] = data['app']
+                url_data['site'] = data.get('site', {})
+                url_data['app'] = data.get('app', {})
+                url_data['tag'] = data.get('tag', {})
+                url_data['branch'] = data.get('branch', {})
                 my_url_patterns.append(
                     url(r'{}'.format(data['url']['raw']),
                         getattr(DocumentViewSet, mode),
