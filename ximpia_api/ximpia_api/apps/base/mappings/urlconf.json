@@ -21,6 +21,10 @@
           }
         }
       },
+      "mode__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
       "document_type__v1": {
         "type": "string",
         "index": "not_analyzed"
