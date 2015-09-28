@@ -426,7 +426,7 @@ class DocumentManager(object):
         # we have like ['status', 'user.value, ... ]
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
         field_dict = to_physical_fields(document_type,
-                                        cls.fields_to_es_format(**kwargs, expand=True))
+                                        cls.fields_to_es_format(expand=True, **kwargs))
 
         filter_data = {}
         for field in kwargs:
