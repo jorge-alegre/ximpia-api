@@ -18,7 +18,7 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '../'
 
-sys.path.append('{}/ximpia/apps/'.format(os.getcwd()))
+sys.path.append('{}/ximpia_api/apps/'.format(os.getcwd()))
 
 
 # Quick-start development settings - unsuitable for production
@@ -89,7 +89,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ximpia.wsgi.application'
+WSGI_APPLICATION = 'ximpia_api.wsgi.application'
 
 
 # Database
