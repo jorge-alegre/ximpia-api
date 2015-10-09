@@ -19,6 +19,7 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '../'
 
 sys.path.append('{}/ximpia_api/apps/'.format(os.getcwd()))
+sys.path.append('{}/ximpia_api/'.format(os.getcwd()))
 
 
 # Quick-start development settings - unsuitable for production
@@ -43,12 +44,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'base',
-    'document',
-    'patterns',
-    'query_build',
-    'user',
-    'sessions'
+    #'base',
+    #'document',
+    #'patterns',
+    #'query_build',
+    #'user',
+    #'sessions'
 )
 
 MIDDLEWARE_CLASSES = (
