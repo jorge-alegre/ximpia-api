@@ -11,6 +11,11 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ximpia.settings")
+import newrelic.agent
+newrelic.agent.initialize(os.environ.get('NEW_RELIC_CONFIG_FILE', ''))
+
+#os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
 application = get_wsgi_application()
+
+application = newrelic.agent.WSGIApplicationWrapper(application)
