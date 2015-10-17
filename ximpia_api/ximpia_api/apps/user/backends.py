@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 from django.conf import settings
 
-from base import SocialNetworkResolution, get_es_response, exceptions
+from xp_base import SocialNetworkResolution, get_es_response, exceptions
 from document import to_logical_doc, to_physical_doc
 
 

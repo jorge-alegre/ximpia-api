@@ -9,7 +9,7 @@ from django.utils.translation import ugettext as _
 
 from django.conf import settings
 
-from base import exceptions
+from xp_base import exceptions
 from document import to_logical_doc, to_physical_doc
 
 

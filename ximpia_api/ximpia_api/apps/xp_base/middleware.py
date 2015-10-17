@@ -5,7 +5,7 @@ from requests.adapters import HTTPAdapter
 from django.conf import settings
 
 from document import Document, to_logical_doc
-from base import exceptions, get_es_response, get_path_search
+from xp_base import exceptions, get_es_response, get_path_search
 
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.SEARCH_HOST),
