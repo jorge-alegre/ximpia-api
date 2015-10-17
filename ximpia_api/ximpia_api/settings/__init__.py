@@ -20,6 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '../'
 
 sys.path.append('{}/ximpia_api/apps/'.format(os.getcwd()))
 sys.path.append('{}/ximpia_api/'.format(os.getcwd()))
+sys.path.append('{}'.format(os.getcwd()))
 print sys.path
 
 # Quick-start development settings - unsuitable for production
