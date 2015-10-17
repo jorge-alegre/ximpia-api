@@ -44,12 +44,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    #'base',
-    #'document',
-    #'patterns',
-    #'query_build',
-    #'user',
-    #'sessions'
+    # 'base',
+    # 'document',
+    # 'patterns',
+    # 'query_build',
+    # 'user',
+    # 'sessions'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -61,16 +61,16 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    #'base.middleware.XimpiaSettingsMiddleware',
-    #'base.middleware.XimpiaUrlsMiddleware',
+    # 'base.middleware.XimpiaSettingsMiddleware',
+    # 'base.middleware.XimpiaUrlsMiddleware',
 )
 
-#REST_FRAMEWORK = {
+# REST_FRAMEWORK = {
 #    'DEFAULT_AUTHENTICATION_CLASSES': (
 #        'user.backends.XimpiaAuthBackend',
 #        'rest_framework.authentication.SessionAuthentication',
 #    )
-#}
+# }
 
 ROOT_URLCONF = 'urls'
 
@@ -125,10 +125,10 @@ XIMPIA_FACEBOOK_APP_TOKEN = '8da636b3369700ae73eeaa4170046d8a'
 
 ELASTIC_SEARCH_HOST = 'localhost:9200'
 
-#SESSION_ENGINE = 'sessions.backends.db'
-#AUTHENTICATION_BACKENDS = (
+# SESSION_ENGINE = 'sessions.backends.db'
+# AUTHENTICATION_BACKENDS = (
 #    'user.backends.XimpiaAuthBackend'
-#)
+# )
 
 # This setting will be injected by middleware from request site
 SITE = 'mysite'
@@ -142,3 +142,4 @@ XIMPIA_DOMAIN = 'ximpia.io'
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''
 FACEBOOK_APP_SECRET = ''
+
