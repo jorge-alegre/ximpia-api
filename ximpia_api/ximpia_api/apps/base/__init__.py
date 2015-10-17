@@ -9,7 +9,7 @@ from django.conf import settings
 from constants import *
 import exceptions
 
-from apps.document import Document
+from document import Document
 
 __author__ = 'jorgealegre'
 
