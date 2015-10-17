@@ -31,5 +31,4 @@ def deploy_dev(branch):
         run('git checkout {}'.format(branch))
         run('git pull origin {}'.format(branch))
         run('/mnt/envs/ximpia-api/bin/pip install -r /mnt/config/configs/ximpia-api-dev-requirements.txt')
-        # run('touch /home/{0}/config/uwsgi.{0}.ini')
         run('touch /mnt/config/ximpia-api.uwsgi.ini')
