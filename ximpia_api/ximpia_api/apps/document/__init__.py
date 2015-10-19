@@ -14,7 +14,7 @@ __author__ = 'jorgealegre'
 MAX_RETRIES = 3
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
 
 logger = logging.getLogger(__name__)

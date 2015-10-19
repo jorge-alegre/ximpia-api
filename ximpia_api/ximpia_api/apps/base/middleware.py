@@ -8,7 +8,7 @@ from document import Document, to_logical_doc
 from base import exceptions, get_es_response, get_path_search
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=3))
 
 __author__ = 'jorgealegre'

@@ -21,7 +21,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '../'
 sys.path.append('{}/ximpia_api/apps/'.format(os.getcwd()))
 sys.path.append('{}/ximpia_api/'.format(os.getcwd()))
 sys.path.append('{}'.format(os.getcwd()))
-print sys.path
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -124,7 +123,7 @@ XIMPIA_FACEBOOK_APP_ID = '940688915994814'
 XIMPIA_FACEBOOK_APP_SECRET = '4a15b75b64be99e1749b81ce91f624a3'
 XIMPIA_FACEBOOK_APP_TOKEN = '8da636b3369700ae73eeaa4170046d8a'
 
-ELASTIC_SEARCH_HOST = 'localhost:9200'
+ELASTIC_SEARCH_HOST = 'es.ximpia.io:9200'
 
 SESSION_ENGINE = 'sessions.backends.db'
 AUTHENTICATION_BACKENDS = (

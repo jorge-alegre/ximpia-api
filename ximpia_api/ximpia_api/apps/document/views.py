@@ -19,7 +19,7 @@ __author__ = 'jorgealegre'
 logger = logging.getLogger(__name__)
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=3))
 
 
@@ -387,7 +387,7 @@ class Completion(generics.RetrieveAPIView):
             }
             es_response = req_session.post(
                 'http://{host}:9200/{index}/_suggest'.format(
-                    host=settings.SEARCH_HOST,
+                    host=settings.ELASTIC_SEARCH_HOST,
                     index=index),
                 data=json.dumps(query_suggest)
                 )

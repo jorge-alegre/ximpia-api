@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=3))
 
 
