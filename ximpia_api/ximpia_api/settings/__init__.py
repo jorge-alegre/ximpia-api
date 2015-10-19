@@ -45,7 +45,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'xp_base',
+    'base',
     'document',
     'patterns',
     'query_build',
@@ -62,8 +62,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'xp_base.middleware.XimpiaSettingsMiddleware',
-    'xp_base.middleware.XimpiaUrlsMiddleware',
+    'base.middleware.XimpiaSettingsMiddleware',
+    'base.middleware.XimpiaUrlsMiddleware',
 )
 
 REST_FRAMEWORK = {
@@ -133,7 +133,7 @@ AUTHENTICATION_BACKENDS = (
 
 # This setting will be injected by middleware from request site
 SITE = 'mysite'
-SITE_BASE_INDEX = u'{}_xp_base'.format(SITE)
+SITE_BASE_INDEX = u'{}_base'.format(SITE)
 SCHEME = 'http'
 APP_ID = ''
 SITE_ID = ''

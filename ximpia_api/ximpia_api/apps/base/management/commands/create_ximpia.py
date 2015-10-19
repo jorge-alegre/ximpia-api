@@ -12,8 +12,8 @@ from django.utils.text import slugify
 from django.utils.crypto import get_random_string
 from django.conf import settings
 
-from xp_base import SocialNetworkResolution
-from xp_base.exceptions import XimpiaAPIException
+from base import SocialNetworkResolution
+from base.exceptions import XimpiaAPIException
 
 __author__ = 'jorgealegre'
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
         :param options:
         :return:
         """
-        mappings_path = settings.BASE_DIR + 'apps/xp_base/mappings'
+        mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
@@ -404,9 +404,9 @@ class Command(BaseCommand):
         social_network = options['social_network']
         invite_only = options['invite_only']
 
-        index_name = 'ximpia_api__xp_base'
+        index_name = 'ximpia_api__base'
         site = 'Ximpia API'
-        app = 'xp_base'
+        app = 'base'
         languages = ['en']
         location = 'us'
         default_groups = [

@@ -16,7 +16,7 @@ from rest_framework import viewsets, generics, response
 from rest_framework.response import Response
 
 from document.views import DocumentViewSet
-from xp_base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site
+from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site
 from document import to_logical_doc, to_physical_doc, Document
 
 __author__ = 'jorgealegre'
@@ -298,22 +298,22 @@ class UserSignup(generics.CreateAPIView):
 class User(DocumentViewSet):
 
     document_type = '_user'
-    app = 'xp_base'
+    app = 'base'
 
 
 class Group(DocumentViewSet):
 
     document_type = '_group'
-    app = 'xp_base'
+    app = 'base'
 
 
 class Permission(DocumentViewSet):
 
     document_type = '_permission'
-    app = 'xp_base'
+    app = 'base'
 
 
 class Invite(DocumentViewSet):
 
     document_type = '_invite'
-    app = 'xp_base'
+    app = 'base'

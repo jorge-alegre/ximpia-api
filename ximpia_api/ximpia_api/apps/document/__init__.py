@@ -7,7 +7,7 @@ from requests.adapters import HTTPAdapter
 from django.utils.translation import ugettext as _
 from django.conf import settings
 
-from xp_base import exceptions, get_es_response, get_path_search
+from base import exceptions, get_es_response, get_path_search
 
 __author__ = 'jorgealegre'
 

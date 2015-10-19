@@ -43,7 +43,7 @@ class SetupSite(generics.CreateAPIView):
         :param index_name:
         :return:
         """
-        base_mappings_path = settings.BASE_DIR + 'apps/xp_base/mappings'
+        base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
@@ -280,7 +280,7 @@ class SetupSite(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         site = data['site']
-        app = 'xp_base'
+        app = 'base'
         access_token = data['access_token']
         social_network = data['social_network']
         invite_only = data['invite_only']
@@ -299,8 +299,8 @@ class SetupSite(generics.CreateAPIView):
             raise exceptions.XimpiaAPIException(_(u'Site name not allowed'))
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        index_name = '{site}__xp_base'.format(site=site)
-        index_ximpia = 'ximpia_api__xp_base'
+        index_name = '{site}__base'.format(site=site)
+        index_ximpia = 'ximpia_api__base'
 
         # create index with settings and mappings:
         self._create_site_index(index_name)

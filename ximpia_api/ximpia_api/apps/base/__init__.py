@@ -176,7 +176,7 @@ def get_path_site(id_):
     """
     return 'http://{host}/{index}/{document_type}/{_id}'.format(
         host=settings.ELASTIC_SEARCH_HOST,
-        index='ximpia_api__xp_base',
+        index='ximpia_api__base',
         document_type='site',
         _id=id_)
 

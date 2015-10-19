@@ -9,10 +9,10 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.utils.translation import ugettext as _
 
-from xp_base import exceptions
+from base import exceptions
 
 from document import to_physical_doc
-from xp_base import get_es_response, get_path_search
+from base import get_es_response, get_path_search
 
 __author__ = 'jorgealegre'
 
