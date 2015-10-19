@@ -9,8 +9,6 @@ from django.conf import settings
 from constants import *
 import exceptions
 
-from document import Document
-
 __author__ = 'jorgealegre'
 
 logger = logging.getLogger(__name__)
@@ -30,6 +28,7 @@ class SocialNetworkResolution(object):
         :param app_secret:
         :return:
         """
+        from document import Document
         app = Document.objects.get('_app', id=settings.APP_ID)
         if not app['social']['facebook']['access_token']:
             response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
@@ -64,6 +63,7 @@ class SocialNetworkResolution(object):
         :param kwargs:
         :return:
         """
+        from document import Document
 
         request_access_token = kwargs.get('access_token', '')
 
