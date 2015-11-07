@@ -14,7 +14,7 @@ from django.core.wsgi import get_wsgi_application
 import newrelic.agent
 newrelic.agent.initialize(os.environ.get('NEW_RELIC_CONFIG_FILE', ''))
 
-#os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
 application = get_wsgi_application()
 

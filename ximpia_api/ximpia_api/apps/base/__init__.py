@@ -212,3 +212,33 @@ def get_es_response(request_object, skip_exception=False):
         else:
             raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
     return es_response_raw.json()
+
+
+def get_setting_value(value_node):
+    """
+
+    :param value_node:
+    :return:
+    """
+    if value_node['int']:
+        return value_node['int']
+    if value_node['date']:
+        return value_node['date']
+    return value_node['value']
+
+
+def get_setting_table_value(value_node):
+    """
+
+    :param value_node:
+    :return:
+    """
+    table = {}
+    for field, value in value_node.items():
+        if value['int']:
+            table[field] = value['int']
+        if value['date']:
+            table[field] = value['date']
+        else:
+            table[field] = value['value']
+    return table

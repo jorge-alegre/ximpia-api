@@ -68,7 +68,7 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/_settings.json'.format(base_mappings_path)) as f:
             settings__dict = json.loads(f.read())
 
-        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
+        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
         with open('{}/_invite.json'.format(user_path)) as f:

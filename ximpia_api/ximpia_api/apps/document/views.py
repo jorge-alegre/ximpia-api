@@ -29,6 +29,36 @@ class DocumentViewSet(viewsets.ModelViewSet):
     app = ''
 
     @classmethod
+    def _process_settings(cls, request):
+        """
+        Process settings
+
+        :param request:
+        :return:
+        """
+        from base import get_setting_table_value, get_setting_value
+        from . import Document, to_logical_doc
+        site_slug = request.META['HTTP_HOST'].split(settings.XIMPIA_DOMAIN)[0]
+        # Where do I get app from?
+        # When we resolve url, we get app_id
+        app_id = getattr(request, 'app_id', -1)
+        if app_id == -1:
+            raise exceptions.XimpiaAPIException(u'App id not found in context, we can\'t process request')
+        db_settings = Document.objects.filter('_settings',
+                                              site__slug__raw=site_slug,
+                                              app__id=app_id)
+        for db_setting_doc in db_settings['hits']['hits']:
+            setting_doc = to_logical_doc('_settings', db_setting_doc)
+            if setting_doc['fields']:
+                setattr(settings,
+                        setting_doc['_source']['name'],
+                        get_setting_table_value(setting_doc['_source']['fields']))
+            else:
+                setattr(settings,
+                        setting_doc['_source']['name'],
+                        get_setting_value(setting_doc['_source']['value']))
+
+    @classmethod
     def _filter_doc_fields(cls, tag, user, document):
         """
         Filter document fields based on user permissions for tag
@@ -120,6 +150,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        self._process_settings(request)
         tag = kwargs.get('tag', 'v1')
         # check that user and tag allows this operation
         es_response_raw = req_session.post(
@@ -147,6 +178,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        self._process_settings(request)
         id_ = args[0]
         # TODO: check that tag and user allows getting content
         tag = kwargs.get('tag', 'v1')
@@ -229,6 +261,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        self._process_settings(request)
         query_name = None
         if len(args) == 1:
             query_name = args[0]
@@ -265,6 +298,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        self._process_settings(request)
         id_ = args[0]
         tag = kwargs.get('tag', 'v1')
         # TODO: check that tag and user allows getting content
@@ -298,6 +332,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        self._process_settings(request)
         id_ = args[0]
         tag = kwargs.get('tag', 'v1')
         # TODO: check that tag and user allows getting content
