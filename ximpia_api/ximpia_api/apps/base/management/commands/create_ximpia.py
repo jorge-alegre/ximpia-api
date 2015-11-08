@@ -132,7 +132,7 @@ class Command(BaseCommand):
             ))
 
     @classmethod
-    def _create_tag(cls, index_name, now_es):
+    def _create_tag(cls, index_name, now_es, version='v1'):
         """
         Create tag v1
 
@@ -141,8 +141,8 @@ class Command(BaseCommand):
         :return:
         """
         tag_data = {
-            u'name__v1': u'v1',
-            u'slug__v1': u'v1',
+            u'name__v1': version,
+            u'slug__v1': version,
             u'is_active__v1': True,
             u'permissions__v1': None,
             u'public__v1': True,
