@@ -273,7 +273,7 @@ class Command(BaseCommand):
             u'created_on': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=api_access)
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write api access "{}"'.format(site)))
@@ -287,8 +287,21 @@ class Command(BaseCommand):
 
         # account
         account_data = {
-
+            u'organization__v1': {
+                u'name__v1': organization_name
+            },
+            u'created_on': now_es,
         }
+        es_response_raw = requests.post(
+            '{}/{}/account/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name, account),
+            data=account_data)
+        if es_response_raw.status_code != 200:
+            XimpiaAPIException(_(u'Could not write account "{}"'.format(site)))
+        es_response = es_response_raw.json()
+        account_data['id'] = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created account {}'.format(
+            account,
+        ))
 
         return site_data, app_data, settings_data, api_access, account_data
 
