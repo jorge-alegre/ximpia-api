@@ -377,10 +377,10 @@ class Command(BaseCommand):
                 u'created_on__v1': now_es,
             }
             if group in permissions:
-                group_data[u'permissions'] = [
+                group_data[u'permissions__v1'] = [
                     {
-                        u'name': permissions[group],
-                        u'created_on': now_es
+                        u'name__v1': permissions[group],
+                        u'created_on__v1': now_es
                     }
                 ]
             es_response_raw = requests.post(
@@ -394,37 +394,37 @@ class Command(BaseCommand):
                 es_response.get('_id', u'')
             ))
             # group_ids[group] = es_response.get('_id', '')
-            groups_data.append(group_data.update({
-                u'id': es_response.get('_id', ''),
-            }))
+            group_data_logical = to_logical_doc('_group', group_data)
+            group_data_logical['id'] = es_response.get('_id', '')
+            groups_data.append(group_data_logical)
         # user
         user_data = {
-            u'alias': None,
-            u'email': social_data.get('email', None),
-            u'password': None,
-            u'avatar': social_data.get('profile_picture', None),
-            u'name': social_data.get('name', None),
-            u'social_networks': [
+            u'alias__v1': None,
+            u'email__v1': social_data.get('email', None),
+            u'password__v1': None,
+            u'avatar__v1': social_data.get('profile_picture', None),
+            u'name__v1': social_data.get('name', None),
+            u'social_networks__v1': [
                 {
-                    u'network': social_network,
-                    u'user_id': social_data.get('user_id', None),
-                    u'access_token': social_data.get('access_token', None),
-                    u'state': None,
-                    u'scopes': social_data.get('scopes', None),
-                    u'has_auth': True,
-                    u'link': social_data.get('link', None),
+                    u'network__v1': social_network,
+                    u'user_id__v1': social_data.get('user_id', None),
+                    u'access_token__v1': social_data.get('access_token', None),
+                    u'state__v1': None,
+                    u'scopes__v1': social_data.get('scopes', None),
+                    u'has_auth__v1': True,
+                    u'link__v1': social_data.get('link', None),
                 }
             ],
-            u'permissions': None,
-            u'groups': map(lambda x: {
-                u'id': x['id'],
-                u'name': x['name']
+            u'permissions__v1': None,
+            u'groups__v1': map(lambda x: {
+                u'id__v1': x['id'],
+                u'name__v1': x['name']
             }, groups_data),
-            u'is_active': True,
-            u'token': None,
-            u'last_login': None,
-            u'session_id': None,
-            u'created_on': now_es,
+            u'is_active__v1': True,
+            u'token__v1': None,
+            u'last_login__v1': None,
+            u'session_id__v1': None,
+            u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -437,29 +437,30 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
-        user_data['id'] = es_response.get('_id', '')
+        user_data_logical = to_logical_doc('_user', user_data)
+        user_data_logical['id'] = es_response.get('_id', '')
         # users groups
         es_response_raw = requests.post(
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data={
-                u'user': map(lambda x: {
-                    u'id': x[u'id'],
-                    u'username': x[u'username'],
-                    u'email': x[u'email'],
-                    u'avatar': x[u'avatar'],
-                    u'name': x[u'name'],
-                    u'social_networks': x[u'social_networks'],
-                    u'permissions': x[u'permissions'],
-                    u'created_on': x[u'created_on'],
+                u'user__v1': map(lambda x: {
+                    u'id__v1': x[u'id'],
+                    u'username__v1': x[u'username'],
+                    u'email__v1': x[u'email'],
+                    u'avatar__v1': x[u'avatar'],
+                    u'name__v1': x[u'name'],
+                    u'social_networks__v1': x[u'social_networks'],
+                    u'permissions__v1': x[u'permissions'],
+                    u'created_on__v1': x[u'created_on'],
                 }, user_data),
-                u'group': map(lambda x: {
-                    u'id': x[u'id'],
-                    u'name': x[u'name'],
-                    u'slug': x[u'slug'],
-                    u'tags': x[u'tags'],
-                    u'created_on': x[u'created_on']
+                u'group__v1': map(lambda x: {
+                    u'id__v1': x[u'id'],
+                    u'name__v1': x[u'name'],
+                    u'slug__v1': x[u'slug'],
+                    u'tags__v1': x[u'tags'],
+                    u'created_on__v1': x[u'created_on']
                 }, groups_data),
-                u'created_on': now_es,
+                u'created_on__v1': now_es,
             })
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write user group'))
@@ -467,7 +468,7 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created user group id: {}'.format(
             es_response.get('_id', '')
         ))
-        return user_data, groups_data
+        return user_data_logical, groups_data
 
     def handle(self, *args, **options):
         access_token = options['access_token']
@@ -512,7 +513,6 @@ class Command(BaseCommand):
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
                                                           social_data, now_es)
 
-        # TODO: we need logical data for these
         if 'verbosity' in options and options['verbosity'] != '0':
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
