@@ -94,6 +94,9 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
+      "public__v1": {
+        "type": "boolean"
+      },
       "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
