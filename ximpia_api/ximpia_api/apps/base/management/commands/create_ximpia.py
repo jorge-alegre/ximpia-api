@@ -38,11 +38,24 @@ class Command(BaseCommand):
         user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
+        # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
+        index_name_physical = u'{}.{}'.format(
+            index_name,
+            datetime.now().strftime("%m-%d-%yT%H:%M:%S")
+        )
+        alias = index_name
+
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
 
         with open('{}/site.json'.format(mappings_path)) as f:
             site_dict = json.loads(f.read())
+
+        with open('{}/account.json'.format(mappings_path)) as f:
+            account_dict = json.loads(f.read())
+
+        with open('{}/api_access.json'.format(mappings_path)) as f:
+            api_access_dict = json.loads(f.read())
 
         with open('{}/urlconf.json'.format(mappings_path)) as f:
             urlconf_dict = json.loads(f.read())
@@ -77,10 +90,12 @@ class Command(BaseCommand):
         with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data={
                                             'settings': settings_dict,
                                             'mappings': {
+                                                'account': account_dict,
+                                                'api_access': api_access_dict,
                                                 'site': site_dict,
                                                 'urlconf': urlconf_dict,
                                                 '_app': app_dict,
@@ -93,8 +108,11 @@ class Command(BaseCommand):
                                                 '_field_version': field_version_dict,
                                                 '_invite': invite_dict,
                                                 '_session': session_dict,
-                                                }
+                                                },
+                                            'aliases': {
+                                                alias: {}
                                             }
+                                            },
                                         )
 
         if es_response_raw.status_code != 200:
@@ -143,7 +161,7 @@ class Command(BaseCommand):
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
-                         access_token, tag_data):
+                         access_token, tag_data, organization_name, public=False, account=None):
         """
         Create site, settings and app
 
@@ -158,6 +176,7 @@ class Command(BaseCommand):
         :param tag_data:
         :return:
         """
+        # account
         # site
         site_data = {
             u'name__v1': site,
@@ -241,7 +260,13 @@ class Command(BaseCommand):
             ))
             settings_output.append(settings_data)
 
-        return site_data, app_data, settings_data
+        # api_access
+        api_access = {}
+
+        # account
+        account_data = {}
+
+        return site_data, app_data, settings_data, api_access, account_data
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
@@ -403,10 +428,13 @@ class Command(BaseCommand):
         access_token = options['access_token']
         social_network = options['social_network']
         invite_only = options['invite_only']
+        organization_name = 'Ximpia Inc'
+        account = 'ximpia'
 
         index_name = 'ximpia_api__base'
         site = 'Ximpia API'
         app = 'base'
+        public = False
         languages = ['en']
         location = 'us'
         default_groups = [
@@ -425,9 +453,11 @@ class Command(BaseCommand):
 
         tag_data = self._create_tag(index_name, now_es)
 
-        site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
-                                                                   languages, location, invite_only,
-                                                                   access_token, tag_data)
+        site_tuple = self._create_site_app(index_name, site, app, now_es,
+                                           languages, location, invite_only,
+                                           access_token, tag_data, organization_name,
+                                           public=public, account=account)
+        site_data, app_data, settings_data, api_access, account_data = site_tuple
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
@@ -440,11 +470,13 @@ class Command(BaseCommand):
         if 'verbosity' in options and options['verbosity'] != '0':
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
+                    u'account': account_data,
                     u'site': site_data,
                     u'app': app_data,
                     u'settings': settings_data,
                     u'user': user_data,
                     u'groups': groups_data,
-                    u'permissions': permissions_data
+                    u'permissions': permissions_data,
+                    u'api_access': api_access
                 })
             ))
