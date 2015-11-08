@@ -14,6 +14,7 @@ from django.conf import settings
 
 from base import SocialNetworkResolution
 from base.exceptions import XimpiaAPIException
+from document import to_logical_doc
 
 __author__ = 'jorgealegre'
 
@@ -157,7 +158,7 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
-        return tag_data
+        return to_logical_doc('_tag', tag_data)
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
@@ -204,7 +205,8 @@ class Command(BaseCommand):
             site,
             site_id
         ))
-        site_data['id'] = site_id
+        site_data_logical = to_logical_doc('site', site_data)
+        site_data_logical['id'] = site_id
         # app
         app_data = {
             u'name__v1': app,
@@ -224,7 +226,8 @@ class Command(BaseCommand):
             XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
         es_response = es_response_raw.json()
         app_id = es_response.get('_id', '')
-        app_data['id'] = app_id
+        app_data_logical = to_logical_doc('_app', app_data)
+        app_data_logical['id'] = app_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -247,8 +250,8 @@ class Command(BaseCommand):
         settings_output = []
         for setting_item in settings_input:
             db_settings = settings_data.update({
-                u'name': setting_item[0],
-                u'value': setting_item[1]
+                u'name__v1': setting_item[0],
+                u'value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
                 '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -259,7 +262,8 @@ class Command(BaseCommand):
             logger.info(u'SetupSite :: created settings id: {}'.format(
                 es_response.get('_id', '')
             ))
-            settings_output.append(settings_data)
+            settings_data_logical = to_logical_doc('_settings', db_settings)
+            settings_output.append(settings_data_logical)
 
         # api_access
         api_access = {
@@ -283,7 +287,8 @@ class Command(BaseCommand):
             site,
             api_access_key
         ))
-        api_access['id'] = api_access_key
+        api_access_logical = to_logical_doc('api_access', api_access)
+        api_access_logical['id'] = api_access_key
 
         # account
         account_data = {
@@ -298,12 +303,13 @@ class Command(BaseCommand):
         if es_response_raw.status_code != 200:
             XimpiaAPIException(_(u'Could not write account "{}"'.format(site)))
         es_response = es_response_raw.json()
-        account_data['id'] = es_response.get('_id', '')
         logger.info(u'SetupSite :: created account {}'.format(
             account,
         ))
+        account_data_logical = to_logical_doc('account', account_data)
+        account_data_logical['id'] = es_response.get('_id', '')
 
-        return site_data, app_data, settings_data, api_access, account_data
+        return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
@@ -341,7 +347,9 @@ class Command(BaseCommand):
                 app['name'],
                 es_response.get('_id', '')
             ))
-            output_permissions.append(db_permission)
+            permission_logical = to_logical_doc('_permission', db_permission)
+            permission_logical['id'] = es_response.get('_id', '')
+            output_permissions.append(permission_logical)
         return output_permissions
 
     @classmethod
