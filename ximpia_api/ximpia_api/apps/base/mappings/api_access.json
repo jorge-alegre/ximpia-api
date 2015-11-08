@@ -1,0 +1,32 @@
+{
+  "api_access": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "site__v1": {
+
+      },
+      "api_secret__v1": {
+
+      },
+      "rate_hour__v1": {
+
+      },
+      "rate_day__v1": {
+
+      },
+      "domains__v1": {
+
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

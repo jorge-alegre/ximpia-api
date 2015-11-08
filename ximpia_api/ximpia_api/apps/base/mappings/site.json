@@ -8,6 +8,33 @@
       "enabled": false
     },
     "properties": {
+      "account__v1": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "fields": {
+              "account__v1": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "organization__v1": {
+            "properties": {
+              "name__v1": {
+                "type": "string"
+              }
+            }
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
       "name__v1": {
         "type": "string"
         "fields": {

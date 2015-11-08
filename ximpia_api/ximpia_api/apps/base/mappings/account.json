@@ -1,0 +1,24 @@
+{
+  "account": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "organization__v1": {
+        "properties": {
+          "name__v1": {
+            "type": "string"
+          }
+        }
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}
