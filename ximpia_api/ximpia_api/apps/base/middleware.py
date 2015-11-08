@@ -25,7 +25,7 @@ class XimpiaUrlsMiddleware(object):
         :return:
         """
         from django.conf.urls import url
-        from ximpia_api import urls
+        import urls
         from document.views import DocumentViewSet
         # get url data
         es_response = get_es_response(

@@ -35,7 +35,7 @@ class Command(BaseCommand):
         :return:
         """
         mappings_path = settings.BASE_DIR + 'apps/base/mappings'
-        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
         with open(settings.BASE_DIR + 'settings/settings.json') as f:

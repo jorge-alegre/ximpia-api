@@ -17,7 +17,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework import routers
 
-# from ximpia_api.ximpia_api.apps.user.views import User
+# from ximpia_api.ximpia_api.apps.xp_user.views import User
 
 router = routers.DefaultRouter()
 # router.register(r'users', User)

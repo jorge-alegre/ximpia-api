@@ -50,7 +50,7 @@ INSTALLED_APPS = (
     'document',
     'patterns',
     'query_build',
-    'user',
+    'xp_user',
     'xp_sessions'
 )
 
@@ -68,7 +68,7 @@ MIDDLEWARE_CLASSES = (
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'user.backends.XimpiaAuthBackend',
+        'xp_user.backends.XimpiaAuthBackend',
         'rest_framework.authentication.SessionAuthentication',
     )
 }
@@ -128,7 +128,7 @@ ELASTIC_SEARCH_HOST = 'elasticsearch:9200'
 
 SESSION_ENGINE = 'xp_sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
-    'user.backends.XimpiaAuthBackend'
+    'xp_user.backends.XimpiaAuthBackend'
 )
 
 # This setting will be injected by middleware from request site

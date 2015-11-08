@@ -44,7 +44,7 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
-        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
@@ -336,7 +336,7 @@ class SetupSite(generics.CreateAPIView):
             u'site': to_logical_doc('site', site_data),
             u'app': to_logical_doc('_app', app_data),
             u'settings': to_logical_doc('_settings', settings_data),
-            u'user': to_logical_doc('_user', user),
+            u'xp_user': to_logical_doc('_user', user),
             u'groups': groups
         }
         return response.Response(response_)
