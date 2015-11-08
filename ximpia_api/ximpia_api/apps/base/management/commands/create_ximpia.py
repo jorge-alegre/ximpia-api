@@ -161,7 +161,8 @@ class Command(BaseCommand):
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
-                         access_token, tag_data, organization_name, public=False, account=None):
+                         access_token, tag_data, organization_name, public=False, account=None,
+                         domains=None):
         """
         Create site, settings and app
 
@@ -261,10 +262,33 @@ class Command(BaseCommand):
             settings_output.append(settings_data)
 
         # api_access
-        api_access = {}
+        api_access = {
+            u'site__v1': {
+                u'id__v1': site_id,
+                u'name__v1': site,
+                u'slug__v1': slugify(site)
+            },
+            u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+            u'domains__v1': domains,
+            u'created_on': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=api_access)
+        if es_response_raw.status_code != 200:
+            XimpiaAPIException(_(u'Could not write api access "{}"'.format(site)))
+        es_response = es_response_raw.json()
+        api_access_key = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created api access {} id: {}'.format(
+            site,
+            api_access_key
+        ))
+        api_access['id'] = api_access_key
 
         # account
-        account_data = {}
+        account_data = {
+
+        }
 
         return site_data, app_data, settings_data, api_access, account_data
 
@@ -435,6 +459,7 @@ class Command(BaseCommand):
         site = 'Ximpia API'
         app = 'base'
         public = False
+        domains = ['ximpia.com']
         languages = ['en']
         location = 'us'
         default_groups = [
@@ -456,7 +481,7 @@ class Command(BaseCommand):
         site_tuple = self._create_site_app(index_name, site, app, now_es,
                                            languages, location, invite_only,
                                            access_token, tag_data, organization_name,
-                                           public=public, account=account)
+                                           public=public, account=account, domains=domains)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
 
         # 2. Permissions
