@@ -89,6 +89,22 @@ class SocialNetworkResolution(object):
             app_access_token = app['social']['facebook']['access_token']
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
+        """
+        {
+            "data": {
+                "app_id": 000000000000000,
+                "application": "Social Cafe",
+                "expires_at": 1352419328,
+                "is_valid": true,
+                "issued_at": 1347235328,
+                "scopes": [
+                    "email",
+                    "publish_actions"
+                ],
+                "user_id": 1207059
+            }
+        }
+        """
         response = req_session.get('https://graph.facebook.com/debug_token?'
                                    'input_token={access_token}&'
                                    'access_token={app_token}'.format(
@@ -97,14 +113,14 @@ class SocialNetworkResolution(object):
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-        fb_data = json.loads(response.content)
+        fb_data = response.json()
         if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
             'user_id': fb_data['data']['user_id'],
             'scopes': fb_data['data']['scopes'],
-            'access_token': app_access_token
+            'access_token': request_access_token
         }
         # call facebook for user name and email
         response = req_session.get('https://graph.facebook.com/v2.4/'
@@ -116,7 +132,7 @@ class SocialNetworkResolution(object):
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-        detail_user_data = json.loads(response.content)
+        detail_user_data = response.json()
         user_data.update({
             'email': detail_user_data.get('email', None),
             'name': detail_user_data.get('name', None),
