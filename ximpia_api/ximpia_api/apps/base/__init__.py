@@ -123,9 +123,9 @@ class SocialNetworkResolution(object):
             'access_token': request_access_token
         }
         # call facebook for user name and email
-        response = req_session.get('https://graph.facebook.com/v2.4/'
-                                   '{user_id}?'
-                                   'access_token={access_token}'.format(
+        response = req_session.get('https://graph.facebook.com/v2.5/'
+                                   'me?'
+                                   'access_token={access_token}&fields=email,link,name'.format(
                                        user_id=user_data['user_id'],
                                        access_token=request_access_token
                                    ))
@@ -138,7 +138,7 @@ class SocialNetworkResolution(object):
             'name': detail_user_data.get('name', None),
             'link': detail_user_data.get('link', None),
         })
-        response = req_session.get('https://graph.facebook.com/v2.4/'
+        response = req_session.get('https://graph.facebook.com/v2.5/'
                                    '{user_id}/picture?'
                                    'access_token={access_token}'.format(
                                        user_id=user_data['user_id'],
