@@ -143,3 +143,5 @@ XIMPIA_DOMAIN = 'ximpia.io'
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''
 FACEBOOK_APP_SECRET = ''
+
+TEST_RUNNER = 'base.XimpiaDiscoverRunner'

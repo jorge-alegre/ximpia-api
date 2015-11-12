@@ -2,8 +2,11 @@ import requests
 from requests.adapters import HTTPAdapter
 import json
 import logging
+import os
 
 from django.utils.translation import ugettext as _
+from django.test.runner import DiscoverRunner
+from django.core.management import call_command
 from django.conf import settings
 
 from constants import *
@@ -258,3 +261,30 @@ def get_setting_table_value(value_node):
         else:
             table[field] = value['value']
     return table
+
+
+class XimpiaDiscoverRunner(DiscoverRunner):
+
+    def __init__(self, *args, **kwargs):
+        super(XimpiaDiscoverRunner, self).__init__(*args, **kwargs)
+
+    def setup_databases(self, **kwargs):
+        if self.verbosity >= 1:
+            print 'Creating test indexes...'
+        old_names = []
+        mirrors = []
+        # Call create_ximpia
+        call_command('create_ximpia',
+                     access_token='',
+                     social_network='facebook',
+                     invite_only=False)
+        return old_names, mirrors
+
+    def teardown_databases(self, old_config, **kwargs):
+        if self.verbosity >= 1:
+            print 'Destroying test indexes...'
+        # delete ximpia_api index
+
+    def setup_test_environment(self, **kwargs):
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
+        super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
