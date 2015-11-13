@@ -16,7 +16,7 @@ __author__ = 'jorgealegre'
 import os
 import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '../'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
 
 
 sys.path.append('{}/ximpia_api/apps/'.format(os.getcwd()))
@@ -130,7 +130,7 @@ XIMPIA_FACEBOOK_TOKENS = [
     'CAAN8XaslQfMBAPseTFcbV2BlFlJBVX9eZAcDDOtxbyW47yAq2j05mXTCOJaK7YQoVnSxAVyzPj8nECu1vDWYJK0T1NwItD2dBWjulZA9ZBQtr9E70bZA2wHqpcZBiuJrTTqCA0O9IZCg7cE3UITo4Texby28MLbyddE2J3pKirUFwOPqbtZAVEs8zLtzvv1Qfd603EzCjfXAwZDZD',
 ]
 
-ELASTIC_SEARCH_HOST = 'elasticsearch:9200'
+ELASTIC_SEARCH_HOST = 'http://elasticsearch-test:9200'
 
 SESSION_ENGINE = 'xp_sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
@@ -149,3 +149,5 @@ XIMPIA_DOMAIN = 'ximpia.io'
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''
 FACEBOOK_APP_SECRET = ''
+
+TEST_RUNNER = 'base.XimpiaDiscoverRunner'

@@ -32,7 +32,7 @@
         }
       },
       "name__v1": {
-        "type": "string"
+        "type": "string",
         "fields": {
           "name__v1": {
             "type": "string"

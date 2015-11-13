@@ -42,7 +42,7 @@ class Command(BaseCommand):
         # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
         index_name_physical = u'{}.{}'.format(
             index_name,
-            datetime.now().strftime("%m-%d-%yT%H:%M:%S")
+            datetime.now().strftime("%m-%d-%y.%H:%M:%S")
         )
         alias = index_name
 
@@ -117,7 +117,10 @@ class Command(BaseCommand):
                                         )
 
         if es_response_raw.status_code != 200:
-            raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
+            raise XimpiaAPIException(_(u'Error creating index "{}" {}'.format(
+                index_name,
+                es_response_raw.content
+            )))
         es_response = es_response_raw.json()
         if not es_response['acknowledged']:
             raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
@@ -493,10 +496,10 @@ class Command(BaseCommand):
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        self._create_index(index_name, **options)
+
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token)
-
-        self._create_index(index_name, **options)
 
         tag_data = self._create_tag(index_name, now_es)
 

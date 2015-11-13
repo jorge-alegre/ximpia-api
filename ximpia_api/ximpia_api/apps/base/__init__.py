@@ -275,7 +275,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         mirrors = []
         # Call create_ximpia
         call_command('create_ximpia',
-                     access_token='',
+                     access_token=settings.XIMPIA_FACEBOOK_TOKENS[0],
                      social_network='facebook',
                      invite_only=False)
         return old_names, mirrors
