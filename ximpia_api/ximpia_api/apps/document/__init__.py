@@ -51,16 +51,16 @@ def walk(node, **kwargs):
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})
             versions_map[field][version_int] = item
-    print versions_map
+    # print versions_map
     if is_physical:
         for field in versions_map:
-            print field
+            # print field
             if not fields_version:
                 target_version = max(versions_map[field].keys())
             else:
                 target_version = int(filter(lambda x: x.split('__')[0] == field,
                                             fields_version)[0].split('__')[1][1:])
-            print 'target_version: {}'.format(target_version)
+            # print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
             if isinstance(item, dict):
                 data[field] = walk(item, **kwargs)
@@ -384,7 +384,7 @@ class DocumentManager(object):
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
-            es_path = 'http://{host}/{index}/{document_type}/{id_}'.format(
+            es_path = '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type,
@@ -418,7 +418,7 @@ class DocumentManager(object):
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
-            es_path = 'http://{host}/{index}/{document_type}/_search'.format(
+            es_path = '{host}/{index}/{document_type}/_search'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type)
@@ -480,7 +480,7 @@ class DocumentManager(object):
         :return:
         """
         es_response_raw = req_session.post(
-            'http://{host}/{index}/{document_type}/{id_}'.format(
+            '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type,
@@ -508,7 +508,7 @@ class DocumentManager(object):
         :return:
         """
         es_response_raw = req_session.put(
-            'http://{host}/{index}/{document_type}/{id_}'.format(
+            '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type=document_type,

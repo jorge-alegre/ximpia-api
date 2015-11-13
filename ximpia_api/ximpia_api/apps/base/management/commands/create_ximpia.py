@@ -46,7 +46,7 @@ class Command(BaseCommand):
         )
         alias = index_name
 
-        with open(settings.BASE_DIR + 'settings/settings.json') as f:
+        with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
             settings_dict = json.loads(f.read())
 
         with open('{}/site.json'.format(mappings_path)) as f:
@@ -90,9 +90,10 @@ class Command(BaseCommand):
 
         with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
+        print account_dict
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
-                                        data={
+                                        data=json.dumps({
                                             'settings': settings_dict,
                                             'mappings': {
                                                 'account': account_dict,
@@ -109,11 +110,11 @@ class Command(BaseCommand):
                                                 '_field_version': field_version_dict,
                                                 '_invite': invite_dict,
                                                 '_session': session_dict,
-                                                },
+                                            },
                                             'aliases': {
                                                 alias: {}
                                             }
-                                            },
+                                        })
                                         )
 
         if es_response_raw.status_code != 200:
@@ -186,7 +187,7 @@ class Command(BaseCommand):
         site_data = {
             u'name__v1': site,
             u'slug__v1': slugify(site),
-            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
+            u'url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
             u'created_on__v1': now_es
         }
@@ -498,9 +499,6 @@ class Command(BaseCommand):
 
         self._create_index(index_name, **options)
 
-        social_data = SocialNetworkResolution.get_network_user_data(social_network,
-                                                                    access_token=access_token)
-
         tag_data = self._create_tag(index_name, now_es)
 
         site_tuple = self._create_site_app(index_name, site, app, now_es,
@@ -508,6 +506,9 @@ class Command(BaseCommand):
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
+
+        social_data = SocialNetworkResolution.get_network_user_data(social_network,
+                                                                    access_token=access_token)
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)

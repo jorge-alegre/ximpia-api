@@ -1,0 +1,13 @@
+{
+  "index": {
+    "number_of_replicas": "1",
+    "similarity": {
+      "bm25_low_frequency": {
+        "b": "0.1",
+        "type": "BM25",
+        "k1": "0.1"
+      }
+    },
+   "number_of_shards": "50"
+  }
+}
