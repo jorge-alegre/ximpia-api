@@ -1,5 +1,5 @@
 {
-  "_field_version": {
+  "field_version": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -69,7 +69,7 @@
                         "type": "string",
                         "term_vector" : "with_positions_offsets",
                         "analyzer" : "snowball",
-                        "copy_to": "text"
+                        "copy_to": "text__v1"
                       }
                     }
                   }
@@ -151,7 +151,7 @@
                         "type": "string",
                         "term_vector": "with_positions_offsets",
                         "analyzer": "snowball",
-                        "copy_to": "text"
+                        "copy_to": "text__v1"
                       }
                     }
                   }
@@ -193,6 +193,11 @@
       },
       "is_active__v1": {
         "type": "boolean"
+      },
+      "text__v1": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
       },
       "created_on__v1" : {
         "type" : "date",

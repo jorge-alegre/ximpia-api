@@ -61,36 +61,35 @@ class Command(BaseCommand):
         with open('{}/urlconf.json'.format(mappings_path)) as f:
             urlconf_dict = json.loads(f.read())
 
-        with open('{}/_app.json'.format(mappings_path)) as f:
+        with open('{}/app.json'.format(mappings_path)) as f:
             app_dict = json.loads(f.read())
 
-        with open('{}/_settings.json'.format(mappings_path)) as f:
+        with open('{}/settings.json'.format(mappings_path)) as f:
             settings__dict = json.loads(f.read())
 
-        with open('{}/_user.json'.format(user_path)) as f:
+        with open('{}/user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
 
-        with open('{}/_group.json'.format(user_path)) as f:
+        with open('{}/group.json'.format(user_path)) as f:
             group_dict = json.loads(f.read())
 
-        with open('{}/_user-group.json'.format(user_path)) as f:
+        with open('{}/user-group.json'.format(user_path)) as f:
             user_group_dict = json.loads(f.read())
 
-        with open('{}/_permission.json'.format(user_path)) as f:
+        with open('{}/permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/_invite.json'.format(user_path)) as f:
+        with open('{}/invite.json'.format(user_path)) as f:
             invite_dict = json.loads(f.read())
 
-        with open('{}/_tag.json'.format(document_path)) as f:
+        with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/_field_version.json'.format(document_path)) as f:
+        with open('{}/field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
-        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
-        print account_dict
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
@@ -100,16 +99,16 @@ class Command(BaseCommand):
                                                 'api_access': api_access_dict,
                                                 'site': site_dict,
                                                 'urlconf': urlconf_dict,
-                                                '_app': app_dict,
-                                                '_settings': settings__dict,
-                                                '_user': user_dict,
-                                                '_group': group_dict,
-                                                '_user-group': user_group_dict,
-                                                '_permissions': permissions_dict,
-                                                '_tag': tag_dict,
-                                                '_field_version': field_version_dict,
-                                                '_invite': invite_dict,
-                                                '_session': session_dict,
+                                                'app': app_dict,
+                                                'settings': settings__dict,
+                                                'user': user_dict,
+                                                'group': group_dict,
+                                                'user-group': user_group_dict,
+                                                'permissions': permissions_dict,
+                                                'tag': tag_dict,
+                                                'field_version': field_version_dict,
+                                                'invite': invite_dict,
+                                                'session': session_dict,
                                             },
                                             'aliases': {
                                                 alias: {}

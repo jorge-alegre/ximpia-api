@@ -50,37 +50,37 @@ class SetupSite(generics.CreateAPIView):
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
 
-        with open('{}/_user.json'.format(user_path)) as f:
+        with open('{}/user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
 
-        with open('{}/_group.json'.format(user_path)) as f:
+        with open('{}/group.json'.format(user_path)) as f:
             group_dict = json.loads(f.read())
 
-        with open('{}/_user-group.json'.format(user_path)) as f:
+        with open('{}/user-group.json'.format(user_path)) as f:
             user_group_dict = json.loads(f.read())
 
-        with open('{}/_permission.json'.format(user_path)) as f:
+        with open('{}/permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/_app.json'.format(base_mappings_path)) as f:
+        with open('{}/app.json'.format(base_mappings_path)) as f:
             app_dict = json.loads(f.read())
 
-        with open('{}/_settings.json'.format(base_mappings_path)) as f:
+        with open('{}/settings.json'.format(base_mappings_path)) as f:
             settings__dict = json.loads(f.read())
 
-        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        with open('{}/_invite.json'.format(user_path)) as f:
+        with open('{}/invite.json'.format(user_path)) as f:
             invite_dict = json.loads(f.read())
 
-        with open('{}/_tag.json'.format(document_path)) as f:
+        with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/_branch.json'.format(document_path)) as f:
+        with open('{}/branch.json'.format(document_path)) as f:
             branch_dict = json.loads(f.read())
 
-        with open('{}/_field_version.json'.format(document_path)) as f:
+        with open('{}/field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
         es_response_raw = req_session.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),

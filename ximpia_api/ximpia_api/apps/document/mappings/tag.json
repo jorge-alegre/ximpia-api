@@ -1,5 +1,5 @@
 {
-  "_tag": {
+  "tag": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true

@@ -1,5 +1,5 @@
 {
-  "_user-group": {
+  "user-group": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
