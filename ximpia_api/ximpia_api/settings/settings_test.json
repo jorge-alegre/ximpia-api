@@ -8,6 +8,111 @@
         "k1": "0.1"
       }
     },
-   "number_of_shards": "50"
+    "analysis": {
+      "filter": {
+        "shingle": {
+          "type": "shingle",
+          "max_shingle_size": "3",
+          "output_unigrams": "false"
+        },
+        "any_latin": {
+          "type": "shingle",
+          "id": "Any-Latin"
+        },
+        "text_front": {
+          "max_gram": "50",
+          "min_gram": "2",
+          "type": "edgeNGram",
+          "side": "front"
+        },
+        "text_middle": {
+          "min_gram": "4",
+          "type": "nGram",
+          "max_gram": "15"
+        },
+        "text_back": {
+          "max_gram": "50",
+          "min_gram": "2",
+          "type": "edgeNGram",
+          "side": "back"
+        }
+      },
+      "analyzer": {
+        "simple_whitespace": {
+          "tokenizer": "whitespace"
+        },
+        "transform_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "any_latin"
+          ],
+          "tokenizer": "standard"
+        },
+        "name_ngram_back": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "text_back"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "name_ngram_middle": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "text_middle"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "search_shingle_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "name_ngram_front": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "text_front"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "email_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "lowercase"
+          ],
+          "tokenizer": "uax_url_email"
+        },
+        "link_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "lowercase"
+          ],
+          "tokenizer": "uax_url_email"
+        },
+        "search_ngram_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard"
+          ],
+          "tokenizer": "whitespace"
+        },
+        "index_shingle_analyzer": {
+          "type": "custom",
+          "filter": [
+            "standard",
+            "shingle"
+          ],
+          "tokenizer": "whitespace"
+        }
+      }
+    },
+    "number_of_shards": "50"
   }
 }

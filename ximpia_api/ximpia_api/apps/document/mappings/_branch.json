@@ -42,6 +42,7 @@
                 "type": "string",
                 "fields": {
                   "name__v1": {
+                    "type": "string",
                     "term_vector": "with_positions_offsets",
                     "analyzer": "snowball",
                     "copy_to": "text"
