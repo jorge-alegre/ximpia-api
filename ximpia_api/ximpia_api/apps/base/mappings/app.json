@@ -12,7 +12,8 @@
         "type": "object",
         "properties": {
           "id__v1": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           },
           "name__v1": {
             "type": "string"

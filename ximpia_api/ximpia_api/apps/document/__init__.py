@@ -47,6 +47,8 @@ def walk(node, **kwargs):
     if is_physical:
         for key, item in node.items():
             # key might have version, or key should strip version
+            if key.find('__') == -1:
+                continue
             field, version_str = key.split('__')
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})

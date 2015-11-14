@@ -23,7 +23,7 @@ req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 class SocialNetworkResolution(object):
 
     @classmethod
-    def get_app_access_token(cls, app_id, app_secret):
+    def get_app_access_token(cls, app_id, app_secret, update_token=True):
         """
         Get app access token
 
@@ -32,8 +32,11 @@ class SocialNetworkResolution(object):
         :return:
         """
         from document import Document
-        app = Document.objects.get('_app', id=settings.APP_ID)
-        if not app['social']['facebook']['access_token']:
+        from exceptions import DocumentNotFound
+        try:
+            app = Document.objects.get('app', id=settings.APP_ID)
+            app_access_token = app['social']['facebook']['access_token']
+        except DocumentNotFound:
             response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
                                            'client_id={app_id}&'
                                            'client_secret={app_secret}&'
@@ -45,11 +48,10 @@ class SocialNetworkResolution(object):
                 raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                     code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
             app_access_token = response_raw.content.split('|')[1]
-            app['social']['facebook']['access_token'] = app_access_token
-            response = Document.objects.update('_app', settings.APP_ID, app)
-            logger.info('SocialNetworkResolution :: update access token: {}'.format(response))
-        else:
-            app_access_token = app['social']['facebook']['access_token']
+            if update_token:
+                app['social']['facebook']['access_token'] = app_access_token
+                response = Document.objects.update('app', settings.APP_ID, app)
+                logger.info('SocialNetworkResolution :: update access token: {}'.format(response))
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
         return app_access_token
 

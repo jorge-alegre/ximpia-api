@@ -12,7 +12,8 @@
         "type": "object",
         "properties": {
           "id__v1": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           },
           "name__v1": {
             "type": "string"
@@ -45,21 +46,14 @@
         "type": "integer"
       },
       "domains__v1": {
-        "type": "nested",
-        "include_in_parent": true,
-        "dynamic": "false",
-        "properties": {
-          "domain__v1": {
+        "type": "string",
+        "fields": {
+          "domains_v1": {
+            "type": "string"
+          },
+          "raw": {
             "type": "string",
-            "fields": {
-              "domain__v1": {
-                "type": "string"
-              },
-              "raw": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
+            "index": "not_analyzed"
           }
         }
       },
