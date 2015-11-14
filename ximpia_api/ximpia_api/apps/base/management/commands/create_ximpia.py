@@ -104,7 +104,7 @@ class Command(BaseCommand):
                                                 'user': user_dict,
                                                 'group': group_dict,
                                                 'user-group': user_group_dict,
-                                                'permissions': permissions_dict,
+                                                'permission': permissions_dict,
                                                 'tag': tag_dict,
                                                 'field_version': field_version_dict,
                                                 'invite': invite_dict,

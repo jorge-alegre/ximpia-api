@@ -65,7 +65,16 @@
       },
       "url__v1": {
         "type": "string",
-        "analyzer": "link_analyzer"
+        "fields": {
+          "url__v1": {
+            "type": "string",
+            "analyzer": "link_analyzer"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
       },
       "is_active__v1": {
         "type": "boolean"

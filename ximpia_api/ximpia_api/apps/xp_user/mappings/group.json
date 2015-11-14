@@ -7,11 +7,8 @@
     "_all": {
       "enabled": false
     },
-    "_parent": {
-      "type": "group"
-    },
     "properties": {
-      "name__v1": {
+      "group_name__v1": {
         "type": "string",
         "fields": {
           "completion__v1": {
@@ -22,9 +19,9 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "name__v1": {
+          "group_name__v1": {
             "type": "string",
-            "copy_to": "text"
+            "copy_to": "text__v1"
           }
         }
       },
@@ -46,7 +43,7 @@
         "properties": {
           "name__v1": {
             "type": "string",
-            "copy_to": "text"
+            "copy_to": "text__v1"
           },
           "slug__v1": {
             "type": "string",
@@ -66,7 +63,7 @@
           }
         }
       },
-      "permissions__v1": {
+      "group_permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",

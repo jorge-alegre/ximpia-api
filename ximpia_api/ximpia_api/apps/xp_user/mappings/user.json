@@ -20,6 +20,7 @@
             "max_input_length": 50
           },
           "username__v1": {
+            "type": "string",
             "index": "not_analyzed",
             "copy_to": "text"
           }
@@ -42,7 +43,7 @@
         "type": "string",
         "index": "not_analyzed"
       },
-      "name__v1": {
+      "user_name__v1": {
         "type": "string",
         "fields": {
           "completion__v1": {
@@ -53,7 +54,8 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "name__v1": {
+          "user_name__v1": {
+            "type": "string",
             "term_vector" : "with_positions_offsets",
             "analyzer" : "snowball",
             "copy_to": "text"
@@ -91,7 +93,7 @@
             }
           }
       },
-      "permissions__v1": {
+      "user_permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
@@ -143,8 +145,7 @@
         "format" : "dateOptionalTime"
       },
       "is_active__v1": {
-        "type": "boolean",
-        "null_value": true
+        "type": "boolean"
       },
       "token__v1": {
         "type": "object",

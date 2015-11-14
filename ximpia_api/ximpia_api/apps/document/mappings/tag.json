@@ -57,7 +57,7 @@
                     "type": "string",
                     "term_vector": "with_positions_offsets",
                     "analyzer": "snowball",
-                    "copy_to": "text"
+                    "copy_to": "text__v1"
                   }
                 }
               }
@@ -90,6 +90,11 @@
       },
       "public__v1": {
         "type": "boolean"
+      },
+      "text__v1": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
       },
       "created_on__v1" : {
         "type" : "date",
