@@ -219,12 +219,8 @@ class Command(BaseCommand):
         site_data_logical['id'] = site_id
         print u'site_data: {}'.format(site_data_logical)
         # app
-        if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
-            app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
-        else:
-            app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
-                                                                            settings.XIMPIA_FACEBOOK_APP_SECRET,
-                                                                            update_token=False)
+        app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
+                                                                        settings.XIMPIA_FACEBOOK_APP_SECRET)
         app_data = {
             u'name__v1': app,
             u'slug__v1': slugify(app),
@@ -355,28 +351,30 @@ class Command(BaseCommand):
                 u'name__v1': permission,
                 u'apps__v1': [
                     {
-                        u'site__v1': site,
-                        u'app__v1': app
+                        u'site_slug__v1': slugify(site),
+                        u'app_slug__v1': slugify(app)
                     }
                 ],
                 u'data__v1': None,
                 u'created_on__v1': now_es
             }
+            print u'db_permission: {}'.format(db_permission)
             es_response_raw = requests.post(
                 '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
-            if es_response_raw.status_code != 200:
+            if es_response_raw.status_code not in [200, 201]:
                 raise XimpiaAPIException(_(u'Could not write permission "can-admin" :: {}'.format(
                     es_response_raw.content
                 )))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
-                app['name'],
+                app,
                 es_response.get('_id', '')
             ))
             permission_logical = to_logical_doc('permission', db_permission)
             permission_logical['id'] = es_response.get('_id', '')
             output_permissions.append(permission_logical)
+        print u'output_permissions: {}'.format(output_permissions)
         return output_permissions
 
     @classmethod
@@ -501,6 +499,7 @@ class Command(BaseCommand):
         access_token = options['access_token']
         social_network = options['social_network']
         invite_only = options['invite_only']
+        skip_auth_social = options.get('skip_auth_social', False)
         organization_name = 'Ximpia Inc'
         account = 'ximpia'
 
@@ -529,9 +528,14 @@ class Command(BaseCommand):
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
+        settings.APP_ID = app_data['id']
 
+        # social
+        # login access token for user to use
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
-                                                                    access_token=access_token)
+                                                                    access_token=access_token,
+                                                                    skip_auth_social=skip_auth_social)
+        print u'social_data: {}'.format(social_data)
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)

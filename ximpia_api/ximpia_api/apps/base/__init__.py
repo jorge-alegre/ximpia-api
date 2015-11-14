@@ -23,7 +23,7 @@ req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 class SocialNetworkResolution(object):
 
     @classmethod
-    def get_app_access_token(cls, app_id, app_secret, update_token=True):
+    def get_app_access_token(cls, app_id, app_secret):
         """
         Get app access token
 
@@ -33,25 +33,24 @@ class SocialNetworkResolution(object):
         """
         from document import Document
         from exceptions import DocumentNotFound
-        try:
-            app = Document.objects.get('app', id=settings.APP_ID)
-            app_access_token = app['social']['facebook']['access_token']
-        except DocumentNotFound:
-            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                           'client_id={app_id}&'
-                                           'client_secret={app_secret}&'
-                                           'grant_type=client_credentials'.format(
-                                               app_id=app_id,
-                                               app_secret=app_secret,
-                                           ))
-            if response_raw.status_code != 200:
-                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-            app_access_token = response_raw.content.split('|')[1]
-            if update_token:
-                app['social']['facebook']['access_token'] = app_access_token
-                response = Document.objects.update('app', settings.APP_ID, app)
-                logger.info('SocialNetworkResolution :: update access token: {}'.format(response))
+        if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
+            app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
+        else:
+            try:
+                app = Document.objects.get('app', id=settings.APP_ID)
+                app_access_token = app['social']['facebook']['access_token']
+            except DocumentNotFound:
+                response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                               'client_id={app_id}&'
+                                               'client_secret={app_secret}&'
+                                               'grant_type=client_credentials'.format(
+                                                   app_id=app_id,
+                                                   app_secret=app_secret,
+                                               ))
+                if response_raw.status_code != 200:
+                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+                app_access_token = response_raw.content.split('|')[1]
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
         return app_access_token
 
@@ -69,29 +68,32 @@ class SocialNetworkResolution(object):
         :return:
         """
         from document import Document
+        from exceptions import DocumentNotFound
 
         request_access_token = kwargs.get('access_token', '')
+        skip_auth_social = kwargs.get('skip_auth_social', False)
 
         # this is executed in case we don't have app access token in ximpia app data
-        app = Document.objects.get('_app', id=settings.APP_ID)
-        if not app['social']['facebook']['access_token']:
-            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                           'client_id={app_id}&'
-                                           'client_secret={app_secret}&'
-                                           'grant_type=client_credentials'.format(
-                                               app_id=kwargs.get('app_id', settings.XIMPIA_FACEBOOK_APP_ID),
-                                               app_secret=kwargs.get('app_secret',
-                                                                     settings.XIMPIA_FACEBOOK_APP_SECRET),
-                                           ))
-            if response_raw.status_code != 200:
-                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-            app_access_token = response_raw.content.split('|')[1]
-            app['social']['facebook']['access_token'] = app_access_token
-            response = Document.objects.update('_app', settings.APP_ID, app)
-            logger.info('SocialNetworkResolution :: update access token: {}'.format(response))
+        if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
+            app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
         else:
-            app_access_token = app['social']['facebook']['access_token']
+            try:
+                app = Document.objects.get('app', id=settings.APP_ID)
+                app_access_token = app['social']['facebook']['access_token']
+            except DocumentNotFound:
+                response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                               'client_id={app_id}&'
+                                               'client_secret={app_secret}&'
+                                               'grant_type=client_credentials'.format(
+                                                   app_id=kwargs.get('app_id', settings.XIMPIA_FACEBOOK_APP_ID),
+                                                   app_secret=kwargs.get('app_secret',
+                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET),
+                                               ))
+                if response_raw.status_code != 200:
+                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+                print u'app access token response: {}'.format(response_raw.content)
+                app_access_token = response_raw.content.split('access_token=')[1]
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
         """
@@ -110,17 +112,32 @@ class SocialNetworkResolution(object):
             }
         }
         """
-        response = req_session.get('https://graph.facebook.com/debug_token?'
-                                   'input_token={access_token}&'
-                                   'access_token={app_token}'.format(
-                                       access_token=request_access_token,
-                                       app_token=app_access_token))
+        request_url = 'https://graph.facebook.com/v2.5/debug_token?' \
+                      'input_token={access_token}&access_token={app_token}'.format(
+                          access_token=request_access_token,
+                          app_token=app_access_token)
+        print u'request_url: {}'.format(request_url)
+        response = req_session.get(request_url)
         if response.status_code != 200:
-            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+                response.content
+            ),
+                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = response.json()
+        print u'token data: {}'.format(fb_data)
+        if skip_auth_social:
+            # We don't need to require user has logged in, for tests. We simply verify token and user_id
+            return {
+                'user_id': fb_data['data']['user_id'],
+                'scopes': fb_data['data']['scopes'],
+                'access_token': request_access_token,
+                'email': None,
+                'name': str(fb_data['data']['user_id']),
+                'link': None,
+                'profile_picture': None
+            }
         if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
-            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: token is not valid',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
             'user_id': fb_data['data']['user_id'],
@@ -279,7 +296,8 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         call_command('create_ximpia',
                      access_token=settings.XIMPIA_FACEBOOK_TOKENS[0],
                      social_network='facebook',
-                     invite_only=False)
+                     invite_only=False,
+                     skip_auth_social=True)
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):

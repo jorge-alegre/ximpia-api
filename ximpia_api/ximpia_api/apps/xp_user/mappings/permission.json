@@ -36,11 +36,11 @@
           "app__v1": {
             "type": "object",
             "properties": {
-              "site__v1": {
+              "site_slug__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "app__v1": {
+              "app_slug__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
@@ -48,16 +48,16 @@
           }
         }
       },
-      "data": {
+      "data__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name": {
+          "name__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "value": {
+          "value__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
