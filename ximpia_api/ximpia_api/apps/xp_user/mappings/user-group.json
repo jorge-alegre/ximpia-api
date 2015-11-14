@@ -10,6 +10,10 @@
     "properties": {
       "user__v1": {
         "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
           "username__v1": {
             "type": "string",
             "fields": {

@@ -92,7 +92,6 @@ class SocialNetworkResolution(object):
                 if response_raw.status_code != 200:
                     raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                         code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                print u'app access token response: {}'.format(response_raw.content)
                 app_access_token = response_raw.content.split('access_token=')[1]
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
@@ -116,7 +115,6 @@ class SocialNetworkResolution(object):
                       'input_token={access_token}&access_token={app_token}'.format(
                           access_token=request_access_token,
                           app_token=app_access_token)
-        print u'request_url: {}'.format(request_url)
         response = req_session.get(request_url)
         if response.status_code != 200:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
@@ -124,7 +122,6 @@ class SocialNetworkResolution(object):
             ),
                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = response.json()
-        print u'token data: {}'.format(fb_data)
         if skip_auth_social:
             # We don't need to require user has logged in, for tests. We simply verify token and user_id
             return {
@@ -288,6 +285,12 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         super(XimpiaDiscoverRunner, self).__init__(*args, **kwargs)
 
     def setup_databases(self, **kwargs):
+        """
+        Create indices with mappings and Ximpia API site with user, groups, settings
+
+        :param kwargs:
+        :return:
+        """
         if self.verbosity >= 1:
             print 'Creating test indexes...'
         old_names = []
@@ -297,13 +300,41 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      access_token=settings.XIMPIA_FACEBOOK_TOKENS[0],
                      social_network='facebook',
                      invite_only=False,
-                     skip_auth_social=True)
+                     skip_auth_social=True,
+                     verbosity=self.verbosity)
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
+        """
+        Drop indices
+
+        :param old_config:
+        :param kwargs:
+        :return:
+        """
         if self.verbosity >= 1:
             print 'Destroying test indexes...'
         # delete ximpia_api index
+        # Get all indices
+        # curl -XGET 'http://192.168.99.100:9201/_recovery?pretty'
+        es_response_raw = requests.get('{}/_recovery'.format(settings.ELASTIC_SEARCH_HOST))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not get indices :: {}'.format(
+                es_response_raw.content
+            )))
+        es_response = es_response_raw.json()
+        indices = es_response.keys()
+        for index in indices:
+            # curl -XDELETE 'http://localhost:9200/twitter/'
+            es_response_raw = requests.delete('{}/{}/'.format(
+                settings.ELASTIC_SEARCH_HOST,
+                index
+            ))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not delete index "{}" :: {}'.format(
+                    index,
+                    es_response_raw.content,
+                )))
 
     def setup_test_environment(self, **kwargs):
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'

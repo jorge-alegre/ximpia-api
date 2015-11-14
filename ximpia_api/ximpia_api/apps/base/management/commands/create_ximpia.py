@@ -164,7 +164,6 @@ class Command(BaseCommand):
             es_response.get('_id', '')
         ))
         tag_data['id'] = es_response.get('_id', '')
-        print u'tag_data: {}'.format(tag_data)
         return to_logical_doc('tag', tag_data)
 
     @classmethod
@@ -205,7 +204,6 @@ class Command(BaseCommand):
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(site_data))
-        print u'_create_site_app :: status_code: {}'.format(es_response_raw.status_code)
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
                 site, es_response_raw.content)))
@@ -217,7 +215,6 @@ class Command(BaseCommand):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
-        print u'site_data: {}'.format(site_data_logical)
         # app
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
@@ -242,7 +239,6 @@ class Command(BaseCommand):
         app_id = es_response.get('_id', '')
         app_data_logical = to_logical_doc('app', app_data)
         app_data_logical['id'] = app_id
-        print u'app_data: {}'.format(app_data_logical)
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -268,7 +264,6 @@ class Command(BaseCommand):
                 u'setting_name__v1': setting_item[0],
                 u'setting_value__v1': setting_item[1]
             })
-            print u'db_settings :: {}'.format(settings_data)
             es_response_raw = requests.post(
                 '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(settings_data))
@@ -307,7 +302,6 @@ class Command(BaseCommand):
         ))
         api_access_logical = to_logical_doc('api_access', api_access)
         api_access_logical['id'] = api_access_key
-        print u'api_access : {}'.format(api_access_logical)
         # account
         account_data = {
             u'organization__v1': {
@@ -328,7 +322,6 @@ class Command(BaseCommand):
         ))
         account_data_logical = to_logical_doc('account', account_data)
         account_data_logical['id'] = es_response.get('_id', '')
-        print u'account_data : {}'.format(account_data_logical)
 
         return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
 
@@ -358,7 +351,6 @@ class Command(BaseCommand):
                 u'data__v1': None,
                 u'created_on__v1': now_es
             }
-            print u'db_permission: {}'.format(db_permission)
             es_response_raw = requests.post(
                 '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
@@ -374,7 +366,6 @@ class Command(BaseCommand):
             permission_logical = to_logical_doc('permission', db_permission)
             permission_logical['id'] = es_response.get('_id', '')
             output_permissions.append(permission_logical)
-        print u'output_permissions: {}'.format(output_permissions)
         return output_permissions
 
     @classmethod
@@ -394,6 +385,7 @@ class Command(BaseCommand):
             u'admin': u'can-admin',
         }
         groups_data = []
+        groups_data_logical = {}
         for group in groups:
             group_data = {
                 u'group_name__v1': group,
@@ -410,9 +402,10 @@ class Command(BaseCommand):
                 ]
             es_response_raw = requests.post(
                 '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=group_data)
-            if es_response_raw.status_code != 200:
-                XimpiaAPIException(_(u'Could not write group "{}"'.format(group)))
+                data=json.dumps(group_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
+                    group, es_response_raw.content)))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created group {} id: {}'.format(
                 group,
@@ -421,10 +414,11 @@ class Command(BaseCommand):
             # group_ids[group] = es_response.get('_id', '')
             group_data_logical = to_logical_doc('group', group_data)
             group_data_logical['id'] = es_response.get('_id', '')
+            groups_data_logical[group_data_logical['id']] = group_data_logical
             groups_data.append(group_data_logical)
         # user
         user_data = {
-            u'alias__v1': None,
+            u'username__v1': " ",
             u'email__v1': social_data.get('email', None),
             u'password__v1': None,
             u'avatar__v1': social_data.get('profile_picture', None),
@@ -443,7 +437,7 @@ class Command(BaseCommand):
             u'user_permissions__v1': None,
             u'groups__v1': map(lambda x: {
                 u'id__v1': x['id'],
-                u'name__v1': x['name']
+                u'name__v1': x['group_name']
             }, groups_data),
             u'is_active__v1': True,
             u'token__v1': None,
@@ -453,46 +447,52 @@ class Command(BaseCommand):
         }
         es_response_raw = requests.post(
             '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=user_data)
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
+            data=json.dumps(user_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
                 social_network,
-                social_data.get('user_id', None))))
+                social_data.get('user_id', None),
+                es_response_raw.content)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
         user_data_logical = to_logical_doc('user', user_data)
         user_data_logical['id'] = es_response.get('_id', '')
+        user_data['id'] = es_response.get('_id', '')
         # users groups
-        es_response_raw = requests.post(
-            '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'user__v1': map(lambda x: {
-                    u'id__v1': x[u'id'],
-                    u'username__v1': x[u'username'],
-                    u'email__v1': x[u'email'],
-                    u'avatar__v1': x[u'avatar'],
-                    u'user_name__v1': x[u'name'],
-                    u'social_networks__v1': x[u'social_networks'],
-                    u'user_permissions__v1': x[u'permissions'],
-                    u'created_on__v1': x[u'created_on'],
-                }, user_data),
-                u'group__v1': map(lambda x: {
-                    u'id__v1': x[u'id'],
-                    u'group_name__v1': x[u'name'],
-                    u'slug__v1': x[u'slug'],
-                    u'tags__v1': x[u'tags'],
-                    u'created_on__v1': x[u'created_on']
-                }, groups_data),
-                u'created_on__v1': now_es,
-            })
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write user group'))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created user group id: {}'.format(
-            es_response.get('_id', '')
-        ))
+        for group_data in groups_data:
+            es_response_raw = requests.post(
+                '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps({
+                    u'user__v1': {
+                        u'id__v1': user_data_logical[u'id'],
+                        u'username__v1': user_data_logical[u'username'],
+                        u'email__v1': user_data_logical[u'email'],
+                        u'avatar__v1': user_data_logical[u'avatar'],
+                        u'user_name__v1': user_data_logical[u'user_name'],
+                        u'social_networks__v1': user_data_logical[u'social_networks'],
+                        u'user_permissions__v1': user_data_logical[u'user_permissions'],
+                        u'created_on__v1': user_data_logical[u'created_on'],
+                    },
+                    u'group__v1': {
+                        u'id__v1': group_data[u'id'],
+                        u'group_name__v1': group_data[u'group_name'],
+                        u'slug__v1': group_data[u'slug'],
+                        u'tags__v1': group_data[u'tags'],
+                        u'created_on__v1': group_data[u'created_on']
+                    },
+                    u'created_on__v1': now_es,
+                }))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write user group :: {}'.format(
+                    es_response_raw.content
+                )))
+            es_response = es_response_raw.json()
+            es_response['id'] = es_response.get('_id', '')
+            logger.info(u'SetupSite :: created user group id: {}'.format(
+                es_response.get('_id', '')
+            ))
         return user_data_logical, groups_data
 
     def handle(self, *args, **options):
@@ -535,16 +535,15 @@ class Command(BaseCommand):
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token,
                                                                     skip_auth_social=skip_auth_social)
-        print u'social_data: {}'.format(social_data)
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
-        user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
-                                                          social_data, now_es)
+        user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
+                                                          social_network, now_es)
 
-        if 'verbosity' in options and options['verbosity'] != '0':
+        if 'verbosity' in options and options['verbosity'] != 0:
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
                     u'account': account_data,
