@@ -14,6 +14,7 @@ from django.conf import settings
 
 from base import SocialNetworkResolution
 from base.exceptions import XimpiaAPIException
+from document import to_logical_doc
 
 __author__ = 'jorgealegre'
 
@@ -35,70 +36,91 @@ class Command(BaseCommand):
         :return:
         """
         mappings_path = settings.BASE_DIR + 'apps/base/mappings'
-        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
-        with open(settings.BASE_DIR + 'settings/settings.json') as f:
+        # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
+        index_name_physical = u'{}.{}'.format(
+            index_name,
+            datetime.now().strftime("%m-%d-%y.%H:%M:%S")
+        )
+        alias = index_name
+
+        with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
             settings_dict = json.loads(f.read())
 
         with open('{}/site.json'.format(mappings_path)) as f:
             site_dict = json.loads(f.read())
 
+        with open('{}/account.json'.format(mappings_path)) as f:
+            account_dict = json.loads(f.read())
+
+        with open('{}/api_access.json'.format(mappings_path)) as f:
+            api_access_dict = json.loads(f.read())
+
         with open('{}/urlconf.json'.format(mappings_path)) as f:
             urlconf_dict = json.loads(f.read())
 
-        with open('{}/_app.json'.format(mappings_path)) as f:
+        with open('{}/app.json'.format(mappings_path)) as f:
             app_dict = json.loads(f.read())
 
-        with open('{}/_settings.json'.format(mappings_path)) as f:
+        with open('{}/settings.json'.format(mappings_path)) as f:
             settings__dict = json.loads(f.read())
 
-        with open('{}/_user.json'.format(user_path)) as f:
+        with open('{}/user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
 
-        with open('{}/_group.json'.format(user_path)) as f:
+        with open('{}/group.json'.format(user_path)) as f:
             group_dict = json.loads(f.read())
 
-        with open('{}/_user-group.json'.format(user_path)) as f:
+        with open('{}/user-group.json'.format(user_path)) as f:
             user_group_dict = json.loads(f.read())
 
-        with open('{}/_permission.json'.format(user_path)) as f:
+        with open('{}/permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/_invite.json'.format(user_path)) as f:
+        with open('{}/invite.json'.format(user_path)) as f:
             invite_dict = json.loads(f.read())
 
-        with open('{}/_tag.json'.format(document_path)) as f:
+        with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/_field_version.json'.format(document_path)) as f:
+        with open('{}/field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
-        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                                        data={
+        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
+                                        data=json.dumps({
                                             'settings': settings_dict,
                                             'mappings': {
+                                                'account': account_dict,
+                                                'api_access': api_access_dict,
                                                 'site': site_dict,
                                                 'urlconf': urlconf_dict,
-                                                '_app': app_dict,
-                                                '_settings': settings__dict,
-                                                '_user': user_dict,
-                                                '_group': group_dict,
-                                                '_user-group': user_group_dict,
-                                                '_permissions': permissions_dict,
-                                                '_tag': tag_dict,
-                                                '_field_version': field_version_dict,
-                                                '_invite': invite_dict,
-                                                '_session': session_dict,
-                                                }
+                                                'app': app_dict,
+                                                'settings': settings__dict,
+                                                'user': user_dict,
+                                                'group': group_dict,
+                                                'user-group': user_group_dict,
+                                                'permission': permissions_dict,
+                                                'tag': tag_dict,
+                                                'field_version': field_version_dict,
+                                                'invite': invite_dict,
+                                                'session': session_dict,
+                                            },
+                                            'aliases': {
+                                                alias: {}
                                             }
+                                        })
                                         )
 
         if es_response_raw.status_code != 200:
-            raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
+            raise XimpiaAPIException(_(u'Error creating index "{}" {}'.format(
+                index_name,
+                es_response_raw.content
+            )))
         es_response = es_response_raw.json()
         if not es_response['acknowledged']:
             raise XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
@@ -114,7 +136,7 @@ class Command(BaseCommand):
             ))
 
     @classmethod
-    def _create_tag(cls, index_name, now_es):
+    def _create_tag(cls, index_name, now_es, version='v1'):
         """
         Create tag v1
 
@@ -123,27 +145,31 @@ class Command(BaseCommand):
         :return:
         """
         tag_data = {
-            u'name__v1': u'v1',
-            u'slug__v1': u'v1',
+            u'name__v1': version,
+            u'slug__v1': version,
             u'is_active__v1': True,
             u'permissions__v1': None,
             u'public__v1': True,
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/_tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(tag_data))
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write tag v1'))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write tag v1 :: {} :: {}'.format(
+                es_response_raw.status_code,
+                es_response_raw.content)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
-        return tag_data
+        tag_data['id'] = es_response.get('_id', '')
+        return to_logical_doc('tag', tag_data)
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,
-                         access_token, tag_data):
+                         access_token, tag_data, organization_name, public=False, account=None,
+                         domains=None):
         """
         Create site, settings and app
 
@@ -158,11 +184,13 @@ class Command(BaseCommand):
         :param tag_data:
         :return:
         """
+        from base import SocialNetworkResolution
+        # account
         # site
         site_data = {
             u'name__v1': site,
             u'slug__v1': slugify(site),
-            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
+            u'url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
             u'created_on__v1': now_es
         }
@@ -175,36 +203,42 @@ class Command(BaseCommand):
             }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=site_data)
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
+            data=json.dumps(site_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
+                site, es_response_raw.content)))
         es_response = es_response_raw.json()
         site_id = es_response.get('_id', '')
         logger.info(u'SetupSite :: created site {} id: {}'.format(
             site,
             site_id
         ))
-        site_data['id'] = site_id
+        site_data_logical = to_logical_doc('site', site_data)
+        site_data_logical['id'] = site_id
         # app
+        app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
+                                                                        settings.XIMPIA_FACEBOOK_APP_SECRET)
         app_data = {
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
             u'social__v1': {
                 u'facebook__v1': {
-                    u'access_token__v1': access_token
+                    u'access_token__v1': app_access_token
                 }
             },
             u'created_on__v1': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=app_data)
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
+            '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(app_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
+                app, es_response_raw.content)))
         es_response = es_response_raw.json()
         app_id = es_response.get('_id', '')
-        app_data['id'] = app_id
+        app_data_logical = to_logical_doc('app', app_data)
+        app_data_logical['id'] = app_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -226,22 +260,70 @@ class Command(BaseCommand):
         }
         settings_output = []
         for setting_item in settings_input:
-            db_settings = settings_data.update({
-                u'name': setting_item[0],
-                u'value': setting_item[1]
+            settings_data.update({
+                u'setting_name__v1': setting_item[0],
+                u'setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
-                '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=db_settings)
-            if es_response_raw.status_code != 200:
-                XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
+                '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(settings_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write settings for site "{}" :: {}'.format(
+                    site, es_response_raw.content)))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created settings id: {}'.format(
                 es_response.get('_id', '')
             ))
-            settings_output.append(settings_data)
+            settings_data_logical = to_logical_doc('settings', settings_data)
+            settings_output.append(settings_data_logical)
 
-        return site_data, app_data, settings_data
+        # api_access
+        api_access = {
+            u'site__v1': {
+                u'id__v1': site_id,
+                u'name__v1': site,
+                u'slug__v1': slugify(site)
+            },
+            u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+            u'domains__v1': domains,
+            u'created_on__v1': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(api_access))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write api access "{}" :: {}'.format(
+                site, es_response_raw.content)))
+        es_response = es_response_raw.json()
+        api_access_key = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created api access {} id: {}'.format(
+            site,
+            api_access_key
+        ))
+        api_access_logical = to_logical_doc('api_access', api_access)
+        api_access_logical['id'] = api_access_key
+        # account
+        account_data = {
+            u'organization__v1': {
+                u'name__v1': organization_name
+            },
+            u'account_name__v1': account,
+            u'created_on__v1': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(account_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write account "{}" :: {}'.format(
+                site, es_response_raw.content)))
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created account {}'.format(
+            account,
+        ))
+        account_data_logical = to_logical_doc('account', account_data)
+        account_data_logical['id'] = es_response.get('_id', '')
+
+        return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
@@ -262,24 +344,28 @@ class Command(BaseCommand):
                 u'name__v1': permission,
                 u'apps__v1': [
                     {
-                        u'site__v1': site,
-                        u'app__v1': app
+                        u'site_slug__v1': slugify(site),
+                        u'app_slug__v1': slugify(app)
                     }
                 ],
                 u'data__v1': None,
                 u'created_on__v1': now_es
             }
             es_response_raw = requests.post(
-                '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
-            if es_response_raw.status_code != 200:
-                XimpiaAPIException(_(u'Could not write permission "can-admin"'))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write permission "can-admin" :: {}'.format(
+                    es_response_raw.content
+                )))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
-                app['name'],
+                app,
                 es_response.get('_id', '')
             ))
-            output_permissions.append(db_permission)
+            permission_logical = to_logical_doc('permission', db_permission)
+            permission_logical['id'] = es_response.get('_id', '')
+            output_permissions.append(permission_logical)
         return output_permissions
 
     @classmethod
@@ -299,114 +385,129 @@ class Command(BaseCommand):
             u'admin': u'can-admin',
         }
         groups_data = []
+        groups_data_logical = {}
         for group in groups:
             group_data = {
-                u'name__v1': group,
+                u'group_name__v1': group,
                 u'slug__v1': slugify(group),
                 u'tags__v1': None,
                 u'created_on__v1': now_es,
             }
             if group in permissions:
-                group_data[u'permissions'] = [
+                group_data[u'group_permissions__v1'] = [
                     {
-                        u'name': permissions[group],
-                        u'created_on': now_es
+                        u'name__v1': permissions[group],
+                        u'created_on__v1': now_es
                     }
                 ]
             es_response_raw = requests.post(
-                '{}/{}/_group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=group_data)
-            if es_response_raw.status_code != 200:
-                XimpiaAPIException(_(u'Could not write group "{}"'.format(group)))
+                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(group_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
+                    group, es_response_raw.content)))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created group {} id: {}'.format(
                 group,
                 es_response.get('_id', u'')
             ))
             # group_ids[group] = es_response.get('_id', '')
-            groups_data.append(group_data.update({
-                u'id': es_response.get('_id', ''),
-            }))
+            group_data_logical = to_logical_doc('group', group_data)
+            group_data_logical['id'] = es_response.get('_id', '')
+            groups_data_logical[group_data_logical['id']] = group_data_logical
+            groups_data.append(group_data_logical)
         # user
         user_data = {
-            u'alias': None,
-            u'email': social_data.get('email', None),
-            u'password': None,
-            u'avatar': social_data.get('profile_picture', None),
-            u'name': social_data.get('name', None),
-            u'social_networks': [
+            u'username__v1': " ",
+            u'email__v1': social_data.get('email', None),
+            u'password__v1': None,
+            u'avatar__v1': social_data.get('profile_picture', None),
+            u'user_name__v1': social_data.get('name', None),
+            u'social_networks__v1': [
                 {
-                    u'network': social_network,
-                    u'user_id': social_data.get('user_id', None),
-                    u'access_token': social_data.get('access_token', None),
-                    u'state': None,
-                    u'scopes': social_data.get('scopes', None),
-                    u'has_auth': True,
-                    u'link': social_data.get('link', None),
+                    u'network__v1': social_network,
+                    u'user_id__v1': social_data.get('user_id', None),
+                    u'access_token__v1': social_data.get('access_token', None),
+                    u'state__v1': None,
+                    u'scopes__v1': social_data.get('scopes', None),
+                    u'has_auth__v1': True,
+                    u'link__v1': social_data.get('link', None),
                 }
             ],
-            u'permissions': None,
-            u'groups': map(lambda x: {
-                u'id': x['id'],
-                u'name': x['name']
+            u'user_permissions__v1': None,
+            u'groups__v1': map(lambda x: {
+                u'id__v1': x['id'],
+                u'name__v1': x['group_name']
             }, groups_data),
-            u'is_active': True,
-            u'token': None,
-            u'last_login': None,
-            u'session_id': None,
-            u'created_on': now_es,
+            u'is_active__v1': True,
+            u'token__v1': None,
+            u'last_login__v1': None,
+            u'session_id__v1': None,
+            u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=user_data)
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
+            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(user_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
                 social_network,
-                social_data.get('user_id', None))))
+                social_data.get('user_id', None),
+                es_response_raw.content)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
+        user_data_logical = to_logical_doc('user', user_data)
+        user_data_logical['id'] = es_response.get('_id', '')
         user_data['id'] = es_response.get('_id', '')
         # users groups
-        es_response_raw = requests.post(
-            '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data={
-                u'user': map(lambda x: {
-                    u'id': x[u'id'],
-                    u'username': x[u'username'],
-                    u'email': x[u'email'],
-                    u'avatar': x[u'avatar'],
-                    u'name': x[u'name'],
-                    u'social_networks': x[u'social_networks'],
-                    u'permissions': x[u'permissions'],
-                    u'created_on': x[u'created_on'],
-                }, user_data),
-                u'group': map(lambda x: {
-                    u'id': x[u'id'],
-                    u'name': x[u'name'],
-                    u'slug': x[u'slug'],
-                    u'tags': x[u'tags'],
-                    u'created_on': x[u'created_on']
-                }, groups_data),
-                u'created_on': now_es,
-            })
-        if es_response_raw.status_code != 200:
-            XimpiaAPIException(_(u'Could not write user group'))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created user group id: {}'.format(
-            es_response.get('_id', '')
-        ))
-        return user_data, groups_data
+        for group_data in groups_data:
+            es_response_raw = requests.post(
+                '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps({
+                    u'user__v1': {
+                        u'id__v1': user_data_logical[u'id'],
+                        u'username__v1': user_data_logical[u'username'],
+                        u'email__v1': user_data_logical[u'email'],
+                        u'avatar__v1': user_data_logical[u'avatar'],
+                        u'user_name__v1': user_data_logical[u'user_name'],
+                        u'social_networks__v1': user_data_logical[u'social_networks'],
+                        u'user_permissions__v1': user_data_logical[u'user_permissions'],
+                        u'created_on__v1': user_data_logical[u'created_on'],
+                    },
+                    u'group__v1': {
+                        u'id__v1': group_data[u'id'],
+                        u'group_name__v1': group_data[u'group_name'],
+                        u'slug__v1': group_data[u'slug'],
+                        u'tags__v1': group_data[u'tags'],
+                        u'created_on__v1': group_data[u'created_on']
+                    },
+                    u'created_on__v1': now_es,
+                }))
+            if es_response_raw.status_code not in [200, 201]:
+                raise XimpiaAPIException(_(u'Could not write user group :: {}'.format(
+                    es_response_raw.content
+                )))
+            es_response = es_response_raw.json()
+            es_response['id'] = es_response.get('_id', '')
+            logger.info(u'SetupSite :: created user group id: {}'.format(
+                es_response.get('_id', '')
+            ))
+        return user_data_logical, groups_data
 
     def handle(self, *args, **options):
         access_token = options['access_token']
         social_network = options['social_network']
         invite_only = options['invite_only']
+        skip_auth_social = options.get('skip_auth_social', False)
+        organization_name = 'Ximpia Inc'
+        account = 'ximpia'
 
         index_name = 'ximpia_api__base'
         site = 'Ximpia API'
         app = 'base'
+        public = False
+        domains = ['ximpia.com']
         languages = ['en']
         location = 'us'
         default_groups = [
@@ -416,35 +517,42 @@ class Command(BaseCommand):
             u'staff'
         ]
 
-        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        social_data = SocialNetworkResolution.get_network_user_data(social_network,
-                                                                    access_token=access_token)
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         self._create_index(index_name, **options)
 
         tag_data = self._create_tag(index_name, now_es)
 
-        site_data, app_data, settings_data = self._create_site_app(index_name, site, app, now_es,
-                                                                   languages, location, invite_only,
-                                                                   access_token, tag_data)
+        site_tuple = self._create_site_app(index_name, site, app, now_es,
+                                           languages, location, invite_only,
+                                           access_token, tag_data, organization_name,
+                                           public=public, account=account, domains=domains)
+        site_data, app_data, settings_data, api_access, account_data = site_tuple
+        settings.APP_ID = app_data['id']
+
+        # social
+        # login access token for user to use
+        social_data = SocialNetworkResolution.get_network_user_data(social_network,
+                                                                    access_token=access_token,
+                                                                    skip_auth_social=skip_auth_social)
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
 
         # 3. Groups, User, UserGroup
-        user_data, groups_data = self._create_user_groups(index_name, default_groups, social_network,
-                                                          social_data, now_es)
+        user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
+                                                          social_network, now_es)
 
-        # TODO: we need logical data for these
-        if 'verbosity' in options and options['verbosity'] != '0':
+        if 'verbosity' in options and options['verbosity'] != 0:
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
+                    u'account': account_data,
                     u'site': site_data,
                     u'app': app_data,
                     u'settings': settings_data,
                     u'user': user_data,
                     u'groups': groups_data,
-                    u'permissions': permissions_data
+                    u'permissions': permissions_data,
+                    u'api_access': api_access
                 })
             ))

@@ -1,0 +1,66 @@
+{
+  "api_access": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "site__v1": {
+        "type": "object",
+        "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name__v1": {
+            "type": "string"
+          },
+          "slug__v1": {
+            "type": "string",
+            "fields": {
+              "slug__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      },
+      "api_secret__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "rate_hour__v1": {
+        "type": "integer"
+      },
+      "rate_day__v1": {
+        "type": "integer"
+      },
+      "rate_month__v1": {
+        "type": "integer"
+      },
+      "domains__v1": {
+        "type": "string",
+        "fields": {
+          "domains_v1": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

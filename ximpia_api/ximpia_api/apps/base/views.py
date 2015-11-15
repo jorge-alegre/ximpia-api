@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=3))
 
 
@@ -44,43 +44,43 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
-        user_path = settings.BASE_DIR + 'apps/user/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
         with open(settings.BASE_DIR + 'settings/settings.json') as f:
             settings_dict = json.loads(f.read())
 
-        with open('{}/_user.json'.format(user_path)) as f:
+        with open('{}/user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
 
-        with open('{}/_group.json'.format(user_path)) as f:
+        with open('{}/group.json'.format(user_path)) as f:
             group_dict = json.loads(f.read())
 
-        with open('{}/_user-group.json'.format(user_path)) as f:
+        with open('{}/user-group.json'.format(user_path)) as f:
             user_group_dict = json.loads(f.read())
 
-        with open('{}/_permission.json'.format(user_path)) as f:
+        with open('{}/permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/_app.json'.format(base_mappings_path)) as f:
+        with open('{}/app.json'.format(base_mappings_path)) as f:
             app_dict = json.loads(f.read())
 
-        with open('{}/_settings.json'.format(base_mappings_path)) as f:
+        with open('{}/settings.json'.format(base_mappings_path)) as f:
             settings__dict = json.loads(f.read())
 
-        with open('{}/_session.json'.format(settings.BASE_DIR + 'apps/sessions/mappings')) as f:
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        with open('{}/_invite.json'.format(user_path)) as f:
+        with open('{}/invite.json'.format(user_path)) as f:
             invite_dict = json.loads(f.read())
 
-        with open('{}/_tag.json'.format(document_path)) as f:
+        with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/_branch.json'.format(document_path)) as f:
+        with open('{}/branch.json'.format(document_path)) as f:
             branch_dict = json.loads(f.read())
 
-        with open('{}/_field_version.json'.format(document_path)) as f:
+        with open('{}/field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
         es_response_raw = req_session.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -336,7 +336,7 @@ class SetupSite(generics.CreateAPIView):
             u'site': to_logical_doc('site', site_data),
             u'app': to_logical_doc('_app', app_data),
             u'settings': to_logical_doc('_settings', settings_data),
-            u'user': to_logical_doc('_user', user),
+            u'xp_user': to_logical_doc('_user', user),
             u'groups': groups
         }
         return response.Response(response_)

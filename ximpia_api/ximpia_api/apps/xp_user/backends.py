@@ -21,7 +21,7 @@ MAX_RETRIES = 3
 FLUSH_LIMIT = 1000
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
 
 logger = logging.getLogger(__name__)

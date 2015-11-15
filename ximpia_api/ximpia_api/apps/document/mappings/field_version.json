@@ -1,5 +1,5 @@
 {
-  "urlconf": {
+  "field_version": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -8,121 +8,33 @@
       "enabled": false
     },
     "properties": {
-      "url__v1": {
+      "doc_type__v1": {
+        "type": "string"
+      },
+      "field__v1": {
         "type": "string",
         "fields": {
-          "url__v1": {
-            "type": "string",
-            "analyzer": "link_analyzer"
+          "field__v1": {
+            "type": "string"
           },
           "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
-          }
-        }
-      },
-      "mode__v1": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "document_type__v1": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "app__v1": {
-        "properties": {
-          "id": {
-            "type": "long"
-          }
-        }
-      },
-      "site__v1": {
-        "properties": {
-          "id": {
-            "type": "long"
           },
-          "name__v1": {
-            "type": "string",
-            "fields": {
-              "name__v1": {
-                "type": "string"
-              },
-              "completion__v1": {
-                "type": "completion",
-                "analyzer": "simple_whitespace",
-                "payloads": true,
-                "preserve_separators": true,
-                "preserve_position_increments": true,
-                "max_input_length": 50
-              }
-            }
-          },
-          "slug__v1": {
-            "type": "string",
-            "fields": {
-              "slug__v1": {
-                "type": "string"
-              },
-              "raw__v1": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
-          },
-          "url__v1": {
-            "type": "string",
-            "analyzer": "link_analyzer"
-          },
-          "is_active__v1": {
-            "type": "boolean"
-          },
-          "invites": {
-            "properties": {
-              "age_days": {
-                "type": "integer"
-              },
-              "active": {
-                "type": "boolean",
-                "null_value": false
-              },
-              "created_on": {
-                "type" : "date",
-                "format" : "dateOptionalTime"
-              },
-              "updated_on": {
-                "type" : "date",
-                "format" : "dateOptionalTime"
-              }
-            }
-          },
-          "text__v1": {
-            "type": "string",
-            "term_vector" : "with_positions_offsets",
-            "analyzer" : "snowball"
-          },
-          "created_on__v1" : {
-            "type" : "date",
-            "format" : "dateOptionalTime"
+          "completion__v1": {
+            "type": "completion",
+            "analyzer": "simple_whitespace",
+            "payloads": true,
+            "preserve_separators": true,
+            "preserve_position_increments": true,
+            "max_input_length": 50
           }
         }
       },
       "tag__v1": {
         "properties": {
           "name__v1": {
-            "type": "string",
-            "fields": {
-              "name__v1": {
-                "type": "string"
-              },
-              "completion__v1": {
-                "type": "completion",
-                "analyzer": "simple_whitespace",
-                "payloads": true,
-                "preserve_separators": true,
-                "preserve_position_increments": true,
-                "max_input_length": 50
-              }
-            }
+            "type": "string"
           },
           "slug__v1": {
             "type": "string",
@@ -133,93 +45,6 @@
               "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
-              }
-            }
-          },
-          "is_active__v1": {
-            "type": "boolean"
-          },
-          "permissions__v1": {
-            "properties": {
-              "users__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
-                "properties": {
-                  "id__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  },
-                  "name__v1": {
-                    "type": "string",
-                    "fields": {
-                      "name__v1": {
-                        "type": "string",
-                        "term_vector": "with_positions_offsets",
-                        "analyzer": "snowball",
-                        "copy_to": "text__v1"
-                      }
-                    }
-                  }
-                }
-              },
-              "groups__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
-                "properties": {
-                  "id_v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  },
-                  "name__v1": {
-                    "type": "string",
-                    "fields": {
-                      "name__v1": {
-                        "type": "string"
-                      },
-                      "raw__v1": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "public__v1": {
-            "type": "boolean"
-          },
-          "text__v1": {
-            "type": "string",
-            "term_vector" : "with_positions_offsets",
-            "analyzer" : "snowball"
-          },
-          "created_on__v1" : {
-            "type" : "date",
-            "format" : "dateOptionalTime"
-          }
-        }
-      },
-      "branch__v1": {
-        "properties": {
-          "id": {
-            "type": "long"
-          },
-          "name__v1": {
-            "type": "string",
-            "fields": {
-              "name__v1": {
-                "type": "string"
-              },
-              "completion__v1": {
-                "type": "completion",
-                "analyzer": "simple_whitespace",
-                "payloads": true,
-                "preserve_separators": true,
-                "preserve_position_increments": true,
-                "max_input_length": 50
               }
             }
           },
@@ -284,20 +109,90 @@
           }
         }
       },
-      "data__v1": {
-        "type": "nested",
-        "include_in_parent": true,
-        "dynamic": "false",
+      "branch__v1": {
         "properties": {
-          "name": {
-            "type": "string",
-            "index": "not_analyzed"
+          "id": {
+            "type": "long"
           },
-          "value": {
+          "name__v1": {
             "type": "string",
-            "index": "not_analyzed"
+            "fields": {
+              "name__v1": {
+                "type": "string"
+              },
+              "completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "permissions__v1": {
+            "properties": {
+              "users__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string",
+                        "term_vector": "with_positions_offsets",
+                        "analyzer": "snowball",
+                        "copy_to": "text__v1"
+                      }
+                    }
+                  }
+                }
+              },
+              "groups__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id_v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "public__v1": {
+            "type": "boolean"
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
           }
         }
+      },
+      "is_active__v1": {
+        "type": "boolean"
       },
       "text__v1": {
         "type": "string",

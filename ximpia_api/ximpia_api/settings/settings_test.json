@@ -16,7 +16,7 @@
           "output_unigrams": "false"
         },
         "any_latin": {
-          "type": "icu_transform",
+          "type": "shingle",
           "id": "Any-Latin"
         },
         "text_front": {
@@ -39,18 +39,13 @@
       },
       "analyzer": {
         "simple_whitespace": {
-          "type": "custom",
-          "filter": [
-            "icu_folding"
-          ],
           "tokenizer": "whitespace"
         },
         "transform_analyzer": {
           "type": "custom",
           "filter": [
             "standard",
-            "any_latin",
-            "icu_folding"
+            "any_latin"
           ],
           "tokenizer": "standard"
         },
@@ -58,8 +53,7 @@
           "type": "custom",
           "filter": [
             "standard",
-            "icu_folding",
-            "ngrams_back"
+            "text_back"
           ],
           "tokenizer": "whitespace"
         },
@@ -67,16 +61,14 @@
           "type": "custom",
           "filter": [
             "standard",
-            "icu_folding",
-            "ngrams_middle"
+            "text_middle"
           ],
           "tokenizer": "whitespace"
         },
         "search_shingle_analyzer": {
           "type": "custom",
           "filter": [
-            "standard",
-            "icu_folding"
+            "standard"
           ],
           "tokenizer": "whitespace"
         },
@@ -84,8 +76,7 @@
           "type": "custom",
           "filter": [
             "standard",
-            "icu_folding",
-            "ngrams_front"
+            "text_front"
           ],
           "tokenizer": "whitespace"
         },
@@ -108,8 +99,7 @@
         "search_ngram_analyzer": {
           "type": "custom",
           "filter": [
-            "standard",
-            "icu_folding"
+            "standard"
           ],
           "tokenizer": "whitespace"
         },
@@ -117,7 +107,6 @@
           "type": "custom",
           "filter": [
             "standard",
-            "icu_folding",
             "shingle"
           ],
           "tokenizer": "whitespace"

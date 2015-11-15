@@ -1,5 +1,5 @@
 {
-  "_user-group": {
+  "user-group": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -10,6 +10,10 @@
     "properties": {
       "user__v1": {
         "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
           "username__v1": {
             "type": "string",
             "fields": {
@@ -22,21 +26,22 @@
                 "max_input_length": 50
               },
               "username__v1": {
+                "type": "string",
                 "index": "not_analyzed",
-                "copy_to": "text"
+                "copy_to": "text__v1"
               }
             }
           },
           "email__v1": {
             "type": "string",
             "analyzer": "email_analyzer",
-            "copy_to": "text"
+            "copy_to": "text__v1"
           },
           "avatar__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "name__v1": {
+          "user_name__v1": {
             "type": "string",
             "fields": {
               "completion__v1": {
@@ -47,10 +52,11 @@
                 "preserve_position_increments": true,
                 "max_input_length": 50
               },
-              "name__v1": {
+              "user_name__v1": {
+                "type": "string",
                 "term_vector" : "with_positions_offsets",
                 "analyzer" : "snowball",
-                "copy_to": "text"
+                "copy_to": "text__v1"
               }
             }
           },
@@ -121,9 +127,10 @@
       "group__v1": {
         "properties": {
           "id__v1": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           },
-          "name__v1": {
+          "group_name__v1": {
             "type": "string"
           },
           "slug__v1": {

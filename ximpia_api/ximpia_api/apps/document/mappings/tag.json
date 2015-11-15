@@ -1,0 +1,105 @@
+{
+  "tag": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "name__v1": {
+        "type": "string",
+        "fields": {
+          "name__v1": {
+            "type": "string"
+          },
+          "completion__v1": {
+            "type": "completion",
+            "analyzer": "simple_whitespace",
+            "payloads": true,
+            "preserve_separators": true,
+            "preserve_position_increments": true,
+            "max_input_length": 50
+          }
+        }
+      },
+      "slug__v1": {
+        "type": "string",
+        "fields": {
+          "slug__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "is_active__v1": {
+        "type": "boolean"
+      },
+      "permissions__v1": {
+        "properties": {
+          "users__v1": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "name__v1": {
+                "type": "string",
+                "fields": {
+                  "name__v1": {
+                    "type": "string",
+                    "term_vector": "with_positions_offsets",
+                    "analyzer": "snowball",
+                    "copy_to": "text__v1"
+                  }
+                }
+              }
+            }
+          },
+          "groups__v1": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "id_v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "name__v1": {
+                "type": "string",
+                "fields": {
+                  "name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "public__v1": {
+        "type": "boolean"
+      },
+      "text__v1": {
+        "type": "string",
+        "term_vector" : "with_positions_offsets",
+        "analyzer" : "snowball"
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      }
+    }
+  }
+}

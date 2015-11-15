@@ -1,5 +1,5 @@
 {
-  "_settings": {
+  "settings": {
     "_timestamp": {
       "enabled": true
     },
@@ -7,24 +7,17 @@
       "enabled": false
     },
     "properties": {
-      "name__v1": {
+      "setting_name__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "value__v1": {
+      "setting_value__v1": {
         "type": "string",
         "index": "not_analyzed",
         "fields": {
-          "value__v1": {
+          "setting_value__v1": {
             "type": "string",
             "index": "not_analyzed"
-          },
-          "int__v1": {
-            "type": "integer"
-          },
-          "date__v1": {
-            "type" : "date",
-            "format" : "dateOptionalTime"
           }
         }
       },
@@ -33,7 +26,7 @@
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name__v1": {
+          "setting_name__v1": {
             "type": "string",
             "fields": {
               "name__v1": {
@@ -53,20 +46,13 @@
               }
             }
           },
-          "value__v1": {
+          "setting_value__v1": {
             "type": "string",
             "index": "not_analyzed",
             "fields": {
-              "value__v1": {
+              "setting_value__v1": {
                 "type": "string",
                 "index": "not_analyzed"
-              },
-              "int__v1": {
-                "type": "integer"
-              },
-              "date__v1": {
-                "type" : "date",
-                "format" : "dateOptionalTime"
               }
             }
           },
@@ -160,45 +146,48 @@
             "type": "boolean"
           },
           "permissions__v1": {
-            "users__v1": {
-              "type": "nested",
-              "include_in_parent": true,
-              "dynamic": "false",
-              "properties": {
-                "id__v1": {
-                  "type": "string",
-                  "index": "not_analyzed"
-                },
-                "name__v1": {
-                  "type": "string",
-                  "fields": {
-                    "name__v1": {
-                      "term_vector" : "with_positions_offsets",
-                      "analyzer" : "snowball",
-                      "copy_to": "text"
+            "properties": {
+              "users__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string",
+                        "term_vector" : "with_positions_offsets",
+                        "analyzer" : "snowball",
+                        "copy_to": "text"
+                      }
                     }
                   }
                 }
-              }
-            },
-            "groups__v1": {
-              "type": "nested",
-              "include_in_parent": true,
-              "dynamic": "false",
-              "properties": {
-                "id_v1": {
-                  "type": "string",
-                  "index": "not_analyzed"
-                },
-                "name__v1": {
-                  "type": "string",
-                  "fields": {
-                    "name__v1": {
-                      "type": "string"
-                    },
-                    "raw__v1": {
-                      "type": "string",
-                      "index": "not_analyzed"
+              },
+              "groups__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id_v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
                     }
                   }
                 }
@@ -239,45 +228,48 @@
             "type": "boolean"
           },
           "permissions__v1": {
-            "users__v1": {
-              "type": "nested",
-              "include_in_parent": true,
-              "dynamic": "false",
-              "properties": {
-                "id__v1": {
-                  "type": "string",
-                  "index": "not_analyzed"
-                },
-                "name__v1": {
-                  "type": "string",
-                  "fields": {
-                    "name__v1": {
-                      "term_vector" : "with_positions_offsets",
-                      "analyzer" : "snowball",
-                      "copy_to": "text"
+            "properties": {
+              "users__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string",
+                        "term_vector": "with_positions_offsets",
+                        "analyzer": "snowball",
+                        "copy_to": "text"
+                      }
                     }
                   }
                 }
-              }
-            },
-            "groups__v1": {
-              "type": "nested",
-              "include_in_parent": true,
-              "dynamic": "false",
-              "properties": {
-                "id_v1": {
-                  "type": "string",
-                  "index": "not_analyzed"
-                },
-                "name__v1": {
-                  "type": "string",
-                  "fields": {
-                    "name__v1": {
-                      "type": "string"
-                    },
-                    "raw__v1": {
-                      "type": "string",
-                      "index": "not_analyzed"
+              },
+              "groups__v1": {
+                "type": "nested",
+                "include_in_parent": true,
+                "dynamic": "false",
+                "properties": {
+                  "id_v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
                     }
                   }
                 }
@@ -297,7 +289,8 @@
         "type": "object",
         "properties": {
           "id__v1": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           },
           "name__v1": {
             "type": "string"
@@ -320,7 +313,8 @@
         "type": "object",
         "properties": {
           "id__v1": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           },
           "name__v1": {
             "type": "string"

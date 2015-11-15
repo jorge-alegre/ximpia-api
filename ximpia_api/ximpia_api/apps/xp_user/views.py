@@ -25,7 +25,7 @@ VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 MAX_RETRIES = 3
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.SEARCH_HOST),
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
 
 logger = logging.getLogger(__name__)
@@ -207,7 +207,7 @@ class UserSignup(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """
-        Create user
+        Create xp_user
 
         :param request:
         :param args:
@@ -255,11 +255,11 @@ class UserSignup(generics.CreateAPIView):
             '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=to_physical_doc('_user', user_data))
         if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write user "{}.{}"'.format(
+            exceptions.XimpiaAPIException(_(u'Could not write xp_user "{}.{}"'.format(
                 request.data['social_network'],
                 social_data.get('user_id', None))))
         es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created user id: {}'.format(
+        logger.info(u'SetupSite :: created xp_user id: {}'.format(
             es_response.get('_id', '')
         ))
         user_data['id'] = es_response.get('_id', '')
@@ -287,9 +287,9 @@ class UserSignup(generics.CreateAPIView):
                 u'created_on__v1': now_es,
             }))
         if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write user group'))
+            exceptions.XimpiaAPIException(_(u'Could not write xp_user group'))
         es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created user group id: {}'.format(
+        logger.info(u'SetupSite :: created xp_user group id: {}'.format(
             es_response.get('_id', '')
         ))
         return Response(user_data)

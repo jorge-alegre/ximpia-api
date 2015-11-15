@@ -8,8 +8,35 @@
       "enabled": false
     },
     "properties": {
+      "account__v1": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "fields": {
+              "account__v1": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "organization__v1": {
+            "properties": {
+              "name__v1": {
+                "type": "string"
+              }
+            }
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
       "name__v1": {
-        "type": "string"
+        "type": "string",
         "fields": {
           "name__v1": {
             "type": "string"
@@ -38,7 +65,16 @@
       },
       "url__v1": {
         "type": "string",
-        "analyzer": "link_analyzer"
+        "fields": {
+          "url__v1": {
+            "type": "string",
+            "analyzer": "link_analyzer"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
       },
       "is_active__v1": {
         "type": "boolean"
@@ -66,6 +102,9 @@
         "type": "string",
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
+      },
+      "public__v1": {
+        "type": "boolean"
       },
       "created_on__v1" : {
         "type" : "date",
