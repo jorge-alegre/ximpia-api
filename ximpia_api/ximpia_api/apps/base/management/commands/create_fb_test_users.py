@@ -53,6 +53,7 @@ class Command(BaseCommand):
             users = {
                 'base': []
             }
+        users_added = []
         for user_counter in range(size):
             user_data = create_fb_test_user_login()
             if 'verbosity' in options and options['verbosity'] != '0':
@@ -62,8 +63,9 @@ class Command(BaseCommand):
                 ))
             users.setdefault(feature, [])
             users[feature].append(user_data)
-        if 'verbosity' in options and options['verbosity'] != '0':
-            self.stdout.write(pprint.PrettyPrinter(indent=2).pformat(users))
+            users_added.append(user_data)
+        if 'verbosity' in options and options['verbosity'] == '2':
+            self.stdout.write(pprint.PrettyPrinter(indent=2).pformat(users_added))
         f = open(path, 'w')
         f.write(json.dumps(users, indent=2))
         f.close()
