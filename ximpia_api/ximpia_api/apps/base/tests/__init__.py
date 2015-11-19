@@ -9,7 +9,7 @@ from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.utils.translation import ugettext as _
 
-from . import exceptions
+from base import exceptions
 
 __author__ = 'jorgealegre'
 
