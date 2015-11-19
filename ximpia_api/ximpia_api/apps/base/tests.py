@@ -28,7 +28,6 @@ def create_fb_test_user():
     request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}'.format(
         app_token=app_access_token,
         app_id=settings.XIMPIA_FACEBOOK_APP_ID)
-    print request_url
     response = req_session.post(request_url,
                                 data=json.dumps({'installed': True}))
     if response.status_code != 200:
@@ -41,7 +40,27 @@ def create_fb_test_user():
 
 
 def create_fb_test_user_login():
-    pass
+    """
+    Create and login FB user data
+
+    :return:
+    """
+    user_data = create_fb_test_user()
+    # login user
+    session_fb = requests.Session()
+    session_fb.get("https://www.facebook.com/", allow_redirects=True)
+    response = session_fb.get(
+        'https://www.facebook.com/login.php'
+    )
+    response = session_fb.post("https://www.facebook.com/login.php",
+                               data={
+                                   'email': user_data["email"],
+                                   'pass': user_data["password"]
+                               })
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    return user_data
 
 
 class XimpiaDiscoverRunner(DiscoverRunner):
