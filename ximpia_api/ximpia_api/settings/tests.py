@@ -150,4 +150,4 @@ XIMPIA_DOMAIN = 'ximpia.io'
 FACEBOOK_APP_ID = ''
 FACEBOOK_APP_SECRET = ''
 
-TEST_RUNNER = 'base.XimpiaDiscoverRunner'
+TEST_RUNNER = 'base.tests.XimpiaDiscoverRunner'

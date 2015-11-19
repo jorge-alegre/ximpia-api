@@ -1,12 +1,8 @@
 import requests
 from requests.adapters import HTTPAdapter
-import json
 import logging
-import os
 
 from django.utils.translation import ugettext as _
-from django.test.runner import DiscoverRunner
-from django.core.management import call_command
 from django.conf import settings
 
 from constants import *
@@ -277,65 +273,3 @@ def get_setting_table_value(value_node):
         else:
             table[field] = value['value']
     return table
-
-
-class XimpiaDiscoverRunner(DiscoverRunner):
-
-    def __init__(self, *args, **kwargs):
-        super(XimpiaDiscoverRunner, self).__init__(*args, **kwargs)
-
-    def setup_databases(self, **kwargs):
-        """
-        Create indices with mappings and Ximpia API site with user, groups, settings
-
-        :param kwargs:
-        :return:
-        """
-        if self.verbosity >= 1:
-            print 'Creating test indexes...'
-        old_names = []
-        mirrors = []
-        # Call create_ximpia
-        call_command('create_ximpia',
-                     access_token=settings.XIMPIA_FACEBOOK_TOKENS[0],
-                     social_network='facebook',
-                     invite_only=False,
-                     skip_auth_social=True,
-                     verbosity=self.verbosity)
-        return old_names, mirrors
-
-    def teardown_databases(self, old_config, **kwargs):
-        """
-        Drop indices
-
-        :param old_config:
-        :param kwargs:
-        :return:
-        """
-        if self.verbosity >= 1:
-            print 'Destroying test indexes...'
-        # delete ximpia_api index
-        # Get all indices
-        # curl -XGET 'http://192.168.99.100:9201/_recovery?pretty'
-        es_response_raw = requests.get('{}/_recovery'.format(settings.ELASTIC_SEARCH_HOST))
-        if es_response_raw.status_code not in [200, 201]:
-            raise exceptions.XimpiaAPIException(_(u'Could not get indices :: {}'.format(
-                es_response_raw.content
-            )))
-        es_response = es_response_raw.json()
-        indices = es_response.keys()
-        for index in indices:
-            # curl -XDELETE 'http://localhost:9200/twitter/'
-            es_response_raw = requests.delete('{}/{}/'.format(
-                settings.ELASTIC_SEARCH_HOST,
-                index
-            ))
-            if es_response_raw.status_code not in [200, 201]:
-                raise exceptions.XimpiaAPIException(_(u'Could not delete index "{}" :: {}'.format(
-                    index,
-                    es_response_raw.content,
-                )))
-
-    def setup_test_environment(self, **kwargs):
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
-        super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
