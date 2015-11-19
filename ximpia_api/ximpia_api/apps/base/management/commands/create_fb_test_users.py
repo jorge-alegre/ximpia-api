@@ -1,6 +1,8 @@
 import logging
 import json
 from optparse import make_option
+import pprint
+import os
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -42,8 +44,26 @@ class Command(BaseCommand):
         feature = options['feature']
         size = options['size']
         # Create and log in fb users
-        with open('{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)) as f:
+        path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
+        if os.path.isfile(path):
+            f = open(path)
             users = json.loads(f.read())
-            for user_counter in range(size):
-                user_data = create_fb_test_user_login()
-                users[feature].append(user_data)
+            f.close()
+        else:
+            users = {
+                'base': []
+            }
+        for user_counter in range(size):
+            user_data = create_fb_test_user_login()
+            if 'verbosity' in options and options['verbosity'] != '0':
+                self.stdout.write(u'{}. {}'.format(
+                    user_counter+1,
+                    user_data.get('email', '')
+                ))
+            users.setdefault(feature, [])
+            users[feature].append(user_data)
+        if 'verbosity' in options and options['verbosity'] != '0':
+            self.stdout.write(pprint.PrettyPrinter(indent=2).pformat(users))
+        f = open(path, 'w')
+        f.write(json.dumps(users, indent=2))
+        f.close()
