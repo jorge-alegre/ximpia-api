@@ -543,7 +543,7 @@ class Command(BaseCommand):
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
                                                           social_network, now_es)
 
-        if 'verbosity' in options and options['verbosity'] != 0:
+        if 'verbosity' in options and options['verbosity'] == 2:
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
                     u'account': account_data,

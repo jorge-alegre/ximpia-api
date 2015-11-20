@@ -42,7 +42,7 @@ class Command(BaseCommand):
         :return:
         """
         feature = options['feature']
-        size = options['size']
+        size = int(options['size'])
         # Create and log in fb users
         path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
         if os.path.isfile(path):

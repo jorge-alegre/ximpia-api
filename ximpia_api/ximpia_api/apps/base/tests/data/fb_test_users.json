@@ -1,76 +1,12 @@
 {
-  "base": [
+  "base": [], 
+  "admin": [
     {
-      "id": "117677605264648", 
-      "access_token": "CAAN8XaslQfMBADDKLP6G6bbs0uZBmU4JoMQ2YAAAQdDEjlQoXwcbL9UH3yTo9ZCNRCqtoLSX5EiR0VxmHtZCTxd3y0uKQydCwgiSW78YFKIIicUoSPqbCflXNuh0hNGWHEbef2OH2QdbK6JWrlMURQWR7DZAwixp9hZBZC9wBABgGkBGzTZBZB7vLFQZCoaJrVZCMZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/117677605264648/", 
-      "email": "qpapyke_baosky_1447975371@tfbnw.net", 
-      "password": "1825960055"
-    }, 
-    {
-      "id": "106606469707137", 
-      "access_token": "CAAN8XaslQfMBALcXV8vG114tI0SCnZBsCqYKfffUVuTBAa5n0W9FZAITj1MFi2bEILbf5w5JwcXgJ6k0ZCR2uX3UruHf5zI5V5gvR9NavVXD7oeYKx0LOZBzezjXfZAZAhE6ZCadovwwUv2v0bmbfrvkZCxA1DBUkFGdQnyGfhePK5cO2m2E4do2ohqScQrWGf0ZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/106606469707137/", 
-      "email": "qdnqcmz_yangman_1447975380@tfbnw.net", 
-      "password": "2146597930"
-    }, 
-    {
-      "id": "110945812605522", 
-      "access_token": "CAAN8XaslQfMBAGwZA12u88ZCs85eV4BB7QZAr8OAsnXu08S1o8BZBg6JLjsCbkKxC4qikFAdXuw2BnTcU32MtOpW8cbEIoFEbr6yZBDlU9ZCR5r3LbmTWm0oCKIqZBNEXZBtmRIcsHuhimAEvBzBshj9Kr756tcRpdBbLqhMzFJRJnnd53G4F0GLrQHkolnh4ZAMjBwg6fB7OpgZDZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/110945812605522/", 
-      "email": "pybvdqd_adeagbosen_1447975389@tfbnw.net", 
-      "password": "1893068314"
-    }, 
-    {
-      "id": "116861615346351", 
-      "access_token": "CAAN8XaslQfMBAEZCFkZCJk0PZCKG096Reen1DoMrabpoIb3MgJvJMTqubZBSWtavOKZBhsLZAetJOJaonvfq5KPj2FE1XNfR6sSpFC1PzorZBfdZCZA2amYzDDn34HKaoLB7e0uCAp3LqHalFjguSHQASQQHpiZCdAaHNYZAh6VeFX1DlxJBHKSz6beXFDF8aiZCuNsZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/116861615346351/", 
-      "email": "btuttyf_martinazzistein_1447975400@tfbnw.net", 
-      "password": "635175868"
-    }, 
-    {
-      "id": "101553683546784", 
-      "access_token": "CAAN8XaslQfMBAG9ZAcTueZAGgr6IxGobSTFZBPSKiPtH7L6Y5C0GYxUZBo4fzZCIk13Ux1FQ2ThbXw2jH8UeIb2X3uZAzvArVqoFphw1DOWEQ2J1kmPinGUCIYx0H1UOe1RhDoPNiRQxS6fsKVh4un0lWWrZCQGDrUgyp8TVHZA7JpZBCbqfsqf7kgXJ6MXH5olDDs4m8EBWIVwZDZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/101553683546784/", 
-      "email": "ezjqfli_schrockstein_1447975409@tfbnw.net", 
-      "password": "1360326509"
-    }
-  ], 
-  "registration": [
-    {
-      "id": "101573173544852", 
-      "access_token": "CAAN8XaslQfMBAEJP3dTjwY6SRgHyb2wJTOUZCC2NObJbsAIg2QjDIeAcJrsbsgYuZAsRdBkL1eq2yZCZCvNBg1vJsgD0O2nmfhh7X1O6cmFoZBW3j1Ru7zYZAIBSrU7cRhOhkX643WIKPPPqjU7RGaVBqaHBrE7KupfmyVFNEo9NlOFvZBR5vXGxYOuxb2wRogZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/101573173544852/", 
-      "email": "xlvacgn_letuchysky_1447975473@tfbnw.net", 
-      "password": "239034493"
-    }, 
-    {
-      "id": "124871147877433", 
-      "access_token": "CAAN8XaslQfMBAF0UZCGQXBf4KNBZCCelJS9Plk28pURUIJ9xGik7vgeUzvzqctCq0SdJZAMDApG5pOhpAPz8fX064yXvOi631uGxqlNIiGRFAkrZCI7knMlVocIA12A6bi3e3z0LoLt5JoG6zJQDRkL7dQEK08pp5IZB3ILHZBDnMMuaZAemsKT19ONWZBXPgDcZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/124871147877433/", 
-      "email": "qzjnhok_dinglestein_1447975481@tfbnw.net", 
-      "password": "99573271"
-    }, 
-    {
-      "id": "110743559292358", 
-      "access_token": "CAAN8XaslQfMBADZAYSODPcnoF1HYKVmpH2DeEIG3ylh0zeVZA6ZCgxWycPOZCzzg22yNzX8kiV9RFtJLyWzChIgbzYBRMwyoWCZCKX5QyBibZBtZBW4iqPvMWluNgl0bpx2ydE7NqpcnDNdfvrtNGaoXM75VYdibrbyfYMgngvrVV0igzZBZAzMi0cGcTPeLtBS4ZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/110743559292358/", 
-      "email": "bafjcvq_wongman_1447975491@tfbnw.net", 
-      "password": "786811688"
-    }, 
-    {
-      "id": "113329175700245", 
-      "access_token": "CAAN8XaslQfMBADQqMXBJiNB7BBSLGgSbb3Tx8ZBwSwHlk7Pcoqhas1vw0ZBLZCuD0zUERS0ZABZBL2mZCjb0FfgaZCaXE0MxZBCBuDaR7rQOQTC2jC2dvEMFWhd4aSkKHj3KTP0jKPSGaGYszRMNJimpKRBRMT3FJxGHTjV30qGS10hpMIW4nzd1BHTG7j5Vyb62jnlZB2u5NbAZDZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/113329175700245/", 
-      "email": "mbxukvr_dingleson_1447975501@tfbnw.net", 
-      "password": "200405727"
-    }, 
-    {
-      "id": "111951229171662", 
-      "access_token": "CAAN8XaslQfMBAB9CJzSmuCZA8ZCuWm5aJtTbGvm8VOwnpceMZB1ZCg6cQ8NZCJAXgkY4h4oHNTxBcyEMwPIb5jJyWZAUmT25gOOMTbDlScOWgvG0CHOMTHiXTU88o5cZACZBxHDGx6pa4dV7AfEKt2Tn7Y6DHZCvzLAhkRtZB1ZCsb7a14WbmsjqrmNEuOpMJkQjh0efZCf0JkkUKAZDZD", 
-      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/111951229171662/", 
-      "email": "gumqjjg_bharambeberg_1447975510@tfbnw.net", 
-      "password": "2032171694"
+      "id": "114855208880686", 
+      "access_token": "CAAN8XaslQfMBAEWWJxZBfaQN5UMnRQd7liMINuPR8FfkPPyZBkqAb0WxhcliTeVX8vjbXxjcZCRhAUAdFi0VVYQYNMIXRCpd59TGdvtcLpNGwC0cc2kMgjhZB3TdGeUmV7bXKnuQk68OTvFV8WLs5rJXUbVC4Yk0mIdHZBTS6K8p7jpAJNDwc7JCcRntGKLNnLVHJIBiGXQZDZD", 
+      "login_url": "https://developers.facebook.com/checkpoint/test-user-login/114855208880686/", 
+      "email": "yiyekbs_seligsteinstein_1447981748@tfbnw.net", 
+      "password": "678510242"
     }
   ]
 }

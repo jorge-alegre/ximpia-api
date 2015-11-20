@@ -129,7 +129,7 @@ class SocialNetworkResolution(object):
                 'link': None,
                 'profile_picture': None
             }
-        if fb_data['data']['app_id'] != settings.FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
+        if fb_data['data']['app_id'] != settings.XIMPIA_FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: token is not valid',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
@@ -148,6 +148,7 @@ class SocialNetworkResolution(object):
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         detail_user_data = response.json()
+        print detail_user_data
         user_data.update({
             'email': detail_user_data.get('email', None),
             'name': detail_user_data.get('name', None),
@@ -167,6 +168,7 @@ class SocialNetworkResolution(object):
             user_data.update({
                 'profile_picture': None,
             })
+        print user_data
         return user_data
 
     @classmethod

@@ -25,11 +25,14 @@ def create_fb_test_user():
     """
     app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
     # /v2.5/{app-id}/accounts/test-users
-    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}'.format(
-        app_token=app_access_token,
-        app_id=settings.XIMPIA_FACEBOOK_APP_ID)
+    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
+                  'permissions=email'.format(
+                      app_token=app_access_token,
+                      app_id=settings.XIMPIA_FACEBOOK_APP_ID)
     response = req_session.post(request_url,
-                                data=json.dumps({'installed': True}))
+                                data=json.dumps({
+                                    'installed': True
+                                }))
     if response.status_code != 200:
         raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
             response.content
@@ -63,10 +66,56 @@ def create_fb_test_user_login():
     return user_data
 
 
+def delete_fb_test_user(user_id):
+    """
+    Delete facebook test user
+
+    :param user_id:
+    :return:
+    """
+    app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
+    # /v2.5/{app-id}/accounts/test-users
+    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?' \
+                  'access_token={app_token}&uid={user_id}'.format(
+                      app_token=app_access_token,
+                      app_id=settings.XIMPIA_FACEBOOK_APP_ID,
+                      user_id=user_id)
+    response = req_session.delete(request_url)
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+            response.content
+        ),
+            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    data = response.json()
+    if 'success' not in data and not data['success']:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+            response.content
+        ),
+            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+
+
+def get_fb_test_user_local(feature):
+    """
+    Get local fb test user random
+
+    :param feature:
+    :return:
+    """
+    from random import choice
+    path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
+    with open(path) as f:
+        users = json.loads(f.read())
+        if feature in users:
+            return choice(users[feature])
+        else:
+            raise exceptions.XimpiaAPIException(u'feature not found in local test users')
+
+
 class XimpiaDiscoverRunner(DiscoverRunner):
 
     def __init__(self, *args, **kwargs):
         super(XimpiaDiscoverRunner, self).__init__(*args, **kwargs)
+        self.admin_user = None
 
     def setup_databases(self, **kwargs):
         """
@@ -75,16 +124,17 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
-        if self.verbosity >= 1:
-            print 'Creating test indexes...'
         old_names = []
         mirrors = []
+        # get test user
+        user_data = get_fb_test_user_local('admin')
+        if self.verbosity >= 1:
+            print u'Creating test indexes...'
         # Call create_ximpia
         call_command('create_ximpia',
-                     access_token=settings.XIMPIA_FACEBOOK_TOKENS[0],
+                     access_token=user_data['access_token'],
                      social_network='facebook',
                      invite_only=False,
-                     skip_auth_social=True,
                      verbosity=self.verbosity)
         return old_names, mirrors
 
@@ -97,7 +147,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :return:
         """
         if self.verbosity >= 1:
-            print 'Destroying test indexes...'
+            print u'Destroying test indexes...'
         # delete ximpia_api index
         # Get all indices
         # curl -XGET 'http://192.168.99.100:9201/_recovery?pretty'
@@ -122,10 +172,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
 
     def setup_test_environment(self, **kwargs):
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
-        # Create sample of FB users ( 5 ), linked to test
-        # Login all users by making form submission for user/password
         super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
-        # Delete all users
         super(XimpiaDiscoverRunner, self).teardown_test_environment(**kwargs)
