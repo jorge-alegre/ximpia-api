@@ -440,7 +440,10 @@ class Command(BaseCommand):
                 u'name__v1': x['group_name']
             }, groups_data),
             u'is_active__v1': True,
-            u'token__v1': get_random_string(100, VALID_KEY_CHARS),
+            u'token__v1': {
+                u'key__v1': get_random_string(100, VALID_KEY_CHARS),
+                u'created_on__v1': now_es,
+            },
             u'last_login__v1': None,
             u'session_id__v1': None,
             u'created_on__v1': now_es,
