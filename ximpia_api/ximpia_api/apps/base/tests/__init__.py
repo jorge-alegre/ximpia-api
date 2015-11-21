@@ -211,17 +211,18 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
-        import shutil
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
         # Create fb_test_users.json
         path = '{}apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
-        path_src = '{}apps/base/tests/data/fb_test_users-src.json'.format(settings.BASE_DIR)
+        path_expires = '{}apps/base/tests/data/fb_test_users-expires.json'.format(settings.BASE_DIR)
         if not os.path.isfile(path):
             if self.verbosity >= 1:
                 print 'Creating test users file...'
             data = {}
             f = open(path, 'w')
-            # create expires 3600 seconds
+            f.write(json.dumps(data, indent=2))
+            f.close()
+            f = open(path_expires, 'w')
             data['expires'] = int(time.time()) + 5000
             f.write(json.dumps(data, indent=2))
             f.close()
@@ -229,7 +230,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             self._create_test_users()
         else:
             # login users again
-            f = open(path)
+            f = open(path_expires)
             data = json.loads(f.read())
             f.close()
             # check expires
@@ -251,7 +252,8 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                             )
                         fb_test_user_login(user_data)
                 # create expires 3600 seconds
-                f = open(path, 'w')
+                data = {}
+                f = open(path_expires, 'w')
                 data['expires'] = int(time.time()) + 5000
                 f.write(json.dumps(data, indent=2))
                 f.close()
