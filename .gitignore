@@ -61,3 +61,4 @@ target/
 
 doc-analysis/
 ximpia_api/ximpia_api/apps/base/tests/data/fb_test_users.json
+ximpia_api/ximpia_api/apps/base/tests/data/fb_test_users-src.json

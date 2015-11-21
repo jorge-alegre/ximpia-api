@@ -171,8 +171,29 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 )))
 
     def setup_test_environment(self, **kwargs):
+        """
+        Setup test environment
+
+        :param kwargs:
+        :return:
+        """
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
+        # Create fb_test_users.json
+        path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
+        if not os.path.isfile(path):
+            f = open(path, 'w')
+            f.write('')
+            f.close()
+        else:
+            with open(path) as f:
+                pass
         super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
+        """
+        TearDown environment
+
+        :param kwargs:
+        :return:
+        """
         super(XimpiaDiscoverRunner, self).teardown_test_environment(**kwargs)
