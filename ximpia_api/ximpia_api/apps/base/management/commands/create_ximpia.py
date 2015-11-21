@@ -3,8 +3,9 @@ import requests
 import json
 import pprint
 import string
+import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext as _
@@ -417,6 +418,8 @@ class Command(BaseCommand):
             groups_data_logical[group_data_logical['id']] = group_data_logical
             groups_data.append(group_data_logical)
         # user
+        seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
+                                      datetime(1970, 1, 1)).total_seconds()))
         user_data = {
             u'username__v1': " ",
             u'email__v1': social_data.get('email', None),
@@ -444,7 +447,9 @@ class Command(BaseCommand):
                 u'key__v1': get_random_string(100, VALID_KEY_CHARS),
                 u'created_on__v1': now_es,
             },
-            u'last_login__v1': None,
+            u'expires_at__v1': time.strftime(
+                '%Y-%m-%dT%H:%M:%S',
+                time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
             u'created_on__v1': now_es,
         }

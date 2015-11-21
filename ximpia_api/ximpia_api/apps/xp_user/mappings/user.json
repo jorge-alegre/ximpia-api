@@ -140,10 +140,6 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "last_login__v1": {
-        "type": "date",
-        "format" : "dateOptionalTime"
-      },
       "is_active__v1": {
         "type": "boolean"
       },
