@@ -67,6 +67,29 @@ def create_fb_test_user_login():
     return user_data
 
 
+def fb_test_user_login(user_data):
+    """
+    Login fb test user
+
+    :return:
+    """
+    # login user
+    session_fb = requests.Session()
+    session_fb.get("https://www.facebook.com/", allow_redirects=True)
+    response = session_fb.get(
+        'https://www.facebook.com/login.php'
+    )
+    response = session_fb.post("https://www.facebook.com/login.php",
+                               data={
+                                   'email': user_data["email"],
+                                   'pass': user_data["password"]
+                               })
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    return user_data
+
+
 def delete_fb_test_user(user_id):
     """
     Delete facebook test user
@@ -199,27 +222,39 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             data = {}
             f = open(path, 'w')
             # create expires 3600 seconds
-            data['expires'] = int(time.time()) + 3600
+            data['expires'] = int(time.time()) + 5000
             f.write(json.dumps(data, indent=2))
             f.close()
             # call command create users for features
             self._create_test_users()
         else:
+            # login users again
             f = open(path)
             data = json.loads(f.read())
             f.close()
             # check expires
             if int(time.time()) > int(data['expires']):
-                # create new file
-                os.remove(path)
-                shutil.copyfile(path_src, path)
+                if self.verbosity >= 1:
+                    print 'Will login test users...'
+                f = open(path, 'r')
+                data = json.loads(f.read())
+                f.close()
+                # login users again
+                for feature in data.keys():
+                    if feature == 'expires':
+                        continue
+                    for user_data in data[feature]:
+                        if self.verbosity >= 1:
+                            print 'logging [{}] {}...'.format(
+                                feature,
+                                user_data['email'],
+                            )
+                        fb_test_user_login(user_data)
                 # create expires 3600 seconds
                 f = open(path, 'w')
-                data = json.loads(f.read())
-                # create expires 3600 seconds
-                data['expires'] = int(time.time()) + 3600
+                data['expires'] = int(time.time()) + 5000
+                f.write(json.dumps(data, indent=2))
                 f.close()
-                # login all users in file
         super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
