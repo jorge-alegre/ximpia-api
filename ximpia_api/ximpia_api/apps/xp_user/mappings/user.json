@@ -140,10 +140,6 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "last_login__v1": {
-        "type": "date",
-        "format" : "dateOptionalTime"
-      },
       "is_active__v1": {
         "type": "boolean"
       },
@@ -159,6 +155,10 @@
             "format" : "dateOptionalTime"
           }
         }
+      },
+      "expires_at__v1": {
+        "type" : "date",
+        "format" : "dateOptionalTime"
       },
       "session_id__v1": {
         "type": "string",

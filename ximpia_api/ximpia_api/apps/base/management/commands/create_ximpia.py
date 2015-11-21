@@ -3,8 +3,9 @@ import requests
 import json
 import pprint
 import string
+import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext as _
@@ -417,6 +418,8 @@ class Command(BaseCommand):
             groups_data_logical[group_data_logical['id']] = group_data_logical
             groups_data.append(group_data_logical)
         # user
+        seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
+                                      datetime(1970, 1, 1)).total_seconds()))
         user_data = {
             u'username__v1': " ",
             u'email__v1': social_data.get('email', None),
@@ -432,6 +435,7 @@ class Command(BaseCommand):
                     u'scopes__v1': social_data.get('scopes', None),
                     u'has_auth__v1': True,
                     u'link__v1': social_data.get('link', None),
+                    u'expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
             u'user_permissions__v1': None,
@@ -440,8 +444,13 @@ class Command(BaseCommand):
                 u'name__v1': x['group_name']
             }, groups_data),
             u'is_active__v1': True,
-            u'token__v1': None,
-            u'last_login__v1': None,
+            u'token__v1': {
+                u'key__v1': get_random_string(100, VALID_KEY_CHARS),
+                u'created_on__v1': now_es,
+            },
+            u'expires_at__v1': time.strftime(
+                '%Y-%m-%dT%H:%M:%S',
+                time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
             u'created_on__v1': now_es,
         }
@@ -543,7 +552,7 @@ class Command(BaseCommand):
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
                                                           social_network, now_es)
 
-        if 'verbosity' in options and options['verbosity'] != 0:
+        if 'verbosity' in options and options['verbosity'] == 2:
             self.stdout.write(u'{}'.format(
                 pprint.PrettyPrinter(indent=4).pformat({
                     u'account': account_data,
