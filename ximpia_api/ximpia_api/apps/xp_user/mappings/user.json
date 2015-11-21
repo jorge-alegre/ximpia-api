@@ -160,6 +160,10 @@
           }
         }
       },
+      "expires_at__v1": {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      },
       "session_id__v1": {
         "type": "string",
         "index": "not_analyzed"
