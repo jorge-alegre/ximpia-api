@@ -40,9 +40,9 @@ class SessionStore(SessionBase):
         :return:
         """
         es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+            '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_session',
+                document_type='session',
                 index=settings.SITE_BASE_INDEX,
                 query_cache=json.dumps(True)),
             data=json.dumps({
@@ -71,7 +71,7 @@ class SessionStore(SessionBase):
             return {}
         es_response = es_response_raw.json()
         try:
-            session_data = self.decode(to_logical_doc('_session',
+            session_data = self.decode(to_logical_doc('session',
                                                       es_response['hits']['hits'][0]['_source'])['session_data'])
             session_data['_id'] = es_response['hits']['hits'][0]['_id']
         except IndexError:
@@ -163,7 +163,7 @@ class SessionStore(SessionBase):
                 return
             session_key = self.session_key
         es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+            '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
@@ -181,7 +181,7 @@ class SessionStore(SessionBase):
         es_response = es_response_raw.json()
         try:
             id_ = es_response['hits']['hits'][0]['_id']
-            es_response_raw = req_session.delete('http://{host}/{index}/{document_type}/{id_}'.format(
+            es_response_raw = req_session.delete('{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
@@ -202,7 +202,7 @@ class SessionStore(SessionBase):
         :return:
         """
         es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/_search?scroll=1m&search_type=scan'.format(
+            '{host}/{index}/{document_type}/_search?scroll=1m&search_type=scan'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX),
@@ -218,7 +218,7 @@ class SessionStore(SessionBase):
             )
         es_response = es_response_raw.json()
         es_response_raw = req_session.get(
-            'http://{host}/_search?scroll=1m&search_type=scan'.format(
+            '{host}/_search?scroll=1m&search_type=scan'.format(
                 host=settings.ELASTIC_SEARCH_HOST),
             data={
                 'scroll_id': es_response['_scroll_id']
@@ -229,7 +229,7 @@ class SessionStore(SessionBase):
             # build bulk data to delete
             for result in es_response['hits']['hits']:
                 if len(delete_list) > FLUSH_LIMIT:
-                    req_session.post('http://{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+                    req_session.post('{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
                                      u'\n'.join(delete_list) + u'\n')
                     delete_list = []
                 else:
@@ -241,11 +241,11 @@ class SessionStore(SessionBase):
                         }
                     })
             es_response_raw = req_session.get(
-                'http://{host}/_search?scroll=1m&search_type=scan'.format(
+                '{host}/_search?scroll=1m&search_type=scan'.format(
                     host=settings.ELASTIC_SEARCH_HOST),
                 data={
                     'scroll_id': es_response['_scroll_id']
                 })
             es_response = es_response_raw.json()
-        req_session.post('http://{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+        req_session.post('{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
                          u'\n'.join(delete_list) + u'\n')
