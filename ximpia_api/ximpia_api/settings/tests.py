@@ -133,7 +133,8 @@ AUTHENTICATION_BACKENDS = (
 
 # This setting will be injected by middleware from request site
 SITE = 'mysite'
-SITE_BASE_INDEX = u'{}_base'.format(SITE)
+# SITE_BASE_INDEX = u'{}_base'.format(SITE)
+SITE_BASE_INDEX = u'ximpia_api__base'
 SCHEME = 'http'
 APP_ID = ''
 SITE_ID = ''

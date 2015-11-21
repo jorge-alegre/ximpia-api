@@ -315,7 +315,3 @@ class XimpiaTestCase(SimpleTestCase):
     def setUp(self):
         self.c = Client()
         self.req_factory = RequestFactory()
-
-    @classmethod
-    def setUpClass(cls):
-        pass

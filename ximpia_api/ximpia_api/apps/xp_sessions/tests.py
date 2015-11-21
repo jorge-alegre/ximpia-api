@@ -1,4 +1,4 @@
-# from django.test import TestCase, RequestFactory, Client
+from django.test import RequestFactory, Client
 from base.tests import XimpiaTestCase
 
 __author__ = 'jorgealegre'
@@ -7,7 +7,8 @@ __author__ = 'jorgealegre'
 class SessionTestCase(XimpiaTestCase):
 
     def setUp(self):
-        pass
+        self.c = Client()
+        self.req_factory = RequestFactory()
 
     def tearDown(self):
         pass

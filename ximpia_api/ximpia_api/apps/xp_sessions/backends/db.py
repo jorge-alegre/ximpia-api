@@ -20,7 +20,7 @@ MAX_RETRIES = 3
 FLUSH_LIMIT = 1000
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
+req_session.mount('{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
 
 logger = logging.getLogger(__name__)
@@ -85,22 +85,22 @@ class SessionStore(SessionBase):
         :param session_key:
         :return:
         """
-        es_response = req_session.get(
-            'http://{host}/{index}/{document_type}/_count?query_cache={query_cache}'.format(
+        es_response_raw = req_session.get(
+            '{host}/{index}/{document_type}/_count?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_session',
                 index=settings.SITE_BASE_INDEX,
+                document_type='session',
                 query_cache=json.dumps(True)),
             data=json.dumps({
                 'query': {
                     'term': {
-                        'session_key__v1': self.session_key
+                        'session_key__v1': session_key
                     }
                 }
             })
             )
-        es_response = json.loads(es_response.content)
-        if es_response.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
+        es_response = es_response_raw.json()
+        if es_response_raw.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
             return False
         return es_response['count'] > 0
 
