@@ -67,7 +67,6 @@ class SocialNetworkResolution(object):
         from exceptions import DocumentNotFound
 
         request_access_token = kwargs.get('access_token', '')
-        skip_auth_social = kwargs.get('skip_auth_social', False)
 
         # this is executed in case we don't have app access token in ximpia app data
         if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
@@ -118,24 +117,15 @@ class SocialNetworkResolution(object):
             ),
                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = response.json()
-        if skip_auth_social:
-            # We don't need to require user has logged in, for tests. We simply verify token and user_id
-            return {
-                'user_id': fb_data['data']['user_id'],
-                'scopes': fb_data['data']['scopes'],
-                'access_token': request_access_token,
-                'email': None,
-                'name': str(fb_data['data']['user_id']),
-                'link': None,
-                'profile_picture': None
-            }
+        print fb_data
         if fb_data['data']['app_id'] != settings.XIMPIA_FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: token is not valid',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
             'user_id': fb_data['data']['user_id'],
             'scopes': fb_data['data']['scopes'],
-            'access_token': request_access_token
+            'access_token': request_access_token,
+            'expires_at': fb_data['data']['expires_at']
         }
         # call facebook for user name and email
         response = req_session.get('https://graph.facebook.com/v2.5/'

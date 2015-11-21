@@ -435,6 +435,7 @@ class Command(BaseCommand):
                     u'scopes__v1': social_data.get('scopes', None),
                     u'has_auth__v1': True,
                     u'link__v1': social_data.get('link', None),
+                    u'expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
             u'user_permissions__v1': None,
