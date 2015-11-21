@@ -117,6 +117,7 @@ class SocialNetworkResolution(object):
             ),
                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = response.json()
+        print fb_data
         if fb_data['data']['app_id'] != settings.XIMPIA_FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: token is not valid',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)

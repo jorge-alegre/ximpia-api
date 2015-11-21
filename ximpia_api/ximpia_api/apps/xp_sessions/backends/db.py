@@ -138,14 +138,14 @@ class SessionStore(SessionBase):
             'expire_date': self.get_expiry_date().strftime("%Y-%m-%d %H:%M:%S")
         }
         if must_create:
-            es_response_raw = requests.post('{}/{}/_session'.format(settings.ELASTIC_SEARCH_HOST,
-                                                                    settings.SITE_BASE_INDEX),
-                                            data=to_physical_doc('_session', session_data))
+            es_response_raw = requests.post('{}/{}/session'.format(settings.ELASTIC_SEARCH_HOST,
+                                                                   settings.SITE_BASE_INDEX),
+                                            data=json.dumps(to_physical_doc('session', session_data)))
         else:
-            es_response_raw = requests.put('{}/{}/_session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
-                                                                        settings.SITE_BASE_INDEX,
-                                                                        id=raw_session_data['_id']),
-                                           data=to_physical_doc('_session', session_data))
+            es_response_raw = requests.put('{}/{}/session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
+                                                                       settings.SITE_BASE_INDEX,
+                                                                       id=raw_session_data['_id']),
+                                           data=json.dumps(to_physical_doc('session', session_data)))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
@@ -165,7 +165,7 @@ class SessionStore(SessionBase):
         es_response_raw = req_session.get(
             'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_session',
+                document_type='session',
                 index=settings.SITE_BASE_INDEX,
                 query_cache=json.dumps(True)),
             data=json.dumps({
@@ -183,7 +183,7 @@ class SessionStore(SessionBase):
             id_ = es_response['hits']['hits'][0]['_id']
             es_response_raw = req_session.delete('http://{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_session',
+                document_type='session',
                 index=settings.SITE_BASE_INDEX,
                 id_=id_))
             if es_response_raw.status_code != 200:
@@ -204,7 +204,7 @@ class SessionStore(SessionBase):
         es_response_raw = req_session.get(
             'http://{host}/{index}/{document_type}/_search?scroll=1m&search_type=scan'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_session',
+                document_type='session',
                 index=settings.SITE_BASE_INDEX),
             data=json.dumps({
                 'query': {

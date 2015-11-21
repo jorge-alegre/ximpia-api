@@ -9,7 +9,7 @@ from django.conf import settings
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.utils.translation import ugettext as _
-from django.test import TestCase, RequestFactory, Client
+from django.test import TestCase, RequestFactory, Client, SimpleTestCase
 
 from base import exceptions
 
@@ -42,6 +42,29 @@ def create_fb_test_user():
             code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
     fb_data = response.json()
     return fb_data
+
+
+def get_fb_test_users(limit=2000):
+    """
+    Get all fb users
+
+    :param limit:
+    :return:
+    """
+    app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
+    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
+                  'fields=access_token&limit={limit}'.format(
+                      app_token=app_access_token,
+                      app_id=settings.XIMPIA_FACEBOOK_APP_ID,
+                      limit=limit)
+    response = req_session.get(request_url)
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+            response.content
+        ),
+            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    fb_data = response.json()
+    return fb_data['data']
 
 
 def create_fb_test_user_login():
@@ -230,6 +253,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             # call command create users for features
             self._create_test_users()
         else:
+            # 981166675280371/accounts/test-users?fields=access_token&limit=500
             # login users again
             f = open(path_expires)
             data = json.loads(f.read())
@@ -242,9 +266,8 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 data = json.loads(f.read())
                 f.close()
                 # login users again
+                user_ids = []
                 for feature in data.keys():
-                    if feature == 'expires':
-                        continue
                     for user_data in data[feature]:
                         if self.verbosity >= 1:
                             print 'logging [{}] {}...'.format(
@@ -252,7 +275,24 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                                 user_data['email'],
                             )
                         fb_test_user_login(user_data)
-                # create expires 3600 seconds
+                        user_ids.append(user_data['id'])
+                        # get test users data
+                # get all test users
+                if self.verbosity >= 1:
+                    print 'getting new access tokens...'
+                all_test_users = get_fb_test_users()
+                access_tokens = dict(map(lambda y: (y['id'], y['access_token']),
+                                     filter(lambda x: x['id'] in user_ids, all_test_users)))
+                f = open(path, 'w')
+                data_new = {}
+                for feature in data.keys():
+                    for user_data in data[feature]:
+                        user_data['access_token'] = access_tokens[user_data['id']]
+                        data_new.setdefault(feature, [])
+                        data_new[feature].append(user_data)
+                f.write(json.dumps(data_new, indent=2))
+                f.close()
+                # create expires 5000 seconds
                 data = {}
                 f = open(path_expires, 'w')
                 data['expires'] = int(time.time()) + 5000
@@ -270,8 +310,12 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         super(XimpiaDiscoverRunner, self).teardown_test_environment(**kwargs)
 
 
-class XimpiaTestCase(TestCase):
+class XimpiaTestCase(SimpleTestCase):
 
     def setUp(self):
         self.c = Client()
         self.req_factory = RequestFactory()
+
+    @classmethod
+    def setUpClass(cls):
+        pass
