@@ -9,6 +9,7 @@ from django.conf import settings
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.utils.translation import ugettext as _
+from django.test import TestCase, RequestFactory, Client
 
 from base import exceptions
 
@@ -267,3 +268,10 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :return:
         """
         super(XimpiaDiscoverRunner, self).teardown_test_environment(**kwargs)
+
+
+class XimpiaTestCase(TestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
