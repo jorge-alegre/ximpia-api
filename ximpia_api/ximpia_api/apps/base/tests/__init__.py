@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import time
 
 from requests.adapters import HTTPAdapter
 
@@ -170,6 +171,16 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                     es_response_raw.content,
                 )))
 
+    @classmethod
+    def _create_test_users(cls):
+        """
+        Create all test users
+
+        :return:
+        """
+        call_command('create_fb_test_users', feature='admin', size=1)
+        call_command('create_fb_test_users', feature='registration', size=5)
+
     def setup_test_environment(self, **kwargs):
         """
         Setup test environment
@@ -177,16 +188,38 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
+        import shutil
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
         # Create fb_test_users.json
-        path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
+        path = '{}apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
+        path_src = '{}apps/base/tests/data/fb_test_users-src.json'.format(settings.BASE_DIR)
         if not os.path.isfile(path):
+            if self.verbosity >= 1:
+                print 'Creating test users file...'
+            data = {}
             f = open(path, 'w')
-            f.write('')
+            # create expires 3600 seconds
+            data['expires'] = int(time.time()) + 3600
+            f.write(json.dumps(data, indent=2))
             f.close()
+            # call command create users for features
+            self._create_test_users()
         else:
-            with open(path) as f:
-                pass
+            f = open(path)
+            data = json.loads(f.read())
+            f.close()
+            # check expires
+            if int(time.time()) > int(data['expires']):
+                # create new file
+                os.remove(path)
+                shutil.copyfile(path_src, path)
+                # create expires 3600 seconds
+                f = open(path, 'w')
+                data = json.loads(f.read())
+                # create expires 3600 seconds
+                data['expires'] = int(time.time()) + 3600
+                f.close()
+                # login all users in file
         super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):

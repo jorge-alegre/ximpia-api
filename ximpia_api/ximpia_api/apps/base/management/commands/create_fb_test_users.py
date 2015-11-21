@@ -57,8 +57,9 @@ class Command(BaseCommand):
         for user_counter in range(size):
             user_data = create_fb_test_user_login()
             if 'verbosity' in options and options['verbosity'] != '0':
-                self.stdout.write(u'{}. {}'.format(
+                self.stdout.write(u'{}. [{}] {}'.format(
                     user_counter+1,
+                    feature,
                     user_data.get('email', '')
                 ))
             users.setdefault(feature, [])
