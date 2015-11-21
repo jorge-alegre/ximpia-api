@@ -135,16 +135,19 @@ class SessionStore(SessionBase):
         session_data = {
             'session_key': self._get_or_create_session_key(),
             'session_data': self.encode(raw_session_data),
-            'expire_date': self.get_expiry_date().strftime("%Y-%m-%d %H:%M:%S")
+            'expire_date': self.get_expiry_date().strftime("%Y-%m-%dT%H:%M:%S")
         }
         if must_create:
-            es_response_raw = requests.post('{}/{}/session'.format(settings.ELASTIC_SEARCH_HOST,
-                                                                   settings.SITE_BASE_INDEX),
-                                            data=json.dumps(to_physical_doc('session', session_data)))
+            es_response_raw = requests.post('{}/{}/session/{id}'.format(
+                settings.ELASTIC_SEARCH_HOST,
+                settings.SITE_BASE_INDEX,
+                id=self.session_key
+            ),
+                data=json.dumps(to_physical_doc('session', session_data)))
         else:
             es_response_raw = requests.put('{}/{}/session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
                                                                        settings.SITE_BASE_INDEX,
-                                                                       id=raw_session_data['_id']),
+                                                                       id=self.session_key),
                                            data=json.dumps(to_physical_doc('session', session_data)))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))

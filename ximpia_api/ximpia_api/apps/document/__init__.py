@@ -73,18 +73,21 @@ def walk(node, **kwargs):
     elif is_logical:
         for key, item in node.items():
             # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
-            if tag:
-                # like status__v7
-                field = map(lambda x: x,
-                            filter(lambda y: y['field__v1'] == key, fields_data))[0]
+            if fields_data:
+                if tag:
+                    # like status__v7
+                    field = map(lambda x: x,
+                                filter(lambda y: y['field__v1'] == key, fields_data))[0]
+                else:
+                    fields = map(lambda x: x['field__v1'], fields_data)
+                    # field: {version}
+                    versions_map = map(lambda x: (x['field__v1'].split('__')[0], {x['field__v1'].split('__')[1]}),
+                                       fields_data)
+                    # like status__v7
+                    field = map(lambda y: max(list(versions_map[y.split('__')[0]])),
+                                filter(lambda x: x.split('__')[0] == key, fields))
             else:
-                fields = map(lambda x: x['field__v1'], fields_data)
-                # field: {version}
-                versions_map = map(lambda x: (x['field__v1'].split('__')[0], {x['field__v1'].split('__')[1]}),
-                                   fields_data)
-                # like status__v7
-                field = map(lambda y: max(list(versions_map[y.split('__')[0]])),
-                            filter(lambda x: x.split('__')[0] == key, fields))
+                field = u'{key}__v1'.format(key=key)
             if isinstance(item, dict):
                 data[field] = walk(item, **kwargs)
             elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):

@@ -211,7 +211,7 @@ def get_path_search(document_type, **kwargs):
     :return:
     """
     query_cache = kwargs.get('query_cache', True)
-    return 'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+    return '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
         host=settings.ELASTIC_SEARCH_HOST,
         index=settings.SITE_BASE_INDEX,
         document_type=document_type,
