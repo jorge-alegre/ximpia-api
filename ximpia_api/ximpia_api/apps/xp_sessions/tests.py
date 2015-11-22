@@ -1,3 +1,5 @@
+import time
+
 from django.test import RequestFactory, Client
 from base.tests import XimpiaTestCase
 
@@ -17,4 +19,6 @@ class SessionTestCase(XimpiaTestCase):
         print 'SessionTest.base...'
         session = self.c.session
         session['key'] = 'value'
-        session.save()
+        # time.sleep(1)
+        print u'SessionTestCase :: session {}'.format(session.load())
+        print u'SessionTestCase :: session_key: {}'.format(session.session_key)
