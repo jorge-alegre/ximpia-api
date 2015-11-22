@@ -146,8 +146,6 @@ class SessionStore(SessionBase):
             'session_data': self.encode(raw_session_data),
             'expire_date': self.get_expiry_date().strftime("%Y-%m-%dT%H:%M:%S")
         }
-        physical_doc = to_physical_doc('session', session_data)
-        print u'physical_doc: {}'.format(physical_doc)
         if must_create:
             es_response_raw = requests.post('{}/{}/session/{id}'.format(
                 settings.ELASTIC_SEARCH_HOST,
@@ -163,7 +161,6 @@ class SessionStore(SessionBase):
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
-        print u'save output: {}'.format(es_response_raw.content)
         # curl -XPOST 'http://localhost:9200/twitter/_refresh'
         requests.post(
             '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX)
@@ -182,19 +179,13 @@ class SessionStore(SessionBase):
                 return
             session_key = self.session_key
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+            '{host}/{index}/{document_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
-                query_cache=json.dumps(True)),
-            data=json.dumps({
-                'query': {
-                    'term': {
-                        'session_key__v1': session_key
-                    }
-                }
-            })
+                id=session_key)
             )
+
         if es_response_raw.status_code != 200:
             return
         es_response = es_response_raw.json()

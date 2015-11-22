@@ -15,10 +15,16 @@ class SessionTestCase(XimpiaTestCase):
     def tearDown(self):
         pass
 
-    def base(self):
-        print 'SessionTest.base...'
+    def save(self):
         session = self.c.session
         session['key'] = 'value'
-        # time.sleep(1)
-        print u'SessionTestCase :: session {}'.format(session.load())
-        print u'SessionTestCase :: session_key: {}'.format(session.session_key)
+        session.save()
+        self.assertTrue(len(session.load()) != 0)
+
+    def delete(self):
+        session = self.c.session
+        session['key'] = 'value'
+        session.save()
+        del session['key']
+        session.save()
+        self.assertTrue(len(session.load()) == 0)
