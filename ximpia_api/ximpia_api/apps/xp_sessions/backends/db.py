@@ -39,11 +39,12 @@ class SessionStore(SessionBase):
 
         :return:
         """
+        print u'SessionStore.load :: session_key: {}'.format(self.session_key)
         es_response_raw = req_session.get(
             '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                document_type='session',
                 index=settings.SITE_BASE_INDEX,
+                document_type='session',
                 query_cache=json.dumps(True)),
             data=json.dumps({
                 'query': {
@@ -57,7 +58,7 @@ class SessionStore(SessionBase):
                             {
                                 'range': {
                                     'expire_date__v1': {
-                                        "gt": timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        "gt": timezone.now().strftime("%Y-%m-%dT%H:%M:%S")
                                     }
                                 }
                             }
@@ -66,15 +67,23 @@ class SessionStore(SessionBase):
                 }
             })
             )
-        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+        print es_response_raw.content
+        if es_response_raw.status_code != 200:
+            print '1'
             self._session_key = None
             return {}
         es_response = es_response_raw.json()
+        if es_response_raw.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
+            print '2'
+            self._session_key = None
+            return {}
         try:
             session_data = self.decode(to_logical_doc('session',
                                                       es_response['hits']['hits'][0]['_source'])['session_data'])
-            session_data['_id'] = es_response['hits']['hits'][0]['_id']
+            print u'SessionStore.load :: session_data: {}'.format(session_data)
+            # session_data['_id'] = es_response['hits']['hits'][0]['_id']
         except IndexError:
+            print '3'
             session_data = {}
         return session_data
 
@@ -135,20 +144,27 @@ class SessionStore(SessionBase):
         session_data = {
             'session_key': self._get_or_create_session_key(),
             'session_data': self.encode(raw_session_data),
-            'expire_date': self.get_expiry_date().strftime("%Y-%m-%d %H:%M:%S")
+            'expire_date': self.get_expiry_date().strftime("%Y-%m-%dT%H:%M:%S")
         }
         if must_create:
-            es_response_raw = requests.post('{}/{}/session'.format(settings.ELASTIC_SEARCH_HOST,
-                                                                   settings.SITE_BASE_INDEX),
-                                            data=json.dumps(to_physical_doc('session', session_data)))
+            es_response_raw = requests.post('{}/{}/session/{id}'.format(
+                settings.ELASTIC_SEARCH_HOST,
+                settings.SITE_BASE_INDEX,
+                id=self.session_key
+            ),
+                data=json.dumps(to_physical_doc('session', session_data)))
         else:
             es_response_raw = requests.put('{}/{}/session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
                                                                        settings.SITE_BASE_INDEX,
-                                                                       id=raw_session_data['_id']),
+                                                                       id=self.session_key),
                                            data=json.dumps(to_physical_doc('session', session_data)))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
         es_response = es_response_raw.json()
+        # curl -XPOST 'http://localhost:9200/twitter/_refresh'
+        requests.post(
+            '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX)
+        )
         logger.info(u'SessionStore :: save() :: es_response: {}'.format(es_response))
 
     def delete(self, session_key=None):
@@ -163,19 +179,13 @@ class SessionStore(SessionBase):
                 return
             session_key = self.session_key
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+            '{host}/{index}/{document_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
-                query_cache=json.dumps(True)),
-            data=json.dumps({
-                'query': {
-                    'term': {
-                        'session_key__v1': session_key
-                    }
-                }
-            })
+                id=session_key)
             )
+
         if es_response_raw.status_code != 200:
             return
         es_response = es_response_raw.json()
