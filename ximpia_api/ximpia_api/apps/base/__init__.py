@@ -231,7 +231,13 @@ def get_es_response(request_object, skip_exception=False):
             pass
         else:
             raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
-    return es_response_raw.json()
+    es_response = es_response_raw.json()
+    if 'status' in es_response and es_response['status'] != 200:
+        if skip_exception:
+            pass
+        else:
+            raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
+    return es_response
 
 
 def get_setting_value(value_node):

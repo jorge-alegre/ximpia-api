@@ -21,7 +21,7 @@ MAX_RETRIES = 3
 FLUSH_LIMIT = 1000
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
+req_session.mount('{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
 
 logger = logging.getLogger(__name__)
@@ -52,10 +52,10 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # 2. Check user_id exists for provider
         es_response = get_es_response(
             req_session.get(
-                'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+                '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
-                    document_type='_user',
                     index=settings.SITE_BASE_INDEX,
+                    document_type='_user',
                     query_cache=json.dumps(True)),
                 data=json.dumps({
                     'query': {
@@ -90,10 +90,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             )
         )
         if es_response.get('hits', {'total': 0})['total'] == 0:
-            raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
-                                                code=exceptions.USER_ID_NOT_FOUND)
+            return None
         db_data = es_response['hits']['hits'][0]
-        user_data = to_logical_doc('_user', db_data['_source'])
+        user_data = to_logical_doc('user', db_data['_source'])
         user = User()
         user.id = user_data.get('_id', '')
         user.email = user_data.get('email', '')
@@ -103,7 +102,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         user.last_name = user_data.get('last_name', '')
         user.last_login = user_data.get('last_login', '')
         user.document = user_data
-        return user, None
+        return user
 
     @classmethod
     def get_user(cls, user_id):
@@ -113,15 +112,14 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         :param user_id:
         :return:
         """
-        es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/{user_id}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_user',
-                index=settings.SITE_BASE_INDEX,
-                user_id=user_id))
-        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
-            pass
-        es_response = es_response_raw.json()
+        es_response = get_es_response(
+            req_session.get(
+                '{host}/{index}/{document_type}/{user_id}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=settings.SITE_BASE_INDEX,
+                    document_type='user',
+                    user_id=user_id))
+        )
         if not es_response['found']:
             raise exceptions.DocumentNotFound(_(u'User document not found for "{}"'.format(user_id)))
         return es_response
