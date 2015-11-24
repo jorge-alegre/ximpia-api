@@ -1,5 +1,7 @@
 from django.test import RequestFactory, Client
-from base.tests import XimpiaTestCase
+from django.contrib.auth import authenticate, login
+
+from base.tests import XimpiaTestCase, get_fb_test_user_local
 
 __author__ = 'jorgealegre'
 
@@ -14,4 +16,10 @@ class AuthenticateTestCase(XimpiaTestCase):
         pass
 
     def authenticate(self):
-        pass
+        auth_data = {
+            'access_token': get_fb_test_user_local('registration'),
+            'provider': 'facebook',
+        }
+        print u'AuthenticateTestCase.authenticate :: auth_data: {}'.format(auth_data)
+        user = authenticate(**auth_data)
+        print user

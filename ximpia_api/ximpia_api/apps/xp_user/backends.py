@@ -52,11 +52,10 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # 2. Check user_id exists for provider
         es_response = get_es_response(
             req_session.get(
-                '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+                '{host}/{index}/{document_type}/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
                     index=settings.SITE_BASE_INDEX,
-                    document_type='_user',
-                    query_cache=json.dumps(True)),
+                    document_type='_user'),
                 data=json.dumps({
                     'query': {
                         'bool': {

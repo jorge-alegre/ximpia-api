@@ -255,6 +255,16 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         else:
             # 981166675280371/accounts/test-users?fields=access_token&limit=500
             # login users again
+            if not os.path.isfile(path_expires):
+                f = open(path_expires, 'w')
+                f.write(
+                    json.dumps(
+                        {
+                            'expires': int(time.time()-3600)
+                        }, indent=2
+                    )
+                )
+                f.close()
             f = open(path_expires)
             data = json.loads(f.read())
             f.close()
