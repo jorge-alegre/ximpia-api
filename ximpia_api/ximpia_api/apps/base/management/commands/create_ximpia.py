@@ -422,6 +422,7 @@ class Command(BaseCommand):
                                       datetime(1970, 1, 1)).total_seconds()))
         user_data = {
             u'username__v1': " ",
+            u'alias__v1': "",
             u'email__v1': social_data.get('email', None),
             u'password__v1': None,
             u'avatar__v1': social_data.get('profile_picture', None),

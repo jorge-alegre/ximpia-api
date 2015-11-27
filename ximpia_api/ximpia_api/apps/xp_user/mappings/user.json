@@ -7,6 +7,9 @@
     "_all": {
        "enabled": false
     },
+    "_id": {
+      "copy_to": "username__v1"
+    },
     "properties": {
       "username__v1": {
         "type": "string",
