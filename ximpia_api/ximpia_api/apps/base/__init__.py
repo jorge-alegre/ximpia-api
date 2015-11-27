@@ -226,7 +226,7 @@ def get_es_response(request_object, skip_exception=False):
     :return:
     """
     es_response_raw = request_object
-    if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+    if es_response_raw.status_code != 200:
         if skip_exception:
             pass
         else:

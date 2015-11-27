@@ -128,7 +128,7 @@ ELASTIC_SEARCH_HOST = 'http://elasticsearch-test:9200'
 
 SESSION_ENGINE = 'xp_sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
-    'xp_user.backends.XimpiaAuthBackend'
+    'xp_user.backends.XimpiaAuthBackend',
 )
 
 # This setting will be injected by middleware from request site

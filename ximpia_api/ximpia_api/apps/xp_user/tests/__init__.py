@@ -17,9 +17,10 @@ class AuthenticateTestCase(XimpiaTestCase):
 
     def authenticate(self):
         auth_data = {
-            'access_token': get_fb_test_user_local('registration'),
+            'access_token': get_fb_test_user_local('admin')['access_token'],
             'provider': 'facebook',
         }
         print u'AuthenticateTestCase.authenticate :: auth_data: {}'.format(auth_data)
         user = authenticate(**auth_data)
-        print user
+        print u'user: {}'.format(user)
+        self.assertIsNotNone(user)

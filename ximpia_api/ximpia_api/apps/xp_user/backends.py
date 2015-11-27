@@ -55,7 +55,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 '{host}/{index}/{document_type}/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
                     index=settings.SITE_BASE_INDEX,
-                    document_type='_user'),
+                    document_type='user'),
                 data=json.dumps({
                     'query': {
                         'bool': {
@@ -88,19 +88,25 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 })
             )
         )
+        print es_response
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
+        print 'user_data: {}'.format(user_data)
         user = User()
-        user.id = user_data.get('_id', '')
-        user.email = user_data.get('email', '')
+        user.id = db_data['_id']
+        user.email = user_data['email']
         user.pk = user.id
-        user.username = user_data.get('username', '')
-        user.first_name = user_data.get('first_name', '')
-        user.last_name = user_data.get('last_name', '')
-        user.last_login = user_data.get('last_login', '')
-        user.document = user_data
+        user.username = user.id
+        user.first_name = user_data['first_name']
+        user.last_name = user_data['last_name']
+        user_document = {
+            'id': db_data['_id']
+        }
+        user.document = user_document.update(user_data)
+        print 'user: {}'.format(user)
+        # create ximpia token with timestamp: way to check user was authenticated
         return user
 
     @classmethod
