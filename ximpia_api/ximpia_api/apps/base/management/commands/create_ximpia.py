@@ -427,6 +427,8 @@ class Command(BaseCommand):
             u'password__v1': None,
             u'avatar__v1': social_data.get('profile_picture', None),
             u'user_name__v1': social_data.get('name', None),
+            u'first_name__v1': social_data.get('first_name', ''),
+            u'last_name__v1': social_data.get('last_name', ''),
             u'social_networks__v1': [
                 {
                     u'network__v1': social_network,

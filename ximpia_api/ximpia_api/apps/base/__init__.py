@@ -140,6 +140,8 @@ class SocialNetworkResolution(object):
         user_data.update({
             'email': detail_user_data.get('email', None),
             'name': detail_user_data.get('name', None),
+            'first_name': detail_user_data.get('first_name', None),
+            'last_name': detail_user_data.get('last_name', None),
             'link': detail_user_data.get('link', None),
         })
         response = req_session.get('https://graph.facebook.com/v2.5/'
