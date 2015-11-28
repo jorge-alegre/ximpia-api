@@ -138,7 +138,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # This setting will be injected by middleware from request site
-SITE = 'mysite'
+"""SITE = 'mysite'
 # SITE_BASE_INDEX = u'{}_base'.format(SITE)
 SITE_BASE_INDEX = u'ximpia_api__base'
 SCHEME = 'http'
@@ -149,6 +149,9 @@ XIMPIA_DOMAIN = 'ximpia.io'
 
 # injected when we configure app social auth
 FACEBOOK_APP_ID = ''
-FACEBOOK_APP_SECRET = ''
+FACEBOOK_APP_SECRET = ''"""
+
+XIMPIA_DOMAIN = 'ximpia.io'
+SITE_BASE_INDEX = u'ximpia_api__base'
 
 TEST_RUNNER = 'base.tests.XimpiaDiscoverRunner'

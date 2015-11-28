@@ -510,7 +510,6 @@ class Command(BaseCommand):
         access_token = options['access_token']
         social_network = options['social_network']
         invite_only = options['invite_only']
-        skip_auth_social = options.get('skip_auth_social', False)
         organization_name = 'Ximpia Inc'
         account = 'ximpia'
 
@@ -539,13 +538,14 @@ class Command(BaseCommand):
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
-        settings.APP_ID = app_data['id']
+        refresh_index(index_name)
+        # settings.APP_ID = app_data['id']
 
         # social
         # login access token for user to use
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token,
-                                                                    skip_auth_social=skip_auth_social)
+                                                                    app_id=app_data['id'])
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
