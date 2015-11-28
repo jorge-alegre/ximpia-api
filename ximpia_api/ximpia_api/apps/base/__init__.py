@@ -270,3 +270,15 @@ def get_setting_table_value(value_node):
         else:
             table[field] = value['value']
     return table
+
+
+def refresh_index(index):
+    """
+    Refresh index
+
+    :param index:
+    :return:
+    """
+    req_session.post(
+        '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, index)
+    )
