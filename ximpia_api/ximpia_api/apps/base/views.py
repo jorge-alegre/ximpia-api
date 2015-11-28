@@ -171,7 +171,7 @@ class SetupSite(generics.CreateAPIView):
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
             data=json.dumps(site_data))
-        if es_response_raw.status_code != 200:
+        if es_response_raw.status_code not in [200, 201]:
             exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
                 site,
                 es_response_raw.content
@@ -203,7 +203,7 @@ class SetupSite(generics.CreateAPIView):
         es_response_raw = requests.post(
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(app_data))
-        if es_response_raw.status_code != 200:
+        if es_response_raw.status_code not in [200, 201]:
             exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
                 app, es_response_raw.content)))
         es_response = es_response_raw.json()
@@ -412,10 +412,11 @@ class SetupSite(generics.CreateAPIView):
         tag_data = self._create_tag(index_name, now_es)
 
         # 1. create site, app and settings
-        site_data, app_data, settings_data = \
-            self._create_site_app(index_ximpia, index_name, site, app, now_es, languages, location,
-                                  invite_only, social_access_token, tag_data, social_app_id, social_secret,
-                                  domains, account, organization_name)
+        site_tuple = self._create_site_app(index_ximpia, index_name, site, app, now_es, languages,
+                                           location, invite_only, social_access_token, tag_data,
+                                           social_app_id, social_secret, domains, account,
+                                           organization_name)
+        site_data, app_data, settings_data, api_access, account_data = site_tuple
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
