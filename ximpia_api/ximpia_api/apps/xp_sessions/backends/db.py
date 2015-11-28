@@ -189,7 +189,6 @@ class SessionStore(SessionBase):
         if es_response_raw.status_code != 200:
             return
         es_response = es_response_raw.json()
-        print es_response
         try:
             # id_ = es_response['hits']['hits'][0]['_id']
             id_ = es_response['_id']

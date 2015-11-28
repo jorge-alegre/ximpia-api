@@ -14,10 +14,10 @@ class AuthenticateTestCase(XimpiaTestCase):
     def tearDown(self):
         pass
 
-    def authenticate(self):
+    def authenticate_login(self):
         auth_data = {
             'access_token': get_fb_test_user_local('admin')['access_token'],
             'provider': 'facebook',
         }
         is_login = self.c.login(**auth_data)
-        print is_login
+        self.assertTrue(is_login)
