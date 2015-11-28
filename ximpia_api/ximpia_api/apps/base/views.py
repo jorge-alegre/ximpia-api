@@ -237,7 +237,7 @@ class SetupSite(generics.CreateAPIView):
         return site_data, app_data, settings_data
 
     @classmethod
-    def _create_tag(cls, index_name, now_es):
+    def _create_tag(cls, index_name, now_es, version='v1'):
         """
         Create tag v1
 
@@ -246,23 +246,26 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         tag_data = {
-            u'name__v1': u'v1',
-            u'slug__v1': u'v1',
+            u'name__v1': version,
+            u'slug__v1': version,
             u'is_active__v1': True,
             u'permissions__v1': None,
             u'public__v1': True,
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/_tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(tag_data))
-        if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write tag v1'))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not write tag v1 :: {} :: {}'.format(
+                es_response_raw.status_code,
+                es_response_raw.content)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
-        return tag_data
+        tag_data['id'] = es_response.get('_id', '')
+        return to_logical_doc('tag', tag_data)
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
@@ -346,7 +349,7 @@ class SetupSite(generics.CreateAPIView):
         # 1. create site, app and settings
         site_data, app_data, settings_data = \
             self._create_site_app(index_ximpia, index_name, site, app, now_es, languages, location,
-                                  invite_only, access_token, tag_data)
+                                  invite_only, social_access_token, tag_data)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
@@ -359,7 +362,7 @@ class SetupSite(generics.CreateAPIView):
         user_raw = req_session.post(
             '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
             data={
-                'access_token': access_token,
+                'access_token': social_access_token,
                 'social_network': social_network,
                 'groups': groups
             }
@@ -370,9 +373,9 @@ class SetupSite(generics.CreateAPIView):
 
         response_ = {
             u'site': to_logical_doc('site', site_data),
-            u'app': to_logical_doc('_app', app_data),
-            u'settings': to_logical_doc('_settings', settings_data),
-            u'xp_user': to_logical_doc('_user', user),
+            u'app': to_logical_doc('app', app_data),
+            u'settings': to_logical_doc('settings', settings_data),
+            u'xp_user': to_logical_doc('user', user),
             u'groups': groups
         }
         return response.Response(response_)
