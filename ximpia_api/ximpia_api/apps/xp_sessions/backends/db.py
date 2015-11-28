@@ -39,7 +39,7 @@ class SessionStore(SessionBase):
 
         :return:
         """
-        print u'SessionStore.load :: session_key: {}'.format(self.session_key)
+        # print u'SessionStore.load :: session_key: {}'.format(self.session_key)
         es_response_raw = req_session.get(
             '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
@@ -67,23 +67,20 @@ class SessionStore(SessionBase):
                 }
             })
             )
-        print es_response_raw.content
+        # print es_response_raw.content
         if es_response_raw.status_code != 200:
-            print '1'
             self._session_key = None
             return {}
         es_response = es_response_raw.json()
         if es_response_raw.status_code != 200 or 'status' in es_response and es_response['status'] != 200:
-            print '2'
             self._session_key = None
             return {}
         try:
             session_data = self.decode(to_logical_doc('session',
                                                       es_response['hits']['hits'][0]['_source'])['session_data'])
-            print u'SessionStore.load :: session_data: {}'.format(session_data)
+            # print u'SessionStore.load :: session_data: {}'.format(session_data)
             # session_data['_id'] = es_response['hits']['hits'][0]['_id']
         except IndexError:
-            print '3'
             session_data = {}
         return session_data
 

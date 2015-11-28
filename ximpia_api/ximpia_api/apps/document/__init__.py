@@ -386,6 +386,10 @@ class DocumentManager(object):
         :param kwargs:
         :return:
         """
+        get_logical = False
+        if 'get_logical' in kwargs and kwargs['get_logical']:
+            get_logical = True
+            del kwargs['get_logical']
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
@@ -402,7 +406,10 @@ class DocumentManager(object):
                     document_type, kwargs['id']
                 )))
             es_response = es_response_raw.json()
-            return es_response['_source']
+            if get_logical:
+                return to_logical_doc(document_type, es_response['_source'])
+            else:
+                return es_response['_source']
         else:
             raise exceptions.XimpiaAPIException(u'We only support get document by id')
 
