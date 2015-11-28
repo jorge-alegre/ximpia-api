@@ -539,7 +539,6 @@ class Command(BaseCommand):
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
         refresh_index(index_name)
-        # settings.APP_ID = app_data['id']
 
         # social
         # login access token for user to use
