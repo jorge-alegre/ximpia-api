@@ -2,11 +2,14 @@ import requests
 from requests.adapters import HTTPAdapter
 import logging
 import json
+import string
+from datetime import datetime
 
 from rest_framework import authentication
 
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
+from django.utils.crypto import get_random_string
 
 from django.conf import settings
 
@@ -23,6 +26,8 @@ FLUSH_LIMIT = 1000
 req_session = requests.Session()
 req_session.mount('{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
+
+VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 logger = logging.getLogger(__name__)
 
@@ -88,12 +93,10 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 })
             )
         )
-        print es_response
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
-        print 'user_data: {}'.format(user_data)
         user = User()
         user.id = db_data['_id']
         user.email = user_data['email']
@@ -105,8 +108,33 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             'id': db_data['_id']
         }
         user.document = user_document.update(user_data)
-        print 'user: {}'.format(user)
         # create ximpia token with timestamp: way to check user was authenticated
+        es_response_raw = req_session.post(
+            '{}/{}/user/{id}/_update'.format(settings.ELASTIC_SEARCH_HOST,
+                                             settings.SITE_BASE_INDEX,
+                                             id=user.id),
+            data=json.dumps(
+                {
+                    u'doc': {
+                        u'token__v1': {
+                            u'key__v1': get_random_string(100, VALID_KEY_CHARS),
+                            u'created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        },
+                    }
+                }
+            ))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not create token "{}" :: {}'.format(
+                user.id,
+                es_response_raw.content)))
+        user_document = req_session.get(
+            '{host}/{index}/{document_type}/{id}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type='user',
+                id=user.id
+            )).json()
+        user.document = user_document
         return user
 
     @classmethod

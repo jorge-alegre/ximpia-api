@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.utils.translation import ugettext as _
 from django.test import TestCase, RequestFactory, Client, SimpleTestCase
 
-from base import exceptions
+from base import exceptions, refresh_index
 
 __author__ = 'jorgealegre'
 
@@ -184,6 +184,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
+        refresh_index('ximpia_api__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):

@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from django.utils.crypto import get_random_string
 from django.conf import settings
 
-from base import SocialNetworkResolution
+from base import SocialNetworkResolution, refresh_index
 from base.exceptions import XimpiaAPIException
 from document import to_logical_doc
 
@@ -447,10 +447,7 @@ class Command(BaseCommand):
                 u'name__v1': x['group_name']
             }, groups_data),
             u'is_active__v1': True,
-            u'token__v1': {
-                u'key__v1': get_random_string(100, VALID_KEY_CHARS),
-                u'created_on__v1': now_es,
-            },
+            u'token__v1': None,
             u'expires_at__v1': time.strftime(
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
@@ -554,6 +551,8 @@ class Command(BaseCommand):
         # 3. Groups, User, UserGroup
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
                                                           social_network, now_es)
+
+        # refresh_index(index_name)
 
         if 'verbosity' in options and options['verbosity'] == 2:
             self.stdout.write(u'{}'.format(
