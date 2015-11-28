@@ -103,6 +103,7 @@ ximpia__base: would keep general data for config
 class Connect(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
+        # this endpoint is related to site, being app base. We get site from request, host name
         try:
             if len(args) != 2:
                 raise exceptions.XimpiaAPIException(_(u'access_token and provider are required'))
