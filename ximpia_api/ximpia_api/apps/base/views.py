@@ -346,24 +346,28 @@ class SetupSite(generics.CreateAPIView):
                 u'name__v1': permission,
                 u'apps__v1': [
                     {
-                        u'site__v1': site,
-                        u'app__v1': app
+                        u'site_slug__v1': slugify(site),
+                        u'app_slug__v1': slugify(app)
                     }
                 ],
                 u'data__v1': None,
                 u'created_on__v1': now_es
             }
             es_response_raw = requests.post(
-                '{}/{}/_permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
-            if es_response_raw.status_code != 200:
-                exceptions.XimpiaAPIException(_(u'Could not write permission "can-admin"'))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not write permission "can-admin" :: {}'.format(
+                    es_response_raw.content
+                )))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created permission "can_admin" for app: {} id: {}'.format(
-                app['name'],
+                app,
                 es_response.get('_id', '')
             ))
-            output_permissions.append(db_permission)
+            permission_logical = to_logical_doc('permission', db_permission)
+            permission_logical['id'] = es_response.get('_id', '')
+            output_permissions.append(permission_logical)
         return output_permissions
 
     def post(self, request, *args, **kwargs):
@@ -419,7 +423,7 @@ class SetupSite(generics.CreateAPIView):
         site_data, app_data, settings_data, api_access, account_data = site_tuple
 
         # 2. Permissions
-        self._create_permissions(site, app, index_name, now_es)
+        permissions_data = self._create_permissions(site, app, index_name, now_es)
 
         # search for group data
         groups = Document.objects.filter('_group',
