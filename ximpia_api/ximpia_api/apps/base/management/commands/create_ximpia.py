@@ -225,7 +225,9 @@ class Command(BaseCommand):
             u'is_active__v1': True,
             u'social__v1': {
                 u'facebook__v1': {
-                    u'access_token__v1': app_access_token
+                    u'access_token__v1': app_access_token,
+                    u"app_id__v1": settings.XIMPIA_FACEBOOK_APP_ID,
+                    u"app_secret__v1": settings.XIMPIA_FACEBOOK_APP_SECRET
                 }
             },
             u'created_on__v1': now_es
