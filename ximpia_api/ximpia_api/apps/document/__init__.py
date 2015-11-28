@@ -396,7 +396,7 @@ class DocumentManager(object):
         else:
             es_path = '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=kwargs.get('index', 'ximpia_api__base'),
+                index=kwargs.get('index', settings.SITE_BASE_INDEX),
                 document_type=document_type,
                 id_=kwargs['id'])
         if len(kwargs) == 1 and 'id' in kwargs:
