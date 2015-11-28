@@ -140,6 +140,8 @@ class SocialNetworkResolution(object):
         user_data.update({
             'email': detail_user_data.get('email', None),
             'name': detail_user_data.get('name', None),
+            'first_name': detail_user_data.get('first_name', None),
+            'last_name': detail_user_data.get('last_name', None),
             'link': detail_user_data.get('link', None),
         })
         response = req_session.get('https://graph.facebook.com/v2.5/'
@@ -226,12 +228,18 @@ def get_es_response(request_object, skip_exception=False):
     :return:
     """
     es_response_raw = request_object
-    if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+    if es_response_raw.status_code != 200:
         if skip_exception:
             pass
         else:
             raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
-    return es_response_raw.json()
+    es_response = es_response_raw.json()
+    if 'status' in es_response and es_response['status'] != 200:
+        if skip_exception:
+            pass
+        else:
+            raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
+    return es_response
 
 
 def get_setting_value(value_node):
@@ -262,3 +270,15 @@ def get_setting_table_value(value_node):
         else:
             table[field] = value['value']
     return table
+
+
+def refresh_index(index):
+    """
+    Refresh index
+
+    :param index:
+    :return:
+    """
+    req_session.post(
+        '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, index)
+    )

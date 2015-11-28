@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = (
+    'xp_user',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,7 +51,6 @@ INSTALLED_APPS = (
     'document',
     'patterns',
     'query_build',
-    'xp_user',
     'xp_sessions'
 )
 
@@ -97,8 +97,14 @@ WSGI_APPLICATION = 'wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-DATABASES = {
-}
+"""DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'test.db',
+    }
+}"""
+
+DATABASES = {}
 
 
 # Internationalization
@@ -128,7 +134,7 @@ ELASTIC_SEARCH_HOST = 'http://elasticsearch-test:9200'
 
 SESSION_ENGINE = 'xp_sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
-    'xp_user.backends.XimpiaAuthBackend'
+    'xp_user.backends.XimpiaAuthBackend',
 )
 
 # This setting will be injected by middleware from request site

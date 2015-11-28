@@ -190,7 +190,8 @@ class SessionStore(SessionBase):
             return
         es_response = es_response_raw.json()
         try:
-            id_ = es_response['hits']['hits'][0]['_id']
+            # id_ = es_response['hits']['hits'][0]['_id']
+            id_ = es_response['_id']
             es_response_raw = req_session.delete('{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',

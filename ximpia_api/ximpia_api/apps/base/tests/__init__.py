@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.utils.translation import ugettext as _
 from django.test import TestCase, RequestFactory, Client, SimpleTestCase
 
-from base import exceptions
+from base import exceptions, refresh_index
 
 __author__ = 'jorgealegre'
 
@@ -184,6 +184,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
+        refresh_index('ximpia_api__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
@@ -255,6 +256,16 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         else:
             # 981166675280371/accounts/test-users?fields=access_token&limit=500
             # login users again
+            if not os.path.isfile(path_expires):
+                f = open(path_expires, 'w')
+                f.write(
+                    json.dumps(
+                        {
+                            'expires': int(time.time()-3600)
+                        }, indent=2
+                    )
+                )
+                f.close()
             f = open(path_expires)
             data = json.loads(f.read())
             f.close()

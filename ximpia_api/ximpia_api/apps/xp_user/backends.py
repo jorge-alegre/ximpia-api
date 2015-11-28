@@ -2,11 +2,14 @@ import requests
 from requests.adapters import HTTPAdapter
 import logging
 import json
+import string
+from datetime import datetime
 
 from rest_framework import authentication
 
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
+from django.utils.crypto import get_random_string
 
 from django.conf import settings
 
@@ -21,8 +24,10 @@ MAX_RETRIES = 3
 FLUSH_LIMIT = 1000
 
 req_session = requests.Session()
-req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
+req_session.mount('{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=MAX_RETRIES))
+
+VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +57,10 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # 2. Check user_id exists for provider
         es_response = get_es_response(
             req_session.get(
-                'http://{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+                '{host}/{index}/{document_type}/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
-                    document_type='_user',
                     index=settings.SITE_BASE_INDEX,
-                    query_cache=json.dumps(True)),
+                    document_type='user'),
                 data=json.dumps({
                     'query': {
                         'bool': {
@@ -90,20 +94,48 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             )
         )
         if es_response.get('hits', {'total': 0})['total'] == 0:
-            raise exceptions.XimpiaAPIException(u'Social network "user_id" not found',
-                                                code=exceptions.USER_ID_NOT_FOUND)
+            return None
         db_data = es_response['hits']['hits'][0]
-        user_data = to_logical_doc('_user', db_data['_source'])
+        user_data = to_logical_doc('user', db_data['_source'])
         user = User()
-        user.id = user_data.get('_id', '')
-        user.email = user_data.get('email', '')
+        user.id = db_data['_id']
+        user.email = user_data['email']
         user.pk = user.id
-        user.username = user_data.get('username', '')
-        user.first_name = user_data.get('first_name', '')
-        user.last_name = user_data.get('last_name', '')
-        user.last_login = user_data.get('last_login', '')
-        user.document = user_data
-        return user, None
+        user.username = user.id
+        user.first_name = user_data['first_name']
+        user.last_name = user_data['last_name']
+        user_document = {
+            'id': db_data['_id']
+        }
+        user.document = user_document.update(user_data)
+        # create ximpia token with timestamp: way to check user was authenticated
+        es_response_raw = req_session.post(
+            '{}/{}/user/{id}/_update'.format(settings.ELASTIC_SEARCH_HOST,
+                                             settings.SITE_BASE_INDEX,
+                                             id=user.id),
+            data=json.dumps(
+                {
+                    u'doc': {
+                        u'token__v1': {
+                            u'key__v1': get_random_string(100, VALID_KEY_CHARS),
+                            u'created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        },
+                    }
+                }
+            ))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not create token "{}" :: {}'.format(
+                user.id,
+                es_response_raw.content)))
+        user_document = req_session.get(
+            '{host}/{index}/{document_type}/{id}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=settings.SITE_BASE_INDEX,
+                document_type='user',
+                id=user.id
+            )).json()
+        user.document = user_document
+        return user
 
     @classmethod
     def get_user(cls, user_id):
@@ -113,15 +145,14 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         :param user_id:
         :return:
         """
-        es_response_raw = req_session.get(
-            'http://{host}/{index}/{document_type}/{user_id}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                document_type='_user',
-                index=settings.SITE_BASE_INDEX,
-                user_id=user_id))
-        if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
-            pass
-        es_response = es_response_raw.json()
+        es_response = get_es_response(
+            req_session.get(
+                '{host}/{index}/{document_type}/{user_id}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=settings.SITE_BASE_INDEX,
+                    document_type='user',
+                    user_id=user_id))
+        )
         if not es_response['found']:
             raise exceptions.DocumentNotFound(_(u'User document not found for "{}"'.format(user_id)))
         return es_response
