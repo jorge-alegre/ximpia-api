@@ -43,12 +43,38 @@ class SetupSite(generics.CreateAPIView):
         :param index_name:
         :return:
         """
-        base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+        # base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+        mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
-        with open(settings.BASE_DIR + 'settings/settings.json') as f:
+        # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
+        index_name_physical = u'{}.{}'.format(
+            index_name,
+            datetime.now().strftime("%m-%d-%y.%H:%M:%S")
+        )
+        alias = index_name
+
+        with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
             settings_dict = json.loads(f.read())
+
+        with open('{}/site.json'.format(mappings_path)) as f:
+            site_dict = json.loads(f.read())
+
+        with open('{}/account.json'.format(mappings_path)) as f:
+            account_dict = json.loads(f.read())
+
+        with open('{}/api_access.json'.format(mappings_path)) as f:
+            api_access_dict = json.loads(f.read())
+
+        with open('{}/urlconf.json'.format(mappings_path)) as f:
+            urlconf_dict = json.loads(f.read())
+
+        with open('{}/app.json'.format(mappings_path)) as f:
+            app_dict = json.loads(f.read())
+
+        with open('{}/settings.json'.format(mappings_path)) as f:
+            settings__dict = json.loads(f.read())
 
         with open('{}/user.json'.format(user_path)) as f:
             user_dict = json.loads(f.read())
@@ -62,48 +88,48 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/permission.json'.format(user_path)) as f:
             permissions_dict = json.loads(f.read())
 
-        with open('{}/app.json'.format(base_mappings_path)) as f:
-            app_dict = json.loads(f.read())
-
-        with open('{}/settings.json'.format(base_mappings_path)) as f:
-            settings__dict = json.loads(f.read())
-
-        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
-            session_dict = json.loads(f.read())
-
         with open('{}/invite.json'.format(user_path)) as f:
             invite_dict = json.loads(f.read())
 
         with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/branch.json'.format(document_path)) as f:
-            branch_dict = json.loads(f.read())
-
         with open('{}/field_version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
-        es_response_raw = req_session.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                                           data={
-                                               'settings': settings_dict,
-                                               'mappings': {
-                                                   '_app': app_dict,
-                                                   '_settings': settings__dict,
-                                                   '_user': user_dict,
-                                                   '_group': group_dict,
-                                                   '_user-group': user_group_dict,
-                                                   '_permission': permissions_dict,
-                                                   '_session': session_dict,
-                                                   '_invite': invite_dict,
-                                                   '_tag': tag_dict,
-                                                   '_branch': branch_dict,
-                                                   '_field_version': field_version_dict,
-                                               }
-                                               }
-                                           )
-        # {"acknowledged":true}
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
+            session_dict = json.loads(f.read())
+
+        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
+                                        data=json.dumps({
+                                            'settings': settings_dict,
+                                            'mappings': {
+                                                'account': account_dict,
+                                                'api_access': api_access_dict,
+                                                'site': site_dict,
+                                                'urlconf': urlconf_dict,
+                                                'app': app_dict,
+                                                'settings': settings__dict,
+                                                'user': user_dict,
+                                                'group': group_dict,
+                                                'user-group': user_group_dict,
+                                                'permission': permissions_dict,
+                                                'tag': tag_dict,
+                                                'field_version': field_version_dict,
+                                                'invite': invite_dict,
+                                                'session': session_dict,
+                                            },
+                                            'aliases': {
+                                                alias: {}
+                                            }
+                                        })
+                                        )
+
         if es_response_raw.status_code != 200:
-            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
+            raise exceptions.XimpiaAPIException(_(u'Error creating index "{}" {}'.format(
+                index_name,
+                es_response_raw.content
+            )))
         es_response = es_response_raw.json()
         if not es_response['acknowledged']:
             raise exceptions.XimpiaAPIException(_(u'Error creating index "{}"'.format(index_name)))
@@ -278,13 +304,23 @@ class SetupSite(generics.CreateAPIView):
         return output_permissions
 
     def post(self, request, *args, **kwargs):
+        """
+        Create site
+
+        Endpoint:
+        https://{site_slug}.ximpia.io/create-site
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        site = args[0]
         data = request.data
-        site = data['site']
         app = 'base'
-        access_token = data['access_token']
+        social_access_token = data['access_token']
         social_network = data['social_network']
         invite_only = data['invite_only']
-
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
 
@@ -300,7 +336,7 @@ class SetupSite(generics.CreateAPIView):
 
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site)
-        index_ximpia = 'ximpia_api__base'
+        index_ximpia = settings.SITE_BASE_INDEX
 
         # create index with settings and mappings:
         self._create_site_index(index_name)

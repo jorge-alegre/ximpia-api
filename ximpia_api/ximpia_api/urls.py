@@ -13,17 +13,20 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
+
 from django.conf.urls import include, url
-from django.contrib import admin
+# from django.contrib import admin
 from rest_framework import routers
 
 # from ximpia_api.ximpia_api.apps.xp_user.views import User
+from base.views import SetupSite
 
 router = routers.DefaultRouter()
 # router.register(r'users', User)
+router.register(r'create-site', SetupSite)
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
+    # url(r'^admin/', include(admin.site.urls)),
     url(r'^', include(router.urls)),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
