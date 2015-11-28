@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
+from django.utils.crypto import get_random_string
 
 from . import SocialNetworkResolution
 import exceptions
@@ -140,7 +141,8 @@ class SetupSite(generics.CreateAPIView):
 
     @classmethod
     def _create_site_app(cls, index_ximpia, index_name, site, app, now_es, languages, location,
-                         invite_only, access_token, tag_data):
+                         invite_only, access_token, tag_data, social_app_id, social_secret, domains,
+                         account, organization_name):
         """
         Create site and app
 
@@ -168,36 +170,46 @@ class SetupSite(generics.CreateAPIView):
             }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
-            data=site_data)
+            data=json.dumps(site_data))
         if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write site "{}"'.format(site)))
+            exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
+                site,
+                es_response_raw.content
+            )))
         es_response = es_response_raw.json()
         site_id = es_response.get('_id', '')
         logger.info(u'SetupSite :: created site {} id: {}'.format(
             site,
             site_id
         ))
-        site_data['id'] = site_id
+        site_data_logical = to_logical_doc('site', site_data)
+        site_data_logical['id'] = site_id
+        # site_data['id'] = site_id
         # app
+        app_access_token = SocialNetworkResolution.get_app_access_token(social_app_id, social_secret)
         app_data = {
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
             u'social__v1': {
                 u'facebook__v1': {
-                    u'access_token__v1': access_token
+                    u'access_token__v1': app_access_token,
+                    u"app_id__v1": social_app_id,
+                    u"app_secret__v1": social_secret
                 }
             },
             u'created_on__v1': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/_app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=app_data)
+            '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(app_data))
         if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write app "{}"'.format(app)))
+            exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
+                app, es_response_raw.content)))
         es_response = es_response_raw.json()
         app_id = es_response.get('_id', '')
-        app_data['id'] = app_id
+        app_data_logical = to_logical_doc('app', app_data)
+        app_data_logical['id'] = app_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -219,22 +231,70 @@ class SetupSite(generics.CreateAPIView):
         }
         settings_output = []
         for setting_item in settings_input:
-            db_settings = settings_data.update({
-                u'name': setting_item[0],
-                u'value': setting_item[1]
+            settings_data.update({
+                u'setting_name__v1': setting_item[0],
+                u'setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
-                '{}/{}/_settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=db_settings)
-            if es_response_raw.status_code != 200:
-                exceptions.XimpiaAPIException(_(u'Could not write settings for site "{}"'.format(site)))
+                '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(settings_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not write settings for site "{}" :: {}'.format(
+                    site, es_response_raw.content)))
             es_response = es_response_raw.json()
             logger.info(u'SetupSite :: created settings id: {}'.format(
                 es_response.get('_id', '')
             ))
-            settings_output.append(settings_data)
+            settings_data_logical = to_logical_doc('settings', settings_data)
+            settings_output.append(settings_data_logical)
 
-        return site_data, app_data, settings_data
+        # api_access
+        api_access = {
+            u'site__v1': {
+                u'id__v1': site_id,
+                u'name__v1': site,
+                u'slug__v1': slugify(site)
+            },
+            u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+            u'domains__v1': domains,
+            u'created_on__v1': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(api_access))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not write api access "{}" :: {}'.format(
+                site, es_response_raw.content)))
+        es_response = es_response_raw.json()
+        api_access_key = es_response.get('_id', '')
+        logger.info(u'SetupSite :: created api access {} id: {}'.format(
+            site,
+            api_access_key
+        ))
+        api_access_logical = to_logical_doc('api_access', api_access)
+        api_access_logical['id'] = api_access_key
+        # account
+        account_data = {
+            u'organization__v1': {
+                u'name__v1': organization_name
+            },
+            u'account_name__v1': account,
+            u'created_on__v1': now_es,
+        }
+        es_response_raw = requests.post(
+            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(account_data))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not write account "{}" :: {}'.format(
+                site, es_response_raw.content)))
+        es_response = es_response_raw.json()
+        logger.info(u'SetupSite :: created account {}'.format(
+            account,
+        ))
+        account_data_logical = to_logical_doc('account', account_data)
+        account_data_logical['id'] = es_response.get('_id', '')
+
+        return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
 
     @classmethod
     def _create_tag(cls, index_name, now_es, version='v1'):
@@ -326,6 +386,11 @@ class SetupSite(generics.CreateAPIView):
         invite_only = data['invite_only']
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
+        social_app_id = data['social_app_id']
+        social_secret = data['social_secret']
+        domains = data['domains']
+        organization_name = data.get('organization_name', site)
+        account = data.get('account', site)
 
         default_groups = [
             u'users',
@@ -349,7 +414,8 @@ class SetupSite(generics.CreateAPIView):
         # 1. create site, app and settings
         site_data, app_data, settings_data = \
             self._create_site_app(index_ximpia, index_name, site, app, now_es, languages, location,
-                                  invite_only, social_access_token, tag_data)
+                                  invite_only, social_access_token, tag_data, social_app_id, social_secret,
+                                  domains, account, organization_name)
 
         # 2. Permissions
         self._create_permissions(site, app, index_name, now_es)
