@@ -1,5 +1,4 @@
 from django.test import RequestFactory, Client
-from django.contrib.auth import authenticate, login
 
 from base.tests import XimpiaTestCase, get_fb_test_user_local
 
@@ -20,7 +19,5 @@ class AuthenticateTestCase(XimpiaTestCase):
             'access_token': get_fb_test_user_local('admin')['access_token'],
             'provider': 'facebook',
         }
-        print u'AuthenticateTestCase.authenticate :: auth_data: {}'.format(auth_data)
-        user = authenticate(**auth_data)
-        print u'user: {}'.format(user)
-        self.assertIsNotNone(user)
+        is_login = self.c.login(**auth_data)
+        print is_login
