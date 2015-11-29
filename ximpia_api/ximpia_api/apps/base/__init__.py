@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter
 import logging
+import json
 
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -211,7 +212,7 @@ def get_path_search(document_type, **kwargs):
     query_cache = kwargs.get('query_cache', True)
     return '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
         host=settings.ELASTIC_SEARCH_HOST,
-        index=settings.SITE_BASE_INDEX,
+        index=kwargs.get('index', settings.SITE_BASE_INDEX),
         document_type=document_type,
         query_cache=query_cache)
 
@@ -266,6 +267,56 @@ def get_setting_table_value(value_node):
         else:
             table[field] = value['value']
     return table
+
+
+def get_base_app(site_slug):
+    """
+    Get base app for site
+
+    We check for base app
+
+    :param site_slug:
+    :return:
+    """
+    from document import to_logical_doc
+    es_path = get_path_search('app', index=u'{}__base'.format(site_slug))
+    query_dsl = {
+        'query': {
+            'filtered': {
+                'query': {
+                    'bool': {
+                        'must': [
+                            {
+                                'term': {
+                                    'site__v1.slug__v1.raw__v1': site_slug
+                                }
+                            },
+                            {
+                                'term': {
+                                    'slug__v1.raw__v1': 'base'
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    es_response_raw = req_session.get(es_path, data=json.dumps(query_dsl))
+    if es_response_raw.status_code != 200:
+        raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
+            u'{}.base'.format(site_slug),
+            es_response_raw.content
+        )))
+    es_response = es_response_raw.json()
+    if 'status' in es_response and es_response['status'] != 200:
+        raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
+            u'{}.base'.format(site_slug),
+            es_response_raw.content
+        )))
+    app = es_response['_source']
+    app['id'] = es_response['_id']
+    return to_logical_doc('app', app)
 
 
 def refresh_index(index):

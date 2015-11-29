@@ -219,7 +219,8 @@ class UserSignup(generics.CreateAPIView):
         site_slug = settings.SITE_BASE_INDEX
         if args:
             site_slug = args[0]
-        site = Document.objects.get('site')
+        # site = Document.objects.get('site', slug=site_slug, get_logical=True)
+        app = None
         # token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
@@ -227,7 +228,7 @@ class UserSignup(generics.CreateAPIView):
         social_data = SocialNetworkResolution.get_network_user_data(
             data['social_network'],
             access_token=data['access_token'],
-            app_id=''
+            app_id=app['id']
         )
 
         # user
