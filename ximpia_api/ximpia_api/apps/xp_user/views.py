@@ -216,20 +216,25 @@ class UserSignup(generics.CreateAPIView):
         :return:
         """
         from base import get_base_app
-        # If no site, we create users for XimpiaAPI
         site_slug = slugify(settings.SITE)
         if args:
             site_slug = args[0]
-        # site = Document.objects.get('site', slug=site_slug, get_logical=True)
         app = get_base_app(site_slug)
-        # token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
         data = request.data
+        if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
+            raise exceptions.XimpiaAPIException(_(
+                u'Social app data not found. Check "app" document for {}.base'.format(
+                    site_slug
+                )
+            ))
         social_data = SocialNetworkResolution.get_network_user_data(
             data['social_network'],
             access_token=data['access_token'],
-            app_id=app['id']
+            app_id=app['id'],
+            social_app_id=app['social']['facebook']['app_id'],
+            social_secret=app['social']['facebook']['app_secret']
         )
 
         # user

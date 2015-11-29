@@ -77,9 +77,8 @@ class SocialNetworkResolution(object):
                                            'client_id={app_id}&'
                                            'client_secret={app_secret}&'
                                            'grant_type=client_credentials'.format(
-                                               app_id=kwargs.get('social_app_id', settings.XIMPIA_FACEBOOK_APP_ID),
-                                               app_secret=kwargs.get('social_app_secret',
-                                                                     settings.XIMPIA_FACEBOOK_APP_SECRET),
+                                               app_id=kwargs['social_app_id'],
+                                               app_secret=kwargs['social_app_secret'],
                                            ))
             if response_raw.status_code != 200:
                 raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
