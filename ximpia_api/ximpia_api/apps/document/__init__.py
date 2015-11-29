@@ -394,25 +394,64 @@ class DocumentManager(object):
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
-            es_path = '{host}/{index}/{document_type}/{id_}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                index=kwargs.get('index', settings.SITE_BASE_INDEX),
-                document_type=document_type,
-                id_=kwargs['id'])
-        if len(kwargs) == 1 and 'id' in kwargs:
+            if 'id' in kwargs:
+                es_path = '{host}/{index}/{document_type}/{id_}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=kwargs.get('index', settings.SITE_BASE_INDEX),
+                    document_type=document_type,
+                    id_=kwargs['id'])
+            else:
+                es_path = '{host}/{index}/{document_type}/_search'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=kwargs.get('index', settings.SITE_BASE_INDEX),
+                    document_type=document_type)
+        if 'id' in kwargs:
             # do logic for get by id
             es_response_raw = req_session.get(es_path)
-            if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+            if es_response_raw.status_code != 200:
                 raise exceptions.DocumentNotFound(_(u'Document "{}" with id "{}" does not exist'.format(
                     document_type, kwargs['id']
                 )))
             es_response = es_response_raw.json()
-            if get_logical:
-                return to_logical_doc(document_type, es_response['_source'])
-            else:
-                return es_response['_source']
+            if 'status' in es_response and es_response['status'] != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with id "{}" does not exist'.format(
+                    document_type, kwargs['id']
+                )))
+
+        elif 'slug' in kwargs:
+            query_dsl = {
+                'query': {
+                    "filtered": {
+                        'query': {
+                            'bool': {
+                                'must': [
+                                    {
+                                        'term': {
+                                            'slug__v1.raw': kwargs['slug']
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+            es_response_raw = req_session.get(es_path, data=json.dumps(query_dsl))
+            if es_response_raw.status_code != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with slug "{}" does not exist'.format(
+                    document_type, kwargs['slug']
+                )))
+            es_response = es_response_raw.json()
+            if 'status' in es_response and es_response['status'] != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with slug "{}" does not exist'.format(
+                    document_type, kwargs['slug']
+                )))
         else:
             raise exceptions.XimpiaAPIException(u'We only support get document by id')
+        if get_logical:
+            return to_logical_doc(document_type, es_response['_source'])
+        else:
+            return es_response['_source']
 
     @classmethod
     def filter(cls, document_type, **kwargs):

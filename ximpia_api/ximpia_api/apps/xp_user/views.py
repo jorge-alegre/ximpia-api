@@ -208,23 +208,29 @@ class UserSignup(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """
-        Create xp_user
+        Create user
 
         :param request:
         :param args:
         :param kwargs:
         :return:
         """
-        token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
+        # If no site, we create users for XimpiaAPI
+        site_slug = settings.SITE_BASE_INDEX
+        if args:
+            site_slug = args[0]
+        site = Document.objects.get('site')
+        # token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        index_name = '{site}__base'.format(site=settings.SITE)
+        index_name = '{site}__base'.format(site=site_slug)
         data = request.data
-        social_data = SocialNetworkResolution.get_network_user_data(data['social_network'],
-                                                                    access_token=data['access_token'])
+        social_data = SocialNetworkResolution.get_network_user_data(
+            data['social_network'],
+            access_token=data['access_token'],
+            app_id=''
+        )
 
         # user
-        # generate session
-        session_id = get_random_string(50, VALID_KEY_CHARS)
         user_data = {
             u'email__v1': social_data.get('email', None),
             u'password__v1': None,
@@ -247,18 +253,17 @@ class UserSignup(generics.CreateAPIView):
                 u'name__v1': x['_source']['name']
             }, data['groups_data']),
             u'is_active__v1': True,
-            u'token__v1': token,
-            u'last_login__v1': now_es,
-            u'session_id__v1': session_id,
+            u'session_id__v1': None,
             u'created_on__v1': now_es,
         }
         es_response_raw = req_session.post(
-            '{}/{}/_user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=to_physical_doc('_user', user_data))
-        if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write xp_user "{}.{}"'.format(
+            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            data=json.dumps(user_data))
+        if es_response_raw.status_code not in [200, 201]:
+            exceptions.XimpiaAPIException(_(u'Could not write xp_user "{}.{}" :: {}'.format(
                 request.data['social_network'],
-                social_data.get('user_id', None))))
+                social_data.get('user_id', None),
+                es_response_raw.content)))
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created xp_user id: {}'.format(
             es_response.get('_id', '')
@@ -293,7 +298,7 @@ class UserSignup(generics.CreateAPIView):
         logger.info(u'SetupSite :: created xp_user group id: {}'.format(
             es_response.get('_id', '')
         ))
-        return Response(user_data)
+        return Response(to_logical_doc('user', user_data))
 
 
 class User(DocumentViewSet):
