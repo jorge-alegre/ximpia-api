@@ -215,12 +215,13 @@ class UserSignup(generics.CreateAPIView):
         :param kwargs:
         :return:
         """
+        from base import get_base_app
         # If no site, we create users for XimpiaAPI
-        site_slug = settings.SITE_BASE_INDEX
+        site_slug = slugify(settings.SITE)
         if args:
             site_slug = args[0]
         # site = Document.objects.get('site', slug=site_slug, get_logical=True)
-        app = None
+        app = get_base_app(site_slug)
         # token = request.data.get('token', get_random_string(400, VALID_KEY_CHARS))
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)

@@ -132,5 +132,6 @@ AUTHENTICATION_BACKENDS = (
 
 XIMPIA_DOMAIN = 'ximpia.io'
 SITE_BASE_INDEX = u'ximpia_api__base'
+SITE = 'Ximpia API'
 
 TEST_RUNNER = 'base.tests.XimpiaDiscoverRunner'
