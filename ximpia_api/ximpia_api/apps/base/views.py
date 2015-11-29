@@ -438,7 +438,7 @@ class SetupSite(generics.CreateAPIView):
                 'group_permissions': {}
             }
         )
-        if user_raw.status_code != 200:
+        if user_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
         user = user_raw.json()
 
