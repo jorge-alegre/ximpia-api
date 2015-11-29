@@ -234,7 +234,8 @@ class UserSignup(generics.CreateAPIView):
             access_token=data['access_token'],
             app_id=app['id'],
             social_app_id=app['social']['facebook']['app_id'],
-            social_secret=app['social']['facebook']['app_secret']
+            social_secret=app['social']['facebook']['app_secret'],
+            app=app,
         )
 
         # user
