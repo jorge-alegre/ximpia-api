@@ -467,6 +467,10 @@ class DocumentManager(object):
         :param kwargs:
         :return:
         """
+        get_logical = False
+        if 'get_logical' in kwargs and kwargs['get_logical']:
+            get_logical = True
+            del kwargs['get_logical']
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
@@ -519,7 +523,17 @@ class DocumentManager(object):
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()
-        return es_response['hits']['hits']
+        if get_logical:
+            output = []
+            for item in es_response['hits']['hits']:
+                item_data = item['_source']
+                item_data['id'] = item['_id']
+                output.append(
+                    to_logical_doc(document_type, item_data)
+                )
+        else:
+            output = es_response['hits']['hits']
+        return output
 
     @classmethod
     def update_partial(cls, document_type, id_, partial_document):

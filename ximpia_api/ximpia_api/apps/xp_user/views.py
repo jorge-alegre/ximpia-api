@@ -3,7 +3,9 @@ import requests
 import json
 from requests.adapters import HTTPAdapter
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+
+import time
 
 # from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
@@ -238,49 +240,93 @@ class UserSignup(generics.CreateAPIView):
             app=app,
         )
 
+        groups_data = []
+        groups_data_logical = {}
+        permissions = data['permissions']
+        for group in data['groups']:
+            group_data = {
+                u'group_name__v1': group,
+                u'slug__v1': slugify(group),
+                u'tags__v1': None,
+                u'created_on__v1': now_es,
+            }
+            if group in permissions:
+                group_data[u'group_permissions__v1'] = [
+                    {
+                        u'name__v1': permissions[group],
+                        u'created_on__v1': now_es
+                    }
+                ]
+            es_response_raw = requests.post(
+                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(group_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
+                    group, es_response_raw.content)))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created group {} id: {}'.format(
+                group,
+                es_response.get('_id', u'')
+            ))
+            # group_ids[group] = es_response.get('_id', '')
+            group_data_logical = to_logical_doc('group', group_data)
+            group_data_logical['id'] = es_response.get('_id', '')
+            groups_data_logical[group_data_logical['id']] = group_data_logical
+            groups_data.append(group_data_logical)
+        seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
+                                      datetime(1970, 1, 1)).total_seconds()))
         # user
         user_data = {
+            u'username__v1': " ",
+            u'alias__v1': "",
             u'email__v1': social_data.get('email', None),
             u'password__v1': None,
             u'avatar__v1': social_data.get('profile_picture', None),
-            u'name__v1': social_data.get('name', None),
+            u'user_name__v1': social_data.get('name', None),
+            u'first_name__v1': social_data.get('first_name', ''),
+            u'last_name__v1': social_data.get('last_name', ''),
             u'social_networks__v1': [
                 {
-                    u'network__v1': request.data['social_network'],
+                    u'network__v1': data.get('social_network', 'facebook'),
                     u'user_id__v1': social_data.get('user_id', None),
                     u'access_token__v1': social_data.get('access_token', None),
                     u'state__v1': None,
                     u'scopes__v1': social_data.get('scopes', None),
                     u'has_auth__v1': True,
                     u'link__v1': social_data.get('link', None),
+                    u'expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
-            u'permissions__v1': None,
+            u'user_permissions__v1': None,
             u'groups__v1': map(lambda x: {
-                u'id__v1': x['_id'],
-                u'name__v1': x['_source']['name']
-            }, data['groups_data']),
+                u'id__v1': x['id'],
+                u'name__v1': x['group_name']
+            }, groups_data),
             u'is_active__v1': True,
+            u'token__v1': None,
+            u'expires_at__v1': time.strftime(
+                '%Y-%m-%dT%H:%M:%S',
+                time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
             u'created_on__v1': now_es,
         }
-        es_response_raw = req_session.post(
+        es_response_raw = requests.post(
             '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(user_data))
         if es_response_raw.status_code not in [200, 201]:
-            exceptions.XimpiaAPIException(_(u'Could not write xp_user "{}.{}" :: {}'.format(
-                request.data['social_network'],
+            raise exceptions.XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
+                data.get('social_network', 'facebook'),
                 social_data.get('user_id', None),
                 es_response_raw.content)))
         es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created xp_user id: {}'.format(
+        logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
         user_data['id'] = es_response.get('_id', '')
         # users groups
-        es_response_raw = req_session.post(
+        """es_response_raw = req_session.post(
             '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=to_physical_doc('_user-group', {
+            data=to_physical_doc('user-group', {
                 u'user__v1': map(lambda x: {
                     u'id__v1': x['id'],
                     u'username__v1': x['username'],
@@ -305,7 +351,7 @@ class UserSignup(generics.CreateAPIView):
         es_response = es_response_raw.json()
         logger.info(u'SetupSite :: created xp_user group id: {}'.format(
             es_response.get('_id', '')
-        ))
+        ))"""
         return Response(to_logical_doc('user', user_data))
 
 

@@ -433,7 +433,8 @@ class SetupSite(generics.CreateAPIView):
             data={
                 'access_token': social_access_token,
                 'social_network': social_network,
-                'groups': groups
+                'groups': groups,
+                'permissions': {}
             }
         )
         if user_raw.status_code != 200:
