@@ -383,11 +383,11 @@ class UserSignup(generics.CreateAPIView):
             ))
         # authenticate and login user
         auth_data = {
-            'access_token': data['access_token'],
-            'provider': data.get('social_network', 'facebook'),
-            'app_id': app['id'],
-            'social_app_id': '',
-            'social_app_secret': '',
+            u'access_token': data['access_token'],
+            u'provider': data.get('social_network', 'facebook'),
+            u'app_id': app['id'],
+            u'social_app_id': app['social']['facebook']['app_id'],
+            u'social_app_secret': app['social']['facebook']['app_secret'],
         }
         user_obj = authenticate(**auth_data)
         # user already has token, logical user
