@@ -20,10 +20,11 @@ from rest_framework import routers
 
 # from ximpia_api.ximpia_api.apps.xp_user.views import User
 from base.views import SetupSite
+from xp_user.views import UserSignup
 
 router = routers.DefaultRouter()
-# router.register(r'users', User)
 router.register(r'create-site', SetupSite)
+router.register(r'user-signup', UserSignup)
 
 urlpatterns = [
     # url(r'^admin/', include(admin.site.urls)),

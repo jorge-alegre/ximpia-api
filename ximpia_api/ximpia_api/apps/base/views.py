@@ -388,7 +388,7 @@ class SetupSite(generics.CreateAPIView):
         app = 'base'
         social_access_token = data['access_token']
         social_network = data.get('social_network', 'facebook')
-        invite_only = data['invite_only']
+        invite_only = data.get('invite_only', False)
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
         domains = data.get('domains', [])
