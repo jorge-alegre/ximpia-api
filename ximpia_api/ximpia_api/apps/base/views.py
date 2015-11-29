@@ -141,8 +141,7 @@ class SetupSite(generics.CreateAPIView):
 
     @classmethod
     def _create_site_app(cls, index_ximpia, index_name, site, app, now_es, languages, location,
-                         invite_only, access_token, tag_data, social_app_id, social_secret, domains,
-                         account, organization_name):
+                         invite_only, tag_data, domains, account, organization_name):
         """
         Create site and app
 
@@ -388,11 +387,11 @@ class SetupSite(generics.CreateAPIView):
         data = request.data
         app = 'base'
         social_access_token = data['access_token']
-        social_network = data['social_network']
+        social_network = data.get('social_network', 'facebook')
         invite_only = data['invite_only']
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
-        domains = data['domains']
+        domains = data.get('domains', [])
         organization_name = data.get('organization_name', site)
         account = data.get('account', site)
 
@@ -417,9 +416,7 @@ class SetupSite(generics.CreateAPIView):
 
         # 1. create site, app and settings
         site_tuple = self._create_site_app(index_ximpia, index_name, site, app, now_es, languages,
-                                           location, invite_only, social_access_token, tag_data,
-                                           social_app_id, social_secret, domains, account,
-                                           organization_name)
+                                           location, invite_only, tag_data, domains, account, organization_name)
         site_data, app_data, settings_data, api_access, account_data = site_tuple
 
         # 2. Permissions
