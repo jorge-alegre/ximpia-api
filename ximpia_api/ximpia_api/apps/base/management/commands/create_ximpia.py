@@ -194,6 +194,7 @@ class Command(BaseCommand):
             u'url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
             u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
+            u'public__v1': public,
             u'created_on__v1': now_es
         }
         if invite_only:

@@ -430,12 +430,11 @@ class SetupSite(generics.CreateAPIView):
                 'access_token': social_access_token,
                 'social_network': social_network,
                 'groups': groups,
-                'group_permissions': {}
+                'group_permissions': {},
+                'api_key': api_access['id'],
+                'api_secret': api_access['api_secret'],
             }
         )
-        # authenticate user and login user, so he has token to access in single step
-        # After authenticate, refresh and get get user, so we have token data
-
         if user_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
         user = user_raw.json()

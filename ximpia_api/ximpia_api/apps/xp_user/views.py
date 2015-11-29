@@ -226,26 +226,26 @@ class UserSignup(generics.CreateAPIView):
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
         # Implemented with the document features
-        if args:
-            # check if public, when we don't do API access checks
-            if not app['site']['public']:
-                # check api key
-                if 'api_key' in data:
-                    api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
-                    api_secret_db = api_access['secret_key']
-                    if api_secret_db != data.get('api_secret', ''):
-                        # display error
-                        raise exceptions.XimpiaAPIException(_(
-                            u'Secret does not match for API access'
-                        ))
-                # check domain
-                if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
-                                                                  app['site']['domains']):
+        # skip_validate = False
+        # check if public, when we don't do API access checks
+        if not app['site']['public']:
+            # check api key
+            if 'api_key' in data:
+                api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                api_secret_db = api_access['secret_key']
+                if api_secret_db != data.get('api_secret', ''):
+                    # display error
                     raise exceptions.XimpiaAPIException(_(
-                        u'API access error'
+                        u'Secret does not match for API access'
                     ))
-        else:
-            pass
+                # skip_validate = True
+            # check domain
+            """if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
+                                                              app['site']['domains'])\
+                    and not skip_validate:
+                raise exceptions.XimpiaAPIException(_(
+                    u'API access error'
+                ))"""
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
 
