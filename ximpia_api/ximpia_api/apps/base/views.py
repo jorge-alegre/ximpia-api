@@ -421,8 +421,9 @@ class SetupSite(generics.CreateAPIView):
         print u'groups: {}'.format(groups)
 
         # 3. Groups, User, UserGroup
+        # We create user at ximpia, so user can connect to ximpia api app to manage account
         user_raw = req_session.post(
-            '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
+            '{scheme}://ximpia.io/user-signup'.format(settings.SCHEME),
             data={
                 'access_token': social_access_token,
                 'social_network': social_network,

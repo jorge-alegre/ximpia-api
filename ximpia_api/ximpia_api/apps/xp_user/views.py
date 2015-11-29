@@ -218,13 +218,28 @@ class UserSignup(generics.CreateAPIView):
         :return:
         """
         from base import get_base_app
+        data = request.data
         site_slug = slugify(settings.SITE)
         if args:
             site_slug = args[0]
         app = get_base_app(site_slug)
+        # Access
+        if args:
+            # check api key
+            if 'api_key' in data:
+                api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                api_secret_db = api_access['secret_key']
+                if api_secret_db != data.get('api_secret', ''):
+                    # display error
+                    raise exceptions.XimpiaAPIException(_(
+                        u'Secret does not match for API access'
+                    ))
+            # check domain
+            if request.META['http_request_domain'] != '':
+                pass
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
-        data = request.data
+
         if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
             raise exceptions.XimpiaAPIException(_(
                 u'Social app data not found. Check "app" document for {}.base'.format(

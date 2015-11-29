@@ -29,6 +29,25 @@
                 "index": "not_analyzed"
               }
             }
+          },
+          "domains__v1": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "domain_name__v1": {
+                "type": "string",
+                "fields": {
+                  "domain_name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
           }
         }
       },

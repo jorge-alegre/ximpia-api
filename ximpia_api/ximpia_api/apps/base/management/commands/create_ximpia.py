@@ -193,6 +193,7 @@ class Command(BaseCommand):
             u'slug__v1': slugify(site),
             u'url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
+            u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
             u'created_on__v1': now_es
         }
         if invite_only:
@@ -220,6 +221,7 @@ class Command(BaseCommand):
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
         app_data = {
+            u'site__v1': site_data_logical,
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
@@ -288,7 +290,6 @@ class Command(BaseCommand):
                 u'slug__v1': slugify(site)
             },
             u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
-            u'domains__v1': domains,
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(

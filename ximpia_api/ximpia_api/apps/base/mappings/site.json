@@ -106,6 +106,25 @@
       "public__v1": {
         "type": "boolean"
       },
+      "domains__v1": {
+        "type": "nested",
+        "include_in_parent": true,
+        "dynamic": "false",
+        "properties": {
+          "domain_name__v1": {
+            "type": "string",
+            "fields": {
+              "domain_name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      },
       "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
