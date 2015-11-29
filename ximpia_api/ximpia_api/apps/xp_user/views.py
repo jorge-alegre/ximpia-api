@@ -225,18 +225,23 @@ class UserSignup(generics.CreateAPIView):
         app = get_base_app(site_slug)
         # Access
         if args:
-            # check api key
-            if 'api_key' in data:
-                api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
-                api_secret_db = api_access['secret_key']
-                if api_secret_db != data.get('api_secret', ''):
-                    # display error
+            # check if public, when we don't do API access checks
+            if not app['site']['public']:
+                # check api key
+                if 'api_key' in data:
+                    api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                    api_secret_db = api_access['secret_key']
+                    if api_secret_db != data.get('api_secret', ''):
+                        # display error
+                        raise exceptions.XimpiaAPIException(_(
+                            u'Secret does not match for API access'
+                        ))
+                # check domain
+                if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
+                                                                  app['site']['domains']):
                     raise exceptions.XimpiaAPIException(_(
-                        u'Secret does not match for API access'
+                        u'API access error'
                     ))
-            # check domain
-            if request.META['http_request_domain'] != '':
-                pass
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
 
