@@ -242,7 +242,7 @@ class UserSignup(generics.CreateAPIView):
 
         groups_data = []
         groups_data_logical = {}
-        permissions = data['permissions']
+        group_permissions = data['group_permissions']
         for group in data['groups']:
             group_data = {
                 u'group_name__v1': group,
@@ -250,10 +250,10 @@ class UserSignup(generics.CreateAPIView):
                 u'tags__v1': None,
                 u'created_on__v1': now_es,
             }
-            if group in permissions:
+            if group in group_permissions:
                 group_data[u'group_permissions__v1'] = [
                     {
-                        u'name__v1': permissions[group],
+                        u'name__v1': group_permissions[group],
                         u'created_on__v1': now_es
                     }
                 ]
@@ -323,35 +323,40 @@ class UserSignup(generics.CreateAPIView):
             es_response.get('_id', '')
         ))
         user_data['id'] = es_response.get('_id', '')
+        user_data_logical = to_logical_doc('user', user_data)
         # users groups
-        """es_response_raw = req_session.post(
-            '{}/{}/_user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=to_physical_doc('user-group', {
-                u'user__v1': map(lambda x: {
-                    u'id__v1': x['id'],
-                    u'username__v1': x['username'],
-                    u'email__v1': x['email'],
-                    u'avatar__v1': x['avatar'],
-                    u'name__v1': x['name'],
-                    u'social_networks__v1': x['social_networks'],
-                    u'permissions__v1': x['permissions'],
-                    u'created_on__v1': x['created_on'],
-                }, user_data),
-                u'group__v1': map(lambda x: {
-                    u'id__v1': x['_id'],
-                    u'name__v1': x['_source']['name'],
-                    u'slug__v1': x['_source']['slug'],
-                    u'tags__v1': x['_source']['tags'],
-                    u'created_on__v1': x['_source']['created_on']
-                }, data['groups_data']),
-                u'created_on__v1': now_es,
-            }))
-        if es_response_raw.status_code != 200:
-            exceptions.XimpiaAPIException(_(u'Could not write xp_user group'))
-        es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created xp_user group id: {}'.format(
-            es_response.get('_id', '')
-        ))"""
+        for group_data in groups_data:
+            es_response_raw = requests.post(
+                '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps({
+                    u'user__v1': {
+                        u'id__v1': user_data_logical[u'id'],
+                        u'username__v1': user_data_logical[u'username'],
+                        u'email__v1': user_data_logical[u'email'],
+                        u'avatar__v1': user_data_logical[u'avatar'],
+                        u'user_name__v1': user_data_logical[u'user_name'],
+                        u'social_networks__v1': user_data_logical[u'social_networks'],
+                        u'user_permissions__v1': user_data_logical[u'user_permissions'],
+                        u'created_on__v1': user_data_logical[u'created_on'],
+                    },
+                    u'group__v1': {
+                        u'id__v1': group_data[u'id'],
+                        u'group_name__v1': group_data[u'group_name'],
+                        u'slug__v1': group_data[u'slug'],
+                        u'tags__v1': group_data[u'tags'],
+                        u'created_on__v1': group_data[u'created_on']
+                    },
+                    u'created_on__v1': now_es,
+                }))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not write user group :: {}'.format(
+                    es_response_raw.content
+                )))
+            es_response = es_response_raw.json()
+            es_response['id'] = es_response.get('_id', '')
+            logger.info(u'SetupSite :: created user group id: {}'.format(
+                es_response.get('_id', '')
+            ))
         return Response(to_logical_doc('user', user_data))
 
 

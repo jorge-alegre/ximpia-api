@@ -424,7 +424,8 @@ class SetupSite(generics.CreateAPIView):
 
         # search for group data
         groups = Document.objects.filter('group',
-                                         name__in=default_groups)
+                                         name__in=default_groups,
+                                         get_logical=True)
         print u'groups: {}'.format(groups)
 
         # 3. Groups, User, UserGroup
@@ -434,7 +435,7 @@ class SetupSite(generics.CreateAPIView):
                 'access_token': social_access_token,
                 'social_network': social_network,
                 'groups': groups,
-                'permissions': {}
+                'group_permissions': {}
             }
         )
         if user_raw.status_code != 200:
