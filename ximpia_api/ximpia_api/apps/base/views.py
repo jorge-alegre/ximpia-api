@@ -186,16 +186,18 @@ class SetupSite(generics.CreateAPIView):
         site_data_logical['id'] = site_id
         # site_data['id'] = site_id
         # app
-        app_access_token = SocialNetworkResolution.get_app_access_token(social_app_id, social_secret)
+        # social app data would be inserted once admin user adds facebook id and secret
+        # having pattern to get facebook app access token. Call would be update app with pattern
+        # to generate the app access token
         app_data = {
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
             u'social__v1': {
                 u'facebook__v1': {
-                    u'access_token__v1': app_access_token,
-                    u"app_id__v1": social_app_id,
-                    u"app_secret__v1": social_secret
+                    u'access_token__v1': None,
+                    u"app_id__v1": None,
+                    u"app_secret__v1": None,
                 }
             },
             u'created_on__v1': now_es
@@ -390,8 +392,6 @@ class SetupSite(generics.CreateAPIView):
         invite_only = data['invite_only']
         languages = data.get('languages', ['en'])
         location = data.get('location', 'us')
-        social_app_id = data['social_app_id']
-        social_secret = data['social_secret']
         domains = data['domains']
         organization_name = data.get('organization_name', site)
         account = data.get('account', site)
@@ -426,11 +426,12 @@ class SetupSite(generics.CreateAPIView):
         permissions_data = self._create_permissions(site, app, index_name, now_es)
 
         # search for group data
-        groups = Document.objects.filter('_group',
+        groups = Document.objects.filter('group',
                                          name__in=default_groups)
+        print u'groups: {}'.format(groups)
 
         # 3. Groups, User, UserGroup
-        user_raw = req_session.post(
+        """user_raw = req_session.post(
             '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
             data={
                 'access_token': social_access_token,
@@ -440,13 +441,16 @@ class SetupSite(generics.CreateAPIView):
         )
         if user_raw.status_code != 200:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-        user = user_raw.json()
+        user = user_raw.json()"""
 
+        # u'xp_user': to_logical_doc('user', user),
         response_ = {
             u'site': to_logical_doc('site', site_data),
             u'app': to_logical_doc('app', app_data),
             u'settings': to_logical_doc('settings', settings_data),
-            u'xp_user': to_logical_doc('user', user),
-            u'groups': groups
+            u'xp_user': None,
+            u'groups': groups,
+            u'permissions': permissions_data
         }
+        print response_
         return response.Response(response_)
