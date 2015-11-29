@@ -150,6 +150,7 @@ class SetupSite(generics.CreateAPIView):
             u'slug__v1': slugify(site),
             u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
+            u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
             u'created_on__v1': now_es
         }
         if invite_only:
@@ -181,6 +182,7 @@ class SetupSite(generics.CreateAPIView):
         # having pattern to get facebook app access token. Call would be update app with pattern
         # to generate the app access token
         app_data = {
+            u'site__v1': site_data_logical,
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
