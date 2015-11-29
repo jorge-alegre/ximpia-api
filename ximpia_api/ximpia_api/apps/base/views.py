@@ -428,7 +428,7 @@ class SetupSite(generics.CreateAPIView):
         print u'groups: {}'.format(groups)
 
         # 3. Groups, User, UserGroup
-        """user_raw = req_session.post(
+        user_raw = req_session.post(
             '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
             data={
                 'access_token': social_access_token,
@@ -438,14 +438,13 @@ class SetupSite(generics.CreateAPIView):
         )
         if user_raw.status_code != 200:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-        user = user_raw.json()"""
+        user = user_raw.json()
 
-        # u'xp_user': to_logical_doc('user', user),
         response_ = {
             u'site': to_logical_doc('site', site_data),
             u'app': to_logical_doc('app', app_data),
             u'settings': to_logical_doc('settings', settings_data),
-            u'xp_user': None,
+            u'user': user,
             u'groups': groups,
             u'permissions': permissions_data
         }
