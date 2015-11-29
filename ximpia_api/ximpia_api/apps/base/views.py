@@ -59,12 +59,6 @@ class SetupSite(generics.CreateAPIView):
         with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
             settings_dict = json.loads(f.read())
 
-        with open('{}/site.json'.format(mappings_path)) as f:
-            site_dict = json.loads(f.read())
-
-        with open('{}/account.json'.format(mappings_path)) as f:
-            account_dict = json.loads(f.read())
-
         with open('{}/api_access.json'.format(mappings_path)) as f:
             api_access_dict = json.loads(f.read())
 
@@ -105,11 +99,9 @@ class SetupSite(generics.CreateAPIView):
                                         data=json.dumps({
                                             'settings': settings_dict,
                                             'mappings': {
-                                                'account': account_dict,
-                                                'api_access': api_access_dict,
-                                                'site': site_dict,
-                                                'urlconf': urlconf_dict,
                                                 'app': app_dict,
+                                                'api_access': api_access_dict,
+                                                'urlconf': urlconf_dict,
                                                 'settings': settings__dict,
                                                 'user': user_dict,
                                                 'group': group_dict,
