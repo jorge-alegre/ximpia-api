@@ -253,7 +253,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
             data=json.dumps(api_access))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write api access "{}" :: {}'.format(
@@ -275,7 +275,7 @@ class SetupSite(generics.CreateAPIView):
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
             data=json.dumps(account_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write account "{}" :: {}'.format(
@@ -435,12 +435,14 @@ class SetupSite(generics.CreateAPIView):
         user = user_raw.json()
 
         response_ = {
+            u'account': account_data,
             u'site': to_logical_doc('site', site_data),
             u'app': to_logical_doc('app', app_data),
             u'settings': to_logical_doc('settings', settings_data),
             u'user': user,
             u'groups': groups,
-            u'permissions': permissions_data
+            u'permissions': permissions_data,
+            u'api_access': api_access,
         }
         print response_
         return response.Response(response_)
