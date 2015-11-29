@@ -224,6 +224,8 @@ class UserSignup(generics.CreateAPIView):
             site_slug = args[0]
         app = get_base_app(site_slug)
         # Access
+        # In future, this logic would be handled by the api access modules, checking rating, etc...
+        # Implemented with the document features
         if args:
             # check if public, when we don't do API access checks
             if not app['site']['public']:
@@ -242,6 +244,8 @@ class UserSignup(generics.CreateAPIView):
                     raise exceptions.XimpiaAPIException(_(
                         u'API access error'
                     ))
+        else:
+            pass
         now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
 
@@ -377,7 +381,18 @@ class UserSignup(generics.CreateAPIView):
             logger.info(u'SetupSite :: created user group id: {}'.format(
                 es_response.get('_id', '')
             ))
-        return Response(to_logical_doc('user', user_data))
+        # authenticate and login user
+        auth_data = {
+            'access_token': data['access_token'],
+            'provider': data.get('social_network', 'facebook'),
+            'app_id': app['id'],
+            'social_app_id': '',
+            'social_app_secret': '',
+        }
+        user_obj = authenticate(**auth_data)
+        # user already has token, logical user
+        login(request, user_obj)
+        return Response(user_obj.document)
 
 
 class User(DocumentViewSet):

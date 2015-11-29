@@ -433,6 +433,9 @@ class SetupSite(generics.CreateAPIView):
                 'group_permissions': {}
             }
         )
+        # authenticate user and login user, so he has token to access in single step
+        # After authenticate, refresh and get get user, so we have token data
+
         if user_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
         user = user_raw.json()
@@ -446,6 +449,7 @@ class SetupSite(generics.CreateAPIView):
             u'groups': groups,
             u'permissions': permissions_data,
             u'api_access': api_access,
+            u'token': {},
         }
         print response_
         return response.Response(response_)

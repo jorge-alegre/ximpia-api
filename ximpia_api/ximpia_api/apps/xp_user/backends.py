@@ -35,13 +35,22 @@ logger = logging.getLogger(__name__)
 class XimpiaAuthBackend(authentication.BaseAuthentication):
 
     @classmethod
-    def authenticate(cls, access_token=None, provider=None, social_app_id=settings.XIMPIA_FACEBOOK_APP_ID,
-                     social_app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET, app_id=None, index=None):
+    def authenticate(cls,
+                     access_token=None,
+                     provider=None,
+                     social_app_id=settings.XIMPIA_FACEBOOK_APP_ID,
+                     social_app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET,
+                     app_id=None,
+                     index=None):
         """
         Authenticate for all providers given access token
 
         :param access_token:
         :param provider:
+        :param social_app_id:
+        :param social_app_secret:
+        :param app_id:
+        :param index:
         :return:
         """
 
@@ -49,8 +58,8 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
                                                                         access_token=access_token,
-                                                                        app_id=social_app_id,
-                                                                        app_secret=social_app_secret)
+                                                                        social_app_id=social_app_id,
+                                                                        social_app_secret=social_app_secret)
         except exceptions.XimpiaAPIException:
             raise
 
@@ -134,7 +143,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 document_type='user',
                 id=user.id
             )).json()
-        user.document = user_document
+        user_data = user_document['_source']
+        user_data['id'] = user_document['_id']
+        user.document = to_logical_doc('user', user_data)
         return user
 
     @classmethod
