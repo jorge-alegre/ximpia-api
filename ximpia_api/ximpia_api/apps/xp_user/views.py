@@ -238,6 +238,10 @@ class UserSignup(generics.CreateAPIView):
                     raise exceptions.XimpiaAPIException(_(
                         u'Secret does not match for API access'
                     ))
+                if api_access['site']['slug'] != site_slug:
+                    raise exceptions.XimpiaAPIException(_(
+                        u'API key does to belong to requested site'
+                    ))
                 # skip_validate = True
             # check domain
             """if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
