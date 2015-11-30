@@ -385,6 +385,7 @@ class UserSignup(generics.CreateAPIView):
             logger.info(u'SetupSite :: created user group id: {}'.format(
                 es_response.get('_id', '')
             ))
+        # TODO: refresh index
         # authenticate and login user
         auth_data = {
             u'access_token': data['access_token'],
