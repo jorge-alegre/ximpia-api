@@ -268,39 +268,6 @@ class UserSignup(generics.CreateAPIView):
             app=app,
         )
 
-        groups_data = []
-        groups_data_logical = {}
-        group_permissions = data['group_permissions']
-        for group in data['groups']:
-            group_data = {
-                u'group_name__v1': group,
-                u'slug__v1': slugify(group),
-                u'tags__v1': None,
-                u'created_on__v1': now_es,
-            }
-            if group in group_permissions:
-                group_data[u'group_permissions__v1'] = [
-                    {
-                        u'name__v1': group_permissions[group],
-                        u'created_on__v1': now_es
-                    }
-                ]
-            es_response_raw = requests.post(
-                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-                data=json.dumps(group_data))
-            if es_response_raw.status_code not in [200, 201]:
-                raise exceptions.XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
-                    group, es_response_raw.content)))
-            es_response = es_response_raw.json()
-            logger.info(u'SetupSite :: created group {} id: {}'.format(
-                group,
-                es_response.get('_id', u'')
-            ))
-            # group_ids[group] = es_response.get('_id', '')
-            group_data_logical = to_logical_doc('group', group_data)
-            group_data_logical['id'] = es_response.get('_id', '')
-            groups_data_logical[group_data_logical['id']] = group_data_logical
-            groups_data.append(group_data_logical)
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
         # user
@@ -329,7 +296,7 @@ class UserSignup(generics.CreateAPIView):
             u'groups__v1': map(lambda x: {
                 u'id__v1': x['id'],
                 u'name__v1': x['group_name']
-            }, groups_data),
+            }, data['groups']),
             u'is_active__v1': True,
             u'token__v1': None,
             u'expires_at__v1': time.strftime(
@@ -353,7 +320,7 @@ class UserSignup(generics.CreateAPIView):
         user_data['id'] = es_response.get('_id', '')
         user_data_logical = to_logical_doc('user', user_data)
         # users groups
-        for group_data in groups_data:
+        for group_data in data['groups']:
             es_response_raw = requests.post(
                 '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps({

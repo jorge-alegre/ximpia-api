@@ -351,6 +351,51 @@ class SetupSite(generics.CreateAPIView):
             output_permissions.append(permission_logical)
         return output_permissions
 
+    @classmethod
+    def _create_groups(cls, groups, now_es, index_name, group_permissions):
+        """
+        Create site groups taking default site groups
+
+        :param groups:
+        :param now_es:
+        :param index_name:
+        :return:
+        """
+        # group
+        groups_data = []
+        groups_data_logical = {}
+        for group in groups:
+            group_data = {
+                u'group_name__v1': group,
+                u'slug__v1': slugify(group),
+                u'tags__v1': None,
+                u'created_on__v1': now_es,
+            }
+            if group in group_permissions:
+                group_data[u'group_permissions__v1'] = [
+                    {
+                        u'name__v1': group_permissions[group],
+                        u'created_on__v1': now_es
+                    }
+                ]
+            es_response_raw = requests.post(
+                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                data=json.dumps(group_data))
+            if es_response_raw.status_code not in [200, 201]:
+                raise exceptions.XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
+                    group, es_response_raw.content)))
+            es_response = es_response_raw.json()
+            logger.info(u'SetupSite :: created group {} id: {}'.format(
+                group,
+                es_response.get('_id', u'')
+            ))
+            # group_ids[group] = es_response.get('_id', '')
+            group_data_logical = to_logical_doc('group', group_data)
+            group_data_logical['id'] = es_response.get('_id', '')
+            groups_data_logical[group_data_logical['id']] = group_data_logical
+            groups_data.append(group_data_logical)
+        return groups_data
+
     def post(self, request, *args, **kwargs):
         """
         Create site
@@ -375,6 +420,7 @@ class SetupSite(generics.CreateAPIView):
         organization_name = data.get('organization_name', site)
         account = data.get('account', site)
 
+        # Site has normal users, beta users, admin users and staff
         default_groups = [
             u'users',
             u'users-test',
@@ -402,24 +448,23 @@ class SetupSite(generics.CreateAPIView):
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
 
-        # search for group data
-        groups = Document.objects.filter('group',
-                                         name__in=default_groups,
-                                         get_logical=True)
-        print u'groups: {}'.format(groups)
+        # 3. Create site groups
+        groups = self._create_groups(default_groups, now_es, index_name,
+                                     {
+                                         u'admin': u'can-admin',
+                                     })
 
-        # 3. Groups, User, UserGroup
+        # 4. User signup
         # We create user at ximpia, so user can connect to ximpia api app to manage account
         user_raw = req_session.post(
             '{scheme}://ximpia.io/user-signup'.format(settings.SCHEME),
-            data={
-                'access_token': social_access_token,
-                'social_network': social_network,
-                'groups': groups,
-                'group_permissions': {},
-                'api_key': site_data['api_access']['api_key'],
-                'api_secret': site_data['api_access']['api_secret'],
-            }
+            data=json.dumps({
+                u'access_token': social_access_token,
+                u'social_network': social_network,
+                u'groups': groups,
+                u'api_key': site_data['api_access']['api_key'],
+                u'api_secret': site_data['api_access']['api_secret'],
+            })
         )
         if user_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
