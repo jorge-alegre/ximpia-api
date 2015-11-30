@@ -448,7 +448,7 @@ class SetupSite(generics.CreateAPIView):
             u'groups': groups,
             u'permissions': permissions_data,
             u'api_access': api_access,
-            u'token': {},
+            u'token': user.get('token', {}),
         }
         print response_
         return response.Response(response_)
