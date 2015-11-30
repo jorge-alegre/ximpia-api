@@ -59,9 +59,6 @@ class SetupSite(generics.CreateAPIView):
         with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
             settings_dict = json.loads(f.read())
 
-        with open('{}/api_access.json'.format(mappings_path)) as f:
-            api_access_dict = json.loads(f.read())
-
         with open('{}/urlconf.json'.format(mappings_path)) as f:
             urlconf_dict = json.loads(f.read())
 
@@ -100,7 +97,6 @@ class SetupSite(generics.CreateAPIView):
                                             'settings': settings_dict,
                                             'mappings': {
                                                 'app': app_dict,
-                                                'api_access': api_access_dict,
                                                 'urlconf': urlconf_dict,
                                                 'settings': settings__dict,
                                                 'user': user_dict,
@@ -145,12 +141,27 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         # site
+        # generate api access key
+        counter = 0
+        api_access_key = get_random_string(32, VALID_KEY_CHARS)
+        while Document.objects.filter('site', api_access__api_key=api_access_key):
+            api_access_key = get_random_string(32, VALID_KEY_CHARS)
+            if counter > 10:
+                raise exceptions.XimpiaAPIException(_(
+                    u'Maximum number of iterations for generate api key'
+                ))
+            counter += 1
         site_data = {
             u'name__v1': site,
             u'slug__v1': slugify(site),
             u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
             u'is_active__v1': True,
             u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
+            u'api_access__v1': {
+                u'api_key__v1': api_access_key,
+                u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+                u'created_on__v1': now_es,
+            },
             u'created_on__v1': now_es
         }
         if invite_only:
@@ -243,31 +254,6 @@ class SetupSite(generics.CreateAPIView):
             settings_data_logical = to_logical_doc('settings', settings_data)
             settings_output.append(settings_data_logical)
 
-        # api_access
-        api_access = {
-            u'site__v1': {
-                u'id__v1': site_id,
-                u'name__v1': site,
-                u'slug__v1': slugify(site)
-            },
-            u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
-            u'domains__v1': domains,
-            u'created_on__v1': now_es,
-        }
-        es_response_raw = requests.post(
-            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
-            data=json.dumps(api_access))
-        if es_response_raw.status_code not in [200, 201]:
-            raise exceptions.XimpiaAPIException(_(u'Could not write api access "{}" :: {}'.format(
-                site, es_response_raw.content)))
-        es_response = es_response_raw.json()
-        api_access_key = es_response.get('_id', '')
-        logger.info(u'SetupSite :: created api access {} id: {}'.format(
-            site,
-            api_access_key
-        ))
-        api_access_logical = to_logical_doc('api_access', api_access)
-        api_access_logical['id'] = api_access_key
         # account
         account_data = {
             u'organization__v1': {
@@ -289,7 +275,7 @@ class SetupSite(generics.CreateAPIView):
         account_data_logical = to_logical_doc('account', account_data)
         account_data_logical['id'] = es_response.get('_id', '')
 
-        return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
+        return site_data_logical, app_data_logical, settings_output, account_data_logical
 
     @classmethod
     def _create_tag(cls, index_name, now_es, version='v1'):
@@ -411,7 +397,7 @@ class SetupSite(generics.CreateAPIView):
         # 1. create site, app and settings
         site_tuple = self._create_site_app(index_ximpia, index_name, site, app, now_es, languages,
                                            location, invite_only, tag_data, domains, account, organization_name)
-        site_data, app_data, settings_data, api_access, account_data = site_tuple
+        site_data, app_data, settings_data, account_data = site_tuple
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
@@ -431,8 +417,8 @@ class SetupSite(generics.CreateAPIView):
                 'social_network': social_network,
                 'groups': groups,
                 'group_permissions': {},
-                'api_key': api_access['id'],
-                'api_secret': api_access['api_secret'],
+                'api_key': site_data['api_access']['api_key'],
+                'api_secret': site_data['api_access']['api_secret'],
             }
         )
         if user_raw.status_code not in [200, 201]:
@@ -447,7 +433,6 @@ class SetupSite(generics.CreateAPIView):
             u'user': user,
             u'groups': groups,
             u'permissions': permissions_data,
-            u'api_access': api_access,
             u'token': user.get('token', {}),
         }
         print response_

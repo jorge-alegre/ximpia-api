@@ -18,7 +18,7 @@ from rest_framework import viewsets, generics, response
 from rest_framework.response import Response
 
 from document.views import DocumentViewSet
-from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site
+from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index
 from document import to_logical_doc, to_physical_doc, Document
 
 __author__ = 'jorgealegre'
@@ -385,7 +385,7 @@ class UserSignup(generics.CreateAPIView):
             logger.info(u'SetupSite :: created user group id: {}'.format(
                 es_response.get('_id', '')
             ))
-        # TODO: refresh index
+        refresh_index(index_name)
         # authenticate and login user
         auth_data = {
             u'access_token': data['access_token'],

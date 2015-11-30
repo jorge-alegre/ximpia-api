@@ -56,9 +56,6 @@ class Command(BaseCommand):
         with open('{}/account.json'.format(mappings_path)) as f:
             account_dict = json.loads(f.read())
 
-        with open('{}/api_access.json'.format(mappings_path)) as f:
-            api_access_dict = json.loads(f.read())
-
         with open('{}/urlconf.json'.format(mappings_path)) as f:
             urlconf_dict = json.loads(f.read())
 
@@ -97,7 +94,6 @@ class Command(BaseCommand):
                                             'settings': settings_dict,
                                             'mappings': {
                                                 'account': account_dict,
-                                                'api_access': api_access_dict,
                                                 'site': site_dict,
                                                 'urlconf': urlconf_dict,
                                                 'app': app_dict,
@@ -186,7 +182,17 @@ class Command(BaseCommand):
         :return:
         """
         from base import SocialNetworkResolution
-        # account
+        from document import Document
+        # generate api access key
+        counter = 0
+        api_access_key = get_random_string(32, VALID_KEY_CHARS)
+        while Document.objects.filter('site', api_access__api_key=api_access_key):
+            api_access_key = get_random_string(32, VALID_KEY_CHARS)
+            if counter > 10:
+                raise XimpiaAPIException(_(
+                    u'Maximum number of iterations for generate api key'
+                ))
+            counter += 1
         # site
         site_data = {
             u'name__v1': site,
@@ -195,6 +201,11 @@ class Command(BaseCommand):
             u'is_active__v1': True,
             u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
             u'public__v1': public,
+            u'api_access__v1': {
+                u'api_key__v1': api_access_key,
+                u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+                u'created_on__v1': now_es,
+            },
             u'created_on__v1': now_es
         }
         if invite_only:
@@ -282,31 +293,6 @@ class Command(BaseCommand):
             ))
             settings_data_logical = to_logical_doc('settings', settings_data)
             settings_output.append(settings_data_logical)
-
-        # api_access
-        api_access = {
-            u'site__v1': {
-                u'id__v1': site_id,
-                u'name__v1': site,
-                u'slug__v1': slugify(site)
-            },
-            u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
-            u'created_on__v1': now_es,
-        }
-        es_response_raw = requests.post(
-            '{}/{}/api_access'.format(settings.ELASTIC_SEARCH_HOST, index_name),
-            data=json.dumps(api_access))
-        if es_response_raw.status_code not in [200, 201]:
-            raise XimpiaAPIException(_(u'Could not write api access "{}" :: {}'.format(
-                site, es_response_raw.content)))
-        es_response = es_response_raw.json()
-        api_access_key = es_response.get('_id', '')
-        logger.info(u'SetupSite :: created api access {} id: {}'.format(
-            site,
-            api_access_key
-        ))
-        api_access_logical = to_logical_doc('api_access', api_access)
-        api_access_logical['id'] = api_access_key
         # account
         account_data = {
             u'organization__v1': {
@@ -328,7 +314,7 @@ class Command(BaseCommand):
         account_data_logical = to_logical_doc('account', account_data)
         account_data_logical['id'] = es_response.get('_id', '')
 
-        return site_data_logical, app_data_logical, settings_output, api_access_logical, account_data_logical
+        return site_data_logical, app_data_logical, settings_output, account_data_logical
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
