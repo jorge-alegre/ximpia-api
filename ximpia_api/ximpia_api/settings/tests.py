@@ -135,3 +135,10 @@ SITE_BASE_INDEX = u'ximpia_api__base'
 SITE = 'Ximpia API'
 
 TEST_RUNNER = 'base.tests.XimpiaDiscoverRunner'
+
+DEFAULT_GROUPS = [
+    u'users',
+    u'users-test',
+    u'admin',
+    u'staff'
+]

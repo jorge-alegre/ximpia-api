@@ -1,9 +1,19 @@
+import json
+import requests
+from requests.adapters import HTTPAdapter
+
 from django.test import RequestFactory, Client
+from django.conf import settings
 
 from base.tests import XimpiaTestCase, get_fb_test_user_local
 from document import Document
 
+
 __author__ = 'jorgealegre'
+
+req_session = requests.Session()
+req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
+                  HTTPAdapter(max_retries=3))
 
 
 class AuthenticateTestCase(XimpiaTestCase):
@@ -27,3 +37,34 @@ class AuthenticateTestCase(XimpiaTestCase):
         user_id = self.c.session['_auth_user_id']
         user = Document.objects.get('user', id=user_id, get_logical=True)
         self.assertTrue(user['token'] and 'key' in user['token'] and user['token']['key'])
+
+
+class Signup(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def signup_ximpia_user(self):
+        # get access token
+        # get site
+        site = Document.objects.get('site',
+                                    name='Ximpia API')
+        # get groups
+        groups = Document.objects.filter('group',
+                                         name__in=settings.DEFAULT_GROUPS,
+                                         get_logical=True)
+        response = self.c.post(
+            '{scheme}://ximpia.io/user-signup'.format(settings.SCHEME),
+            {
+                u'access_token': get_fb_test_user_local('registration')['access_token'],
+                u'social_network': 'facebook',
+                u'groups': groups,
+                u'api_key': site['api_access']['api_key'],
+                u'api_secret': site['api_access']['api_secret'],
+            }
+        )
+        print response
