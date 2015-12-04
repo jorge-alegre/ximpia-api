@@ -233,7 +233,7 @@ class Command(BaseCommand):
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
         app_data = {
-            u'site__v1': site_data_logical,
+            u'site__v1': site_data,
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,

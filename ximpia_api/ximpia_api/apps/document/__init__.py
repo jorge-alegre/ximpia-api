@@ -317,10 +317,11 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 }
             ]
     es_response = get_es_response(
-        req_session.get(get_path_search('_field_version'),
+        req_session.get(get_path_search('field_version'),
                         data=json.dumps(query)))
     # here we have all physical fields for document
     field_dict = {}
+    print u'physical db field response: {}'.format(es_response)
     for field_db in es_response['hits']['hits']:
         try:
             if field_db.split('__')[0] in fields:
@@ -329,6 +330,14 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 field_dict[target_field] = field_db
         except (IndexError, KeyError):
             pass
+    if not es_response['hits']['hits']:
+        for field in fields:
+            # mine.cost -> mine__v1.cost__v1
+            if '.' in field:
+                for field_item in field.split('.'):
+                    field_dict[field_item] = u'{}__v1'.format(field_item)
+            else:
+                field_dict[field] = u'{}__v1'.format(field)
     return field_dict
 
 
@@ -370,7 +379,7 @@ class DocumentManager(object):
             if '__' not in field_name:
                 fields_generated.append(field_name)
             else:
-                if not expand:
+                if expand:
                     fields_generated.append(field_name.replace('__', '.'))
                 else:
                     for field_item in field_name.split('__'):
@@ -481,8 +490,10 @@ class DocumentManager(object):
 
         # we have like ['status', 'user.value, ... ]
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
+        print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
         field_dict = to_physical_fields(document_type,
-                                        cls.fields_to_es_format(expand=True, **kwargs))
+                                        cls.fields_to_es_format(kwargs, expand=True))
+        print u'field_dict: {}'.format(field_dict)
 
         filter_data = {}
         for field in kwargs:
@@ -504,17 +515,12 @@ class DocumentManager(object):
 
             filter_data[field_name] = value
 
+        print u'filter_data: {}'.format(filter_data)
         query_dsl = {
             'query': {
                 'filtered': {
                     'filter': {
-                        {
-                            'and': map(lambda x: {
-                                'term': {
-                                    x[0]: x[1]
-                                }
-                            }, filter_data)
-                        }
+                        'and': map(lambda x: {'term': {x: filter_data[x]}}, filter_data)
                     }
                 }
             }
@@ -523,6 +529,7 @@ class DocumentManager(object):
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()
+        print es_response_raw.content
         if get_logical:
             output = []
             for item in es_response['hits']['hits']:

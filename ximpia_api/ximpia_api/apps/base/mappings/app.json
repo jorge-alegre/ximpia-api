@@ -15,8 +15,48 @@
             "type": "string",
             "index": "not_analyzed"
           },
+          "account__v1": {
+            "properties": {
+              "id": {
+                "type": "string",
+                "fields": {
+                  "account__v1": {
+                    "type": "string"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "organization__v1": {
+                "properties": {
+                  "name__v1": {
+                    "type": "string"
+                  }
+                }
+              },
+              "created_on__v1" : {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
+          },
           "name__v1": {
-            "type": "string"
+            "type": "string",
+            "fields": {
+              "name__v1": {
+                "type": "string"
+              },
+              "completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
           },
           "slug__v1": {
             "type": "string",
@@ -29,6 +69,44 @@
                 "index": "not_analyzed"
               }
             }
+          },
+          "url__v1": {
+            "type": "string",
+            "fields": {
+              "url__v1": {
+                "type": "string",
+                "analyzer": "link_analyzer"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "invites__v1": {
+            "properties": {
+              "age_days__v1": {
+                "type": "integer"
+              },
+              "active__v1": {
+                "type": "boolean",
+                "null_value": false
+              },
+              "created_on__v1": {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              },
+              "updated_on__v1": {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
+          },
+          "public__v1": {
+            "type": "boolean"
           },
           "domains__v1": {
             "type": "nested",
@@ -48,6 +126,35 @@
                 }
               }
             }
+          },
+          "api_access__v1": {
+            "properties": {
+              "api_key__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "api_secret__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "rate_hour__v1": {
+                "type": "integer"
+              },
+              "rate_day__v1": {
+                "type": "integer"
+              },
+              "rate_month__v1": {
+                "type": "integer"
+              },
+              "created_on__v1" : {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
           }
         }
       },

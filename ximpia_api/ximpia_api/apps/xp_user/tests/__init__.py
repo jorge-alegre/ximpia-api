@@ -49,6 +49,7 @@ class Signup(XimpiaTestCase):
         pass
 
     def signup_ximpia_user(self):
+        print 'signup_ximpia_user...'
         # get access token
         # get site
         site = Document.objects.get('site',
@@ -57,8 +58,9 @@ class Signup(XimpiaTestCase):
         groups = Document.objects.filter('group',
                                          name__in=settings.DEFAULT_GROUPS,
                                          get_logical=True)
+        print u'groups: {}'.format(groups)
         response = self.c.post(
-            '{scheme}://ximpia.io/user-signup'.format(settings.SCHEME),
+            '/user-signup',
             {
                 u'access_token': get_fb_test_user_local('registration')['access_token'],
                 u'social_network': 'facebook',
@@ -67,4 +69,6 @@ class Signup(XimpiaTestCase):
                 u'api_secret': site['api_access']['api_secret'],
             }
         )
-        print response
+        print response.status_code
+        print response.content
+        print response.json()
