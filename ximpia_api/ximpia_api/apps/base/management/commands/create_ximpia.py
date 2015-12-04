@@ -525,7 +525,7 @@ class Command(BaseCommand):
                                            languages, location, invite_only,
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
-        site_data, app_data, settings_data, api_access, account_data = site_tuple
+        site_data, app_data, settings_data, account_data = site_tuple
         refresh_index(index_name)
 
         # social
@@ -553,6 +553,5 @@ class Command(BaseCommand):
                     u'user': user_data,
                     u'groups': groups_data,
                     u'permissions': permissions_data,
-                    u'api_access': api_access
                 })
             ))
