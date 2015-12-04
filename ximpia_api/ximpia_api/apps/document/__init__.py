@@ -496,11 +496,16 @@ class DocumentManager(object):
         print u'field_dict: {}'.format(field_dict)
 
         filter_data = {}
+        query_items = []
         for field in kwargs:
             value = kwargs[field]
+            values = []
             op, field_name = cls.get_op(field)
+            is_array_type = False
             if op == 'in':
-                value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
+                # value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
+                values = map(lambda x: u'{}'.format(x), value)
+                is_array_type = True
             if op and op not in ['in']:
                 raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
             if isinstance(value, (datetime.date, datetime.datetime)):
@@ -514,18 +519,34 @@ class DocumentManager(object):
                 field_name = field_dict[field_name]
 
             filter_data[field_name] = value
+            if not is_array_type:
+                query_items.append({
+                    'term': {
+                        field_name: value
+                    }
+                })
+            else:
+                query_items.append({
+                    'terms': {
+                        field_name: values
+                    }
+                })
 
         print u'filter_data: {}'.format(filter_data)
         query_dsl = {
             'query': {
                 'filtered': {
+                    'query': {
+                        'match_all': {}
+                    },
                     'filter': {
-                        'and': map(lambda x: {'term': {x: filter_data[x]}}, filter_data)
+                        'and': query_items
                     }
                 }
             }
         }
 
+        print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()

@@ -52,11 +52,12 @@ class Signup(XimpiaTestCase):
         print 'signup_ximpia_user...'
         # get access token
         # get site
-        site = Document.objects.get('site',
-                                    name='Ximpia API')
+        site = Document.objects.filter('site',
+                                       slug__raw='ximpia-api', get_logical=True)[0]
+        # print u'site: {}'.format(site)
         # get groups
         groups = Document.objects.filter('group',
-                                         name__in=settings.DEFAULT_GROUPS,
+                                         slug__raw__in=settings.DEFAULT_GROUPS,
                                          get_logical=True)
         print u'groups: {}'.format(groups)
         response = self.c.post(
