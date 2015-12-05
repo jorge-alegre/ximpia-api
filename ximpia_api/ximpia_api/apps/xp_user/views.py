@@ -218,11 +218,13 @@ class UserSignup(generics.CreateAPIView):
         :return:
         """
         from base import get_base_app
-        data = request.data
+        print request.body
+        data = json.loads(request.body)
         site_slug = slugify(settings.SITE)
         if args:
             site_slug = args[0]
         app = get_base_app(site_slug)
+        print u'app: {}'.format(app)
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
         # Implemented with the document features
@@ -231,16 +233,12 @@ class UserSignup(generics.CreateAPIView):
         if not app['site']['public']:
             # check api key
             if 'api_key' in data:
-                api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
-                api_secret_db = api_access['secret_key']
+                # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                api_secret_db = app['site']['api_access']['api_secret']
                 if api_secret_db != data.get('api_secret', ''):
                     # display error
                     raise exceptions.XimpiaAPIException(_(
                         u'Secret does not match for API access'
-                    ))
-                if api_access['site']['slug'] != site_slug:
-                    raise exceptions.XimpiaAPIException(_(
-                        u'API key does to belong to requested site'
                     ))
                 # skip_validate = True
             # check domain
@@ -250,7 +248,7 @@ class UserSignup(generics.CreateAPIView):
                 raise exceptions.XimpiaAPIException(_(
                     u'API access error'
                 ))"""
-        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
 
         if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
@@ -271,6 +269,7 @@ class UserSignup(generics.CreateAPIView):
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
         # user
+        print u'groups_data: {}'.format(data['groups'])
         user_data = {
             u'username__v1': " ",
             u'alias__v1': "",
@@ -317,8 +316,8 @@ class UserSignup(generics.CreateAPIView):
         logger.info(u'SetupSite :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
-        user_data['id'] = es_response.get('_id', '')
         user_data_logical = to_logical_doc('user', user_data)
+        user_data_logical['id'] = es_response.get('_id', '')
         # users groups
         for group_data in data['groups']:
             es_response_raw = requests.post(

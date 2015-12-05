@@ -501,7 +501,7 @@ class Command(BaseCommand):
         organization_name = 'Ximpia Inc'
         account = 'ximpia'
 
-        index_name = 'ximpia_api__base'
+        index_name = 'ximpia-api__base'
         site = 'Ximpia API'
         app = 'base'
         public = False

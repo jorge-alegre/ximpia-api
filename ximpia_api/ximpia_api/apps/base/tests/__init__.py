@@ -184,7 +184,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
-        refresh_index('ximpia_api__base')
+        refresh_index('ximpia-api__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):

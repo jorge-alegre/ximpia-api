@@ -555,9 +555,11 @@ class DocumentManager(object):
             output = []
             for item in es_response['hits']['hits']:
                 item_data = item['_source']
-                item_data['id'] = item['_id']
+                # item_data['id'] = item['_id']
+                item_document = to_logical_doc(document_type, item_data)
+                item_document['id'] = item['_id']
                 output.append(
-                    to_logical_doc(document_type, item_data)
+                    item_document
                 )
         else:
             output = es_response['hits']['hits']

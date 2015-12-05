@@ -57,6 +57,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # 1. get social data for user
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
+                                                                        app_id=app_id,
                                                                         access_token=access_token,
                                                                         social_app_id=social_app_id,
                                                                         social_app_secret=social_app_secret)

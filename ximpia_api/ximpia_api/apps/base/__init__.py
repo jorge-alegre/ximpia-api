@@ -316,9 +316,13 @@ def get_base_app(site_slug):
             u'{}.base'.format(site_slug),
             es_response_raw.content
         )))
-    app = es_response['_source']
-    app['id'] = es_response['_id']
-    return to_logical_doc('app', app)
+    try:
+        app = es_response['hits']['hits'][0]['_source']
+        app_document = to_logical_doc('app', app)
+        app_document['id'] = es_response['hits']['hits'][0]['_id']
+        return app_document
+    except IndexError:
+        raise exceptions.DocumentNotFound(_(u'Base app not found'))
 
 
 def refresh_index(index):

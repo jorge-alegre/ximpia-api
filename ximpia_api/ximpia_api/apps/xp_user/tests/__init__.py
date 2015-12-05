@@ -54,22 +54,20 @@ class Signup(XimpiaTestCase):
         # get site
         site = Document.objects.filter('site',
                                        slug__raw='ximpia-api', get_logical=True)[0]
-        # print u'site: {}'.format(site)
         # get groups
         groups = Document.objects.filter('group',
                                          slug__raw__in=settings.DEFAULT_GROUPS,
                                          get_logical=True)
-        print u'groups: {}'.format(groups)
         response = self.c.post(
             '/user-signup',
-            {
+            json.dumps({
                 u'access_token': get_fb_test_user_local('registration')['access_token'],
                 u'social_network': 'facebook',
                 u'groups': groups,
                 u'api_key': site['api_access']['api_key'],
                 u'api_secret': site['api_access']['api_secret'],
-            }
+            }),
+            content_type="application/json"
         )
-        print response.status_code
-        print response.content
-        print response.json()
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
