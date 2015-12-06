@@ -20,7 +20,23 @@ req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 class SocialNetworkResolution(object):
 
     @classmethod
-    def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base'):
+    def get_app_access_token_from_network(cls, social_app_id, social_app_secret, provider='facebook'):
+        response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                       'client_id={social_app_id}&'
+                                       'client_secret={social_app_secret}&'
+                                       'grant_type=client_credentials'.format(
+                                           social_app_id=social_app_id,
+                                           social_app_secret=social_app_secret,
+                                       ))
+        if response_raw.status_code != 200:
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+        app_access_token = response_raw.content.split('access_token=')[1]
+        return app_access_token
+
+    @classmethod
+    def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base',
+                             provider='facebook'):
         """
         Get app access token
 
@@ -33,18 +49,22 @@ class SocialNetworkResolution(object):
         try:
             app = Document.objects.get('app', id=app_id)
             app_access_token = app['social']['facebook']['access_token']
+            if not app_access_token:
+                app_access_token = cls.get_app_access_token_from_network(social_app_id,
+                                                                         social_app_secret)
+                app['social'][provider]['access_token'] = app_access_token
+                # update app
+                response = Document.objects.update_partial('app',
+                                                           app['id'],
+                                                           app['social'])
+                if 'status' in response and response['status'] not in [200, 201]:
+                    raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                        response
+                    ))
+
         except DocumentNotFound:
-            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                           'client_id={social_app_id}&'
-                                           'client_secret={social_app_secret}&'
-                                           'grant_type=client_credentials'.format(
-                                               social_app_id=social_app_id,
-                                               social_app_secret=social_app_secret,
-                                           ))
-            if response_raw.status_code != 200:
-                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-            app_access_token = response_raw.content.split('access_token=')[1]
+            app_access_token = cls.get_app_access_token_from_network(social_app_id,
+                                                                     social_app_secret)
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
         return app_access_token
 
@@ -64,6 +84,7 @@ class SocialNetworkResolution(object):
         from document import Document
         from exceptions import DocumentNotFound
 
+        provider = kwargs.get('provider', 'facebook')
         request_access_token = kwargs.get('access_token', '')
         if 'app_id' not in kwargs and not kwargs['app_id']:
             raise exceptions.XimpiaAPIException(u'App Id not informed')
@@ -75,18 +96,21 @@ class SocialNetworkResolution(object):
             try:
                 app = Document.objects.get('app', id=kwargs['app_id'], get_logical=True)
                 app_access_token = app['social']['facebook']['access_token']
+                if not app_access_token:
+                    app_access_token = cls.get_app_access_token_from_network(kwargs['social_app_id'],
+                                                                             kwargs['social_app_secret'])
+                    app['social'][provider]['access_token'] = app_access_token
+                    # update app
+                    response = Document.objects.update_partial('app',
+                                                               app['id'],
+                                                               app['social'])
+                    if 'status' in response and response['status'] not in [200, 201]:
+                        raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                            response
+                        ))
             except DocumentNotFound:
-                response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                               'client_id={app_id}&'
-                                               'client_secret={app_secret}&'
-                                               'grant_type=client_credentials'.format(
-                                                   app_id=kwargs['social_app_id'],
-                                                   app_secret=kwargs['social_app_secret'],
-                                               ))
-                if response_raw.status_code != 200:
-                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                app_access_token = response_raw.content.split('access_token=')[1]
+                app_access_token = cls.get_app_access_token_from_network(kwargs['social_app_id'],
+                                                                         kwargs['social_app_secret'])
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
         """

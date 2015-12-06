@@ -173,6 +173,8 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
+        from base import exceptions, SocialNetworkResolution
+        from document import Document
         old_names = []
         mirrors = []
         # get test user
@@ -186,6 +188,40 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      invite_only=False,
                      verbosity=self.verbosity)
         refresh_index('ximpia-api__base')
+        # Create site My Site
+        user_data = get_fb_test_user_local('registration')
+        client = Client()
+        response = client.post(
+            reverse('create_site'),
+            json.dumps({
+                u'access_token': user_data['access_token'],
+                u'social_network': 'facebook',
+                u'languages': ['en'],
+                u'location': 'us',
+                u'domains': ['my-domain.com'],
+                u'organization_name': u'my-company',
+                u'account': 'my-company',
+                u'site': 'my-site',
+            }),
+            content_type="application/json"
+        )
+        if response.status_code != 200:
+            raise exceptions.XimpiaAPIException(u'Error creating My Site')
+        # Update facebook app ids to My Site
+        response_data = json.loads(response.content)
+        app_id = response_data['app']['id']
+        # get app
+        app = Document.objects.get('app', id=app_id)
+        app['social']['facebook']['app_id'] = settings.MY_SITE_FACEBOOK_APP_ID
+        app['social']['facebook']['app_secret'] = settings.MY_SITE_FACEBOOK_APP_SECRET
+        # Get app access token
+        # social_app_id, social_app_secret, app_id='ximpia_api__base')
+        app['social']['facebook']['access_token'] = SocialNetworkResolution.get_app_access_token(
+            app['social']['facebook']['app_id'],
+            app['social']['facebook']['app_secret'],
+            app_id=app['id']
+        )
+        # update app partially for app['social']
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):

@@ -566,7 +566,7 @@ class DocumentManager(object):
         return output
 
     @classmethod
-    def update_partial(cls, document_type, id_, partial_document):
+    def update_partial(cls, document_type, id_, partial_document, index=settings.SITE_BASE_INDEX):
         """
         Update partial document
 
@@ -578,14 +578,14 @@ class DocumentManager(object):
         es_response_raw = req_session.post(
             '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
+                index=index,
                 document_type=document_type,
                 id_=id_),
             data=json.dumps({
                 'doc': partial_document
             })
         )
-        if es_response_raw.status_code != 200:
+        if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could no partially update document {} '
                                                   u'with id {} doc: {}'.format(
                                                       document_type,
