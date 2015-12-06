@@ -458,7 +458,9 @@ class DocumentManager(object):
         else:
             raise exceptions.XimpiaAPIException(u'We only support get document by id')
         if get_logical:
-            return to_logical_doc(document_type, es_response['_source'])
+            logical_doc = to_logical_doc(document_type, es_response['_source'])
+            logical_doc['id'] = es_response['_id']
+            return logical_doc
         else:
             return es_response['_source']
 
@@ -576,7 +578,7 @@ class DocumentManager(object):
         :return:
         """
         es_response_raw = req_session.post(
-            '{host}/{index}/{document_type}/{id_}'.format(
+            '{host}/{index}/{document_type}/{id_}/_update'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=index,
                 document_type=document_type,
@@ -587,10 +589,11 @@ class DocumentManager(object):
         )
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could no partially update document {} '
-                                                  u'with id {} doc: {}'.format(
+                                                  u'with id {} doc: {} :: {}'.format(
                                                       document_type,
                                                       id_,
-                                                      partial_document)))
+                                                      partial_document,
+                                                      es_response_raw.content)))
         return es_response_raw.json()
 
     @classmethod

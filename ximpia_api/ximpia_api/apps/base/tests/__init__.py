@@ -174,7 +174,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :return:
         """
         from base import exceptions, SocialNetworkResolution
-        from document import Document
+        from document import Document, to_physical_doc
         old_names = []
         mirrors = []
         # get test user
@@ -187,7 +187,6 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
-        refresh_index('ximpia-api__base')
         # Create site My Site
         user_data = get_fb_test_user_local('registration')
         client = Client()
@@ -209,9 +208,13 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             raise exceptions.XimpiaAPIException(u'Error creating My Site')
         # Update facebook app ids to My Site
         response_data = json.loads(response.content)
+        print u'response_data app: {}'.format(response_data['app'])
         app_id = response_data['app']['id']
+        refresh_index('ximpia-api__base')
+        refresh_index('my-site__base')
         # get app
-        app = Document.objects.get('app', id=app_id)
+        app = Document.objects.get('app', id=app_id, index='my-site__base', get_logical=True)
+        print app
         app['social']['facebook']['app_id'] = settings.MY_SITE_FACEBOOK_APP_ID
         app['social']['facebook']['app_secret'] = settings.MY_SITE_FACEBOOK_APP_SECRET
         # Get app access token
@@ -219,9 +222,21 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         app['social']['facebook']['access_token'] = SocialNetworkResolution.get_app_access_token(
             app['social']['facebook']['app_id'],
             app['social']['facebook']['app_secret'],
-            app_id=app['id']
+            app_id=app['id'],
+            disable_update=True,
         )
         # update app partially for app['social']
+        response = Document.objects.update_partial('app',
+                                                   app['id'],
+                                                   {
+                                                       'social__v1': to_physical_doc('app', app['social'])
+                                                   },
+                                                   index='my-site__base'
+                                                   )
+        if 'status' in response and response['status'] not in [200, 201]:
+            raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                response
+            ))
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
@@ -397,9 +412,9 @@ class CreateSite(XimpiaTestCase):
                 u'languages': ['en'],
                 u'location': 'us',
                 u'domains': ['my-domain.com'],
-                u'organization_name': u'my-company',
-                u'account': 'my-company',
-                u'site': 'my-site',
+                u'organization_name': u'my-company-test',
+                u'account': 'my-company-test',
+                u'site': 'my-site-test',
             }),
             content_type="application/json"
         )

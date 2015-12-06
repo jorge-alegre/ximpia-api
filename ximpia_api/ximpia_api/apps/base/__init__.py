@@ -36,7 +36,7 @@ class SocialNetworkResolution(object):
 
     @classmethod
     def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base',
-                             provider='facebook'):
+                             provider='facebook', disable_update=False):
         """
         Get app access token
 
@@ -44,7 +44,7 @@ class SocialNetworkResolution(object):
         :param social_app_secret:
         :return:
         """
-        from document import Document
+        from document import Document, to_physical_doc
         from exceptions import DocumentNotFound
         try:
             app = Document.objects.get('app', id=app_id)
@@ -56,7 +56,9 @@ class SocialNetworkResolution(object):
                 # update app
                 response = Document.objects.update_partial('app',
                                                            app['id'],
-                                                           app['social'])
+                                                           {
+                                                               'social__v1': to_physical_doc('app', app['social'])
+                                                           })
                 if 'status' in response and response['status'] not in [200, 201]:
                     raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
                         response
@@ -81,7 +83,7 @@ class SocialNetworkResolution(object):
         :param kwargs:
         :return:
         """
-        from document import Document
+        from document import Document, to_physical_doc
         from exceptions import DocumentNotFound
 
         provider = kwargs.get('provider', 'facebook')
@@ -103,7 +105,9 @@ class SocialNetworkResolution(object):
                     # update app
                     response = Document.objects.update_partial('app',
                                                                app['id'],
-                                                               app['social'])
+                                                               {
+                                                                   'social__v1': to_physical_doc('app', app['social'])
+                                                               })
                     if 'status' in response and response['status'] not in [200, 201]:
                         raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
                             response
