@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter
 import logging
+import json
 
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -19,34 +20,31 @@ req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 class SocialNetworkResolution(object):
 
     @classmethod
-    def get_app_access_token(cls, app_id, app_secret):
+    def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base'):
         """
         Get app access token
 
-        :param app_id:
-        :param app_secret:
+        :param social_app_id:
+        :param social_app_secret:
         :return:
         """
         from document import Document
         from exceptions import DocumentNotFound
-        if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
-            app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
-        else:
-            try:
-                app = Document.objects.get('app', id=settings.APP_ID)
-                app_access_token = app['social']['facebook']['access_token']
-            except DocumentNotFound:
-                response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                               'client_id={app_id}&'
-                                               'client_secret={app_secret}&'
-                                               'grant_type=client_credentials'.format(
-                                                   app_id=app_id,
-                                                   app_secret=app_secret,
-                                               ))
-                if response_raw.status_code != 200:
-                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                app_access_token = response_raw.content.split('|')[1]
+        try:
+            app = Document.objects.get('app', id=app_id)
+            app_access_token = app['social']['facebook']['access_token']
+        except DocumentNotFound:
+            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                           'client_id={social_app_id}&'
+                                           'client_secret={social_app_secret}&'
+                                           'grant_type=client_credentials'.format(
+                                               social_app_id=social_app_id,
+                                               social_app_secret=social_app_secret,
+                                           ))
+            if response_raw.status_code != 200:
+                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+            app_access_token = response_raw.content.split('access_token=')[1]
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
         return app_access_token
 
@@ -67,22 +65,23 @@ class SocialNetworkResolution(object):
         from exceptions import DocumentNotFound
 
         request_access_token = kwargs.get('access_token', '')
+        if 'app_id' not in kwargs and not kwargs['app_id']:
+            raise exceptions.XimpiaAPIException(u'App Id not informed')
 
         # this is executed in case we don't have app access token in ximpia app data
-        if hasattr(settings, 'XIMPIA_FACEBOOK_APP_TOKEN') and settings.XIMPIA_FACEBOOK_APP_TOKEN:
-            app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
+        if 'app' in kwargs:
+            app_access_token = kwargs['app']['social']['facebook']['access_token']
         else:
             try:
-                app = Document.objects.get('app', id=settings.APP_ID)
+                app = Document.objects.get('app', id=kwargs['app_id'], get_logical=True)
                 app_access_token = app['social']['facebook']['access_token']
             except DocumentNotFound:
                 response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
                                                'client_id={app_id}&'
                                                'client_secret={app_secret}&'
                                                'grant_type=client_credentials'.format(
-                                                   app_id=kwargs.get('app_id', settings.XIMPIA_FACEBOOK_APP_ID),
-                                                   app_secret=kwargs.get('app_secret',
-                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET),
+                                                   app_id=kwargs['social_app_id'],
+                                                   app_secret=kwargs['social_app_secret'],
                                                ))
                 if response_raw.status_code != 200:
                     raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
@@ -215,7 +214,7 @@ def get_path_search(document_type, **kwargs):
     query_cache = kwargs.get('query_cache', True)
     return '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
         host=settings.ELASTIC_SEARCH_HOST,
-        index=settings.SITE_BASE_INDEX,
+        index=kwargs.get('index', settings.SITE_BASE_INDEX),
         document_type=document_type,
         query_cache=query_cache)
 
@@ -272,6 +271,73 @@ def get_setting_table_value(value_node):
     return table
 
 
+def get_base_app(site_slug):
+    """
+    Get base app for site
+
+    We check for base app
+
+    :param site_slug:
+    :return:
+    """
+    from document import to_logical_doc
+    es_path = get_path_search('app', index=u'{}__base'.format(site_slug))
+    query_dsl = {
+        'query': {
+            'filtered': {
+                'query': {
+                    'bool': {
+                        'must': [
+                            {
+                                'term': {
+                                    'site__v1.slug__v1.raw__v1': site_slug
+                                }
+                            },
+                            {
+                                'term': {
+                                    'slug__v1.raw__v1': 'base'
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    """query_dsl = {
+        'query': {
+            'filtered': {
+                'query': {
+                    'match_all': {}
+                }
+            }
+        }
+    }"""
+    # print es_path
+    # print query_dsl
+    es_response_raw = req_session.get(es_path, data=json.dumps(query_dsl))
+    # print es_response_raw.status_code
+    if es_response_raw.status_code != 200:
+        raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
+            u'{}.base'.format(site_slug),
+            es_response_raw.content
+        )))
+    es_response = es_response_raw.json()
+    # print es_response
+    if 'status' in es_response and es_response['status'] != 200:
+        raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
+            u'{}.base'.format(site_slug),
+            es_response_raw.content
+        )))
+    try:
+        app = es_response['hits']['hits'][0]['_source']
+        app_document = to_logical_doc('app', app)
+        app_document['id'] = es_response['hits']['hits'][0]['_id']
+        return app_document
+    except IndexError:
+        raise exceptions.DocumentNotFound(_(u'Base app not found'))
+
+
 def refresh_index(index):
     """
     Refresh index
@@ -282,3 +348,87 @@ def refresh_index(index):
     req_session.post(
         '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, index)
     )
+
+
+def get_site(request):
+    """
+    Get site, either from data, host name
+
+    :param request:
+    :return:
+    """
+    data = json.loads(request.body)
+    host = request.META.get('HTTP_HOST', None)
+    if 'site' in data:
+        return data['site']
+    elif host:
+        site_slug = host.split('.' + settings.XIMPIA_DOMAIN)[0]
+        return site_slug
+    return None
+
+
+def get_resource(request, path, method_type, data=None):
+    """
+    We make request with test client or normal request to django web server
+
+    How we can make requests to server and get testing settings???
+
+    :param path: Like /create-site
+    :param data:
+    :return:
+    """
+    from requests.adapters import HTTPAdapter
+    from django.test import Client
+    req_session.mount('{}'.format(settings.XIMPIA_IO_HOST),
+                      HTTPAdapter(max_retries=3))
+    if settings.DEBUG:
+        print u'get_resource :: Testing request...'
+        request_data = json.loads(request.body)
+        if 'site' not in data:
+            data['site'] = request_data.get('site', None)
+        if not data['site']:
+            raise exceptions.XimpiaAPIException(u'No site defined in tests')
+        client = Client()
+        if method_type == 'get':
+            print u'get_resource :: testing get...'
+            response_raw = client.get(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+        elif method_type == 'post':
+            print u'get_resource :: testing post...'
+            response_raw = client.post(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+        elif method_type == 'put':
+            print u'get_resource :: testing put...'
+            response_raw = client.put(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+    else:
+        if method_type == 'get':
+            response_raw = req_session.get(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw
+        elif method_type == 'post':
+            response_raw = req_session.post(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw
+        elif method_type == 'put':
+            response_raw = req_session.put(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw

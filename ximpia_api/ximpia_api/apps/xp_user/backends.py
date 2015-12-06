@@ -35,22 +35,32 @@ logger = logging.getLogger(__name__)
 class XimpiaAuthBackend(authentication.BaseAuthentication):
 
     @classmethod
-    def authenticate(cls, access_token=None, provider=None, app_id=settings.XIMPIA_FACEBOOK_APP_ID,
-                     app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET):
+    def authenticate(cls,
+                     access_token=None,
+                     provider=None,
+                     social_app_id=settings.XIMPIA_FACEBOOK_APP_ID,
+                     social_app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET,
+                     app_id=None,
+                     index=None):
         """
         Authenticate for all providers given access token
 
         :param access_token:
         :param provider:
+        :param social_app_id:
+        :param social_app_secret:
+        :param app_id:
+        :param index:
         :return:
         """
 
         # 1. get social data for user
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
-                                                                        access_token=access_token,
                                                                         app_id=app_id,
-                                                                        app_secret=app_secret)
+                                                                        access_token=access_token,
+                                                                        social_app_id=social_app_id,
+                                                                        social_app_secret=social_app_secret)
         except exceptions.XimpiaAPIException:
             raise
 
@@ -59,7 +69,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             req_session.get(
                 '{host}/{index}/{document_type}/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
-                    index=settings.SITE_BASE_INDEX,
+                    index=index or settings.SITE_BASE_INDEX,
                     document_type='user'),
                 data=json.dumps({
                     'query': {
@@ -130,11 +140,13 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         user_document = req_session.get(
             '{host}/{index}/{document_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
+                index=index or settings.SITE_BASE_INDEX,
                 document_type='user',
                 id=user.id
             )).json()
-        user.document = user_document
+        user_data = user_document['_source']
+        user_data['id'] = user_document['_id']
+        user.document = to_logical_doc('user', user_data)
         return user
 
     @classmethod

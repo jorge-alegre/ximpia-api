@@ -9,7 +9,8 @@ from django.conf import settings
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.utils.translation import ugettext as _
-from django.test import TestCase, RequestFactory, Client, SimpleTestCase
+from django.core.urlresolvers import reverse
+from django.test import RequestFactory, Client, SimpleTestCase
 
 from base import exceptions, refresh_index
 
@@ -184,7 +185,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
-        refresh_index('ximpia_api__base')
+        refresh_index('ximpia-api__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
@@ -236,7 +237,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.test'
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.tests'
         # Create fb_test_users.json
         path = '{}apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
         path_expires = '{}apps/base/tests/data/fb_test_users-expires.json'.format(settings.BASE_DIR)
@@ -309,7 +310,9 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 data['expires'] = int(time.time()) + 5000
                 f.write(json.dumps(data, indent=2))
                 f.close()
+        # settings.DEBUG = True
         super(XimpiaDiscoverRunner, self).setup_test_environment(**kwargs)
+        settings.DEBUG = True
 
     def teardown_test_environment(self, **kwargs):
         """
@@ -326,3 +329,43 @@ class XimpiaTestCase(SimpleTestCase):
     def setUp(self):
         self.c = Client()
         self.req_factory = RequestFactory()
+
+
+class CreateSite(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def create_site(self):
+        """
+        We make request like:
+        https://mysite.ximpia.io/create-site
+
+        In tests, since we can't have the different host, we send in data.
+        Views get either from hostname or data
+
+        Being site slug embedded in the hostname
+
+        :return:
+        """
+        user_data = get_fb_test_user_local('registration')
+        response = self.c.post(
+            reverse('create_site'),
+            json.dumps({
+                u'access_token': user_data['access_token'],
+                u'social_network': 'facebook',
+                u'languages': ['en'],
+                u'location': 'us',
+                u'domains': ['my-domain.com'],
+                u'organization_name': u'my-company',
+                u'account': 'my-company',
+                u'site': 'my-site',
+            }),
+            content_type="application/json"
+        )
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(json.loads(response.content) and 'account' in json.loads(response.content))

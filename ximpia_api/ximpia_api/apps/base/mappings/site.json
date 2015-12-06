@@ -106,6 +106,50 @@
       "public__v1": {
         "type": "boolean"
       },
+      "domains__v1": {
+        "type": "nested",
+        "include_in_parent": true,
+        "dynamic": "false",
+        "properties": {
+          "domain_name__v1": {
+            "type": "string",
+            "fields": {
+              "domain_name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      },
+      "api_access__v1": {
+        "properties": {
+          "api_key__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "api_secret__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "rate_hour__v1": {
+            "type": "integer"
+          },
+          "rate_day__v1": {
+            "type": "integer"
+          },
+          "rate_month__v1": {
+            "type": "integer"
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
       "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"

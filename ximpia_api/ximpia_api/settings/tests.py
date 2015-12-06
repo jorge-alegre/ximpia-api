@@ -97,13 +97,6 @@ WSGI_APPLICATION = 'wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'test.db',
-    }
-}"""
-
 DATABASES = {}
 
 
@@ -131,24 +124,23 @@ XIMPIA_FACEBOOK_APP_SECRET = '01aa291d3f3e519d9430675af008deed'
 XIMPIA_FACEBOOK_APP_TOKEN = '981166675280371|Dq76b80QKO9eSqcl2KvKgYrPGCI'
 
 ELASTIC_SEARCH_HOST = 'http://elasticsearch-test:9200'
+# XIMPIA_IO_HOST = 'http://dev-web'
+XIMPIA_IO_HOST = 'http://testserver'
 
 SESSION_ENGINE = 'xp_sessions.backends.db'
 AUTHENTICATION_BACKENDS = (
     'xp_user.backends.XimpiaAuthBackend',
 )
 
-# This setting will be injected by middleware from request site
-SITE = 'mysite'
-# SITE_BASE_INDEX = u'{}_base'.format(SITE)
-SITE_BASE_INDEX = u'ximpia_api__base'
-SCHEME = 'http'
-APP_ID = ''
-SITE_ID = ''
-INDEX_NAME = ''
 XIMPIA_DOMAIN = 'ximpia.io'
-
-# injected when we configure app social auth
-FACEBOOK_APP_ID = ''
-FACEBOOK_APP_SECRET = ''
+SITE_BASE_INDEX = u'ximpia-api__base'
+SITE = 'Ximpia API'
 
 TEST_RUNNER = 'base.tests.XimpiaDiscoverRunner'
+
+DEFAULT_GROUPS = [
+    u'users',
+    u'users-test',
+    u'admin',
+    u'staff'
+]

@@ -317,10 +317,11 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 }
             ]
     es_response = get_es_response(
-        req_session.get(get_path_search('_field_version'),
+        req_session.get(get_path_search('field_version'),
                         data=json.dumps(query)))
     # here we have all physical fields for document
     field_dict = {}
+    print u'physical db field response: {}'.format(es_response)
     for field_db in es_response['hits']['hits']:
         try:
             if field_db.split('__')[0] in fields:
@@ -329,6 +330,14 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 field_dict[target_field] = field_db
         except (IndexError, KeyError):
             pass
+    if not es_response['hits']['hits']:
+        for field in fields:
+            # mine.cost -> mine__v1.cost__v1
+            if '.' in field:
+                for field_item in field.split('.'):
+                    field_dict[field_item] = u'{}__v1'.format(field_item)
+            else:
+                field_dict[field] = u'{}__v1'.format(field)
     return field_dict
 
 
@@ -370,7 +379,7 @@ class DocumentManager(object):
             if '__' not in field_name:
                 fields_generated.append(field_name)
             else:
-                if not expand:
+                if expand:
                     fields_generated.append(field_name.replace('__', '.'))
                 else:
                     for field_item in field_name.split('__'):
@@ -386,6 +395,7 @@ class DocumentManager(object):
         :param kwargs:
         :return:
         """
+        # TODO: When document definition done, get index by type
         get_logical = False
         if 'get_logical' in kwargs and kwargs['get_logical']:
             get_logical = True
@@ -393,25 +403,64 @@ class DocumentManager(object):
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
-            es_path = '{host}/{index}/{document_type}/{id_}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
-                document_type=document_type,
-                id_=kwargs['id'])
-        if len(kwargs) == 1 and 'id' in kwargs:
+            if 'id' in kwargs:
+                es_path = '{host}/{index}/{document_type}/{id_}'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=kwargs.get('index', settings.SITE_BASE_INDEX),
+                    document_type=document_type,
+                    id_=kwargs['id'])
+            else:
+                es_path = '{host}/{index}/{document_type}/_search'.format(
+                    host=settings.ELASTIC_SEARCH_HOST,
+                    index=kwargs.get('index', settings.SITE_BASE_INDEX),
+                    document_type=document_type)
+        if 'id' in kwargs:
             # do logic for get by id
             es_response_raw = req_session.get(es_path)
-            if es_response_raw.status_code != 200 or 'status' in es_response_raw and es_response_raw['status'] != 200:
+            if es_response_raw.status_code != 200:
                 raise exceptions.DocumentNotFound(_(u'Document "{}" with id "{}" does not exist'.format(
                     document_type, kwargs['id']
                 )))
             es_response = es_response_raw.json()
-            if get_logical:
-                return to_logical_doc(document_type, es_response['_source'])
-            else:
-                return es_response['_source']
+            if 'status' in es_response and es_response['status'] != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with id "{}" does not exist'.format(
+                    document_type, kwargs['id']
+                )))
+
+        elif 'slug' in kwargs:
+            query_dsl = {
+                'query': {
+                    "filtered": {
+                        'query': {
+                            'bool': {
+                                'must': [
+                                    {
+                                        'term': {
+                                            'slug__v1.raw': kwargs['slug']
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+            es_response_raw = req_session.get(es_path, data=json.dumps(query_dsl))
+            if es_response_raw.status_code != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with slug "{}" does not exist'.format(
+                    document_type, kwargs['slug']
+                )))
+            es_response = es_response_raw.json()
+            if 'status' in es_response and es_response['status'] != 200:
+                raise exceptions.DocumentNotFound(_(u'Document "{}" with slug "{}" does not exist'.format(
+                    document_type, kwargs['slug']
+                )))
         else:
             raise exceptions.XimpiaAPIException(u'We only support get document by id')
+        if get_logical:
+            return to_logical_doc(document_type, es_response['_source'])
+        else:
+            return es_response['_source']
 
     @classmethod
     def filter(cls, document_type, **kwargs):
@@ -427,6 +476,10 @@ class DocumentManager(object):
         :param kwargs:
         :return:
         """
+        get_logical = False
+        if 'get_logical' in kwargs and kwargs['get_logical']:
+            get_logical = True
+            del kwargs['get_logical']
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
@@ -437,15 +490,22 @@ class DocumentManager(object):
 
         # we have like ['status', 'user.value, ... ]
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
+        print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
         field_dict = to_physical_fields(document_type,
-                                        cls.fields_to_es_format(expand=True, **kwargs))
+                                        cls.fields_to_es_format(kwargs, expand=True))
+        print u'field_dict: {}'.format(field_dict)
 
         filter_data = {}
+        query_items = []
         for field in kwargs:
             value = kwargs[field]
+            values = []
             op, field_name = cls.get_op(field)
+            is_array_type = False
             if op == 'in':
-                value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
+                # value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
+                values = map(lambda x: u'{}'.format(x), value)
+                is_array_type = True
             if op and op not in ['in']:
                 raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
             if isinstance(value, (datetime.date, datetime.datetime)):
@@ -459,27 +519,51 @@ class DocumentManager(object):
                 field_name = field_dict[field_name]
 
             filter_data[field_name] = value
+            if not is_array_type:
+                query_items.append({
+                    'term': {
+                        field_name: value
+                    }
+                })
+            else:
+                query_items.append({
+                    'terms': {
+                        field_name: values
+                    }
+                })
 
+        print u'filter_data: {}'.format(filter_data)
         query_dsl = {
             'query': {
                 'filtered': {
+                    'query': {
+                        'match_all': {}
+                    },
                     'filter': {
-                        {
-                            'and': map(lambda x: {
-                                'term': {
-                                    x[0]: x[1]
-                                }
-                            }, filter_data)
-                        }
+                        'and': query_items
                     }
                 }
             }
         }
 
+        print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()
-        return es_response['hits']['hits']
+        print es_response_raw.content
+        if get_logical:
+            output = []
+            for item in es_response['hits']['hits']:
+                item_data = item['_source']
+                # item_data['id'] = item['_id']
+                item_document = to_logical_doc(document_type, item_data)
+                item_document['id'] = item['_id']
+                output.append(
+                    item_document
+                )
+        else:
+            output = es_response['hits']['hits']
+        return output
 
     @classmethod
     def update_partial(cls, document_type, id_, partial_document):
