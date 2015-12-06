@@ -18,7 +18,8 @@ from rest_framework import viewsets, generics, response
 from rest_framework.response import Response
 
 from document.views import DocumentViewSet
-from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index
+from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index, \
+    get_site
 from document import to_logical_doc, to_physical_doc, Document
 
 __author__ = 'jorgealegre'
@@ -217,12 +218,12 @@ class UserSignup(generics.CreateAPIView):
         :param kwargs:
         :return:
         """
+        print u'UserSignup...'
         from base import get_base_app
         print request.body
         data = json.loads(request.body)
-        site_slug = slugify(settings.SITE)
-        if args:
-            site_slug = args[0]
+        site_slug = get_site(request)
+        print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
         print u'app: {}'.format(app)
         # Access

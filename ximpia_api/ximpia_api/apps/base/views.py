@@ -13,11 +13,13 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
 from django.utils.crypto import get_random_string
+from django.core.urlresolvers import reverse
 
 from . import SocialNetworkResolution
 import exceptions
 
 from document import to_physical_doc, to_logical_doc, Document
+from base import refresh_index, get_resource
 
 __author__ = 'jorgealegre'
 
@@ -27,6 +29,8 @@ VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
+                  HTTPAdapter(max_retries=3))
+req_session.mount('{}'.format(settings.XIMPIA_IO_HOST),
                   HTTPAdapter(max_retries=3))
 
 
@@ -129,7 +133,7 @@ class SetupSite(generics.CreateAPIView):
 
     @classmethod
     def _create_site_app(cls, index_ximpia, index_name, site, app, now_es, languages, location,
-                         invite_only, tag_data, domains, account, organization_name):
+                         invite_only, tag_data, domains, account, organization_name, public):
         """
         Create site and app
 
@@ -154,9 +158,10 @@ class SetupSite(generics.CreateAPIView):
         site_data = {
             u'name__v1': site,
             u'slug__v1': slugify(site),
-            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(slugify(site)),
+            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(site_slug=slugify(site)),
             u'is_active__v1': True,
             u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
+            u'public__v1': public,
             u'api_access__v1': {
                 u'api_key__v1': api_access_key,
                 u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
@@ -175,11 +180,15 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
             data=json.dumps(site_data))
         if es_response_raw.status_code not in [200, 201]:
-            exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
+            raise exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
                 site,
                 es_response_raw.content
             )))
         es_response = es_response_raw.json()
+        print es_response
+        if 'status' in es_response and es_response['status'] != 200:
+            raise exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
+                app, es_response_raw.content)))
         site_id = es_response.get('_id', '')
         logger.info(u'SetupSite :: created site {} id: {}'.format(
             site,
@@ -187,13 +196,14 @@ class SetupSite(generics.CreateAPIView):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
+        site_data['id__v1'] = site_id
         # site_data['id'] = site_id
         # app
         # social app data would be inserted once admin user adds facebook id and secret
         # having pattern to get facebook app access token. Call would be update app with pattern
         # to generate the app access token
         app_data = {
-            u'site__v1': site_data_logical,
+            u'site__v1': site_data,
             u'name__v1': app,
             u'slug__v1': slugify(app),
             u'is_active__v1': True,
@@ -201,7 +211,7 @@ class SetupSite(generics.CreateAPIView):
                 u'facebook__v1': {
                     u'access_token__v1': None,
                     u"app_id__v1": None,
-                    u"app_secret__v1": None,
+                    u"app_secret__v1": None
                 }
             },
             u'created_on__v1': now_es
@@ -210,9 +220,13 @@ class SetupSite(generics.CreateAPIView):
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(app_data))
         if es_response_raw.status_code not in [200, 201]:
-            exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
+            raise exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
                 app, es_response_raw.content)))
         es_response = es_response_raw.json()
+        print u'app: {}'.format(es_response)
+        if 'status' in es_response and es_response['status'] != 200:
+            raise exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
+                app, es_response_raw.content)))
         app_id = es_response.get('_id', '')
         app_data_logical = to_logical_doc('app', app_data)
         app_data_logical['id'] = app_id
@@ -408,8 +422,16 @@ class SetupSite(generics.CreateAPIView):
         :param kwargs:
         :return:
         """
-        site = args[0]
-        data = request.data
+        import os
+        from django.conf import settings
+        data = json.loads(request.body)
+        print
+        print u'SetupSite :: request META: {}'.format(request.META)
+        site = request.META.get('HTTP_HOST', data.get('site', None))
+        print u'SetupSite :: site: {}'.format(site)
+        if not site:
+            raise exceptions.XimpiaAPIException(_(u'Site is not informed'))
+
         app = 'base'
         social_access_token = data['access_token']
         social_network = data.get('social_network', 'facebook')
@@ -419,6 +441,7 @@ class SetupSite(generics.CreateAPIView):
         domains = data.get('domains', [])
         organization_name = data.get('organization_name', site)
         account = data.get('account', site)
+        public = False
 
         # Site has normal users, beta users, admin users and staff
         default_groups = [
@@ -428,10 +451,10 @@ class SetupSite(generics.CreateAPIView):
             u'staff'
         ]
 
-        if filter(lambda x: site.index(x) != -1, list(self.RESERVED_WORDS)):
+        if filter(lambda x: site.find(x) != -1, list(self.RESERVED_WORDS)):
             raise exceptions.XimpiaAPIException(_(u'Site name not allowed'))
 
-        now_es = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         index_name = '{site}__base'.format(site=site)
         index_ximpia = settings.SITE_BASE_INDEX
 
@@ -442,7 +465,8 @@ class SetupSite(generics.CreateAPIView):
 
         # 1. create site, app and settings
         site_tuple = self._create_site_app(index_ximpia, index_name, site, app, now_es, languages,
-                                           location, invite_only, tag_data, domains, account, organization_name)
+                                           location, invite_only, tag_data, domains, account, organization_name,
+                                           public)
         site_data, app_data, settings_data, account_data = site_tuple
 
         # 2. Permissions
@@ -453,32 +477,43 @@ class SetupSite(generics.CreateAPIView):
                                      {
                                          u'admin': u'can-admin',
                                      })
+        refresh_index(index_name)
 
         # 4. User signup
         # We create user at ximpia, so user can connect to ximpia api app to manage account
-        user_raw = req_session.post(
-            '{scheme}://ximpia.io/user-signup'.format(settings.SCHEME),
-            data=json.dumps({
+        # We need testing framework use test client, and normal mode use normal request
+        # Signup user in ximpia api that creates site
+        # After facebook id and secret are linked, user would be able to register in their
+        # site as admin
+        site_ximpia = Document.objects.filter('site',
+                                              slug__raw=slugify(settings.SITE),
+                                              get_logical=True)[0]
+        user_raw = get_resource(
+            request,
+            reverse('signup'),
+            'post',
+            data={
                 u'access_token': social_access_token,
                 u'social_network': social_network,
-                u'groups': groups,
-                u'api_key': site_data['api_access']['api_key'],
-                u'api_secret': site_data['api_access']['api_secret'],
-            })
+                u'groups': filter(lambda x: x['slug'] in ['users', 'users-test'], groups),
+                u'api_key': site_ximpia['api_access']['api_key'],
+                u'api_secret': site_ximpia['api_access']['api_secret'],
+                u'site': site_ximpia['slug']
+            }
         )
         if user_raw.status_code not in [200, 201]:
+            # print user_raw.content
             raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-        user = user_raw.json()
+        user = json.loads(user_raw.content)
 
         response_ = {
             u'account': account_data,
-            u'site': to_logical_doc('site', site_data),
-            u'app': to_logical_doc('app', app_data),
-            u'settings': to_logical_doc('settings', settings_data),
+            u'site': site_data,
+            u'app': app_data,
+            u'settings': settings_data,
             u'user': user,
             u'groups': groups,
             u'permissions': permissions_data,
             u'token': user.get('token', {}),
         }
-        print response_
         return response.Response(response_)

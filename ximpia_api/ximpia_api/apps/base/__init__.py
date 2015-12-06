@@ -304,13 +304,26 @@ def get_base_app(site_slug):
             }
         }
     }
+    """query_dsl = {
+        'query': {
+            'filtered': {
+                'query': {
+                    'match_all': {}
+                }
+            }
+        }
+    }"""
+    # print es_path
+    # print query_dsl
     es_response_raw = req_session.get(es_path, data=json.dumps(query_dsl))
+    # print es_response_raw.status_code
     if es_response_raw.status_code != 200:
         raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
             u'{}.base'.format(site_slug),
             es_response_raw.content
         )))
     es_response = es_response_raw.json()
+    # print es_response
     if 'status' in es_response and es_response['status'] != 200:
         raise exceptions.DocumentNotFound(_(u'Error getting app "{}" :: {}'.format(
             u'{}.base'.format(site_slug),
@@ -335,3 +348,87 @@ def refresh_index(index):
     req_session.post(
         '{}/{}/_refresh'.format(settings.ELASTIC_SEARCH_HOST, index)
     )
+
+
+def get_site(request):
+    """
+    Get site, either from data, host name
+
+    :param request:
+    :return:
+    """
+    data = json.loads(request.body)
+    host = request.META.get('HTTP_HOST', None)
+    if 'site' in data:
+        return data['site']
+    elif host:
+        site_slug = host.split('.' + settings.XIMPIA_DOMAIN)[0]
+        return site_slug
+    return None
+
+
+def get_resource(request, path, method_type, data=None):
+    """
+    We make request with test client or normal request to django web server
+
+    How we can make requests to server and get testing settings???
+
+    :param path: Like /create-site
+    :param data:
+    :return:
+    """
+    from requests.adapters import HTTPAdapter
+    from django.test import Client
+    req_session.mount('{}'.format(settings.XIMPIA_IO_HOST),
+                      HTTPAdapter(max_retries=3))
+    if settings.DEBUG:
+        print u'get_resource :: Testing request...'
+        request_data = json.loads(request.body)
+        if 'site' not in data:
+            data['site'] = request_data.get('site', None)
+        if not data['site']:
+            raise exceptions.XimpiaAPIException(u'No site defined in tests')
+        client = Client()
+        if method_type == 'get':
+            print u'get_resource :: testing get...'
+            response_raw = client.get(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+        elif method_type == 'post':
+            print u'get_resource :: testing post...'
+            response_raw = client.post(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+        elif method_type == 'put':
+            print u'get_resource :: testing put...'
+            response_raw = client.put(
+                path,
+                json.dumps(data),
+                content_type="application/json"
+            )
+            return response_raw
+    else:
+        if method_type == 'get':
+            response_raw = req_session.get(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw
+        elif method_type == 'post':
+            response_raw = req_session.post(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw
+        elif method_type == 'put':
+            response_raw = req_session.put(
+                u'{}{}'.format(settings.XIMPIA_IO_HOST, path),
+                data=json.dumps(data)
+            )
+            return response_raw
