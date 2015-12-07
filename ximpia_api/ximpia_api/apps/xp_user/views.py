@@ -105,14 +105,37 @@ ximpia__base: would keep general data for config
 
 class Connect(generics.CreateAPIView):
 
+    DEFAULT_PROVIDER = 'facebook'
+
     def post(self, request, *args, **kwargs):
+        from base import get_base_app
         # this endpoint is related to site, being app base. We get site from request, host name
         try:
             # get access_token and provider from request parameter, then from data
             data = json.loads(request.body)
             access_token = request.REQUEST.get('access_token', data['access_token'])
-            provider = request.REQUEST.get('provider', data.get('provider', 'facebook'))
+            provider = request.REQUEST.get('provider', data.get('provider', self.DEFAULT_PROVIDER))
+            site_slug = get_site(request)
+            app = get_base_app(site_slug)
             # Check access
+            if not app['site']['public']:
+                # check api key
+                if 'api_key' in data:
+                    # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                    api_secret_db = app['site']['api_access']['api_secret']
+                    if api_secret_db != data.get('api_secret', ''):
+                        # display error
+                        raise exceptions.XimpiaAPIException(_(
+                            u'Secret does not match for API access'
+                        ))
+                    # skip_validate = True
+                # check domain
+                """if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
+                                                                  app['site']['domains'])\
+                        and not skip_validate:
+                    raise exceptions.XimpiaAPIException(_(
+                        u'API access error'
+                    ))"""
             # 1. Might need to get social id and secret from database once access is verified
             # 2. app_id and index depends on app and site, site__app
             app = {}
