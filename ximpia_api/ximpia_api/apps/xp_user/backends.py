@@ -145,8 +145,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 id=user.id
             )).json()
         user_data = user_document['_source']
-        user_data['id'] = user_document['_id']
-        user.document = to_logical_doc('user', user_data)
+        user_document_logical = to_logical_doc('user', user_data)
+        user_document_logical['id'] = user_document['_id']
+        user.document = user_document_logical
         return user
 
     @classmethod

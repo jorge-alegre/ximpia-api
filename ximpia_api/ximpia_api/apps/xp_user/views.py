@@ -108,41 +108,32 @@ class Connect(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         # this endpoint is related to site, being app base. We get site from request, host name
         try:
-            if len(args) != 2:
-                raise exceptions.XimpiaAPIException(_(u'access_token and provider are required'))
-            access_token, provider = args
-            if settings.SITE == 'XimpiaApi':
-                if not hasattr(settings, '{}_APP_ID'.format(provider.upper())):
-                    app_id = getattr(settings, 'XIMPIA_{}_APP_ID'.format(provider.upper()))
-                    app_secret = getattr(settings, 'XIMPIA_{}_APP_SECRET'.format(provider.upper()))
-                else:
-                    app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
-                    app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
-            else:
-                app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
-                app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
+            # get access_token and provider from request parameter, then from data
+            data = json.loads(request.body)
+            access_token = request.REQUEST.get('access_token', data['access_token'])
+            provider = request.REQUEST.get('provider', data.get('provider', 'facebook'))
+            # Check access
+            # 1. Might need to get social id and secret from database once access is verified
+            # 2. app_id and index depends on app and site, site__app
+            app = {}
             auth_data = {
                 'access_token': access_token,
                 'provider': provider,
-                'app_id': app_id,
-                'app_secret': app_secret,
+                'social_app_id': app['social'][provider]['app_id'],
+                'social_app_secret': app['social'][provider]['app_secret'],
+                'app_id': app['id'],
+                'index': '{}__{}'.format(
+                    app['site']['slug'],
+                    app['slug']
+                )
             }
             user = authenticate(**auth_data)
             if user:
                 login(request, user)
-                token = get_random_string(400, VALID_KEY_CHARS)
-                es_response_raw = req_session.put(get_path_by_id('_user', user.document.get('_id', '')),
-                                                  data=user.document['_source'].update(
-                                                      {
-                                                          'token': token
-                                                      }
-                    )
-                )
-                es_response = json.loads(es_response_raw.content)
                 return {
                     'status': 'ok',
                     'action': 'login',
-                    'token': es_response['_source']['token']
+                    'token': user.document['token']
                 }
             else:
                 # invite checking if active at site
