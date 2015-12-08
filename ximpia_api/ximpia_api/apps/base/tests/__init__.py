@@ -20,18 +20,17 @@ req_session = requests.Session()
 req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 
 
-def create_fb_test_user():
+def create_fb_test_user(app_access_token=None, facebook_app_id=None):
     """
     Create Facebook test user
 
     :return:
     """
-    app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
     # /v2.5/{app-id}/accounts/test-users
     request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
                   'permissions=email'.format(
-                      app_token=app_access_token,
-                      app_id=settings.XIMPIA_FACEBOOK_APP_ID)
+                      app_token=app_access_token or settings.XIMPIA_FACEBOOK_APP_TOKEN,
+                      app_id=facebook_app_id or settings.XIMPIA_FACEBOOK_APP_ID)
     response = req_session.post(request_url,
                                 data=json.dumps({
                                     'installed': True
@@ -65,16 +64,30 @@ def get_fb_test_users(limit=2000):
         ),
             code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
     fb_data = response.json()
-    return fb_data['data']
+    app_access_token = settings.MY_SITE_APP_ACCESS_TOKEN
+    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
+                  'fields=access_token&limit={limit}'.format(
+                      app_token=app_access_token,
+                      app_id=settings.MY_SITE_FACEBOOK_APP_ID,
+                      limit=limit)
+    response = req_session.get(request_url)
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+            response.content
+        ),
+            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    fb_data_my_site = response.json()
+    return fb_data['data'].extend(fb_data_my_site['data'])
 
 
-def create_fb_test_user_login():
+def create_fb_test_user_login(app_access_token=None, facebook_app_id=None):
     """
     Create and login FB user data
 
     :return:
     """
-    user_data = create_fb_test_user()
+    user_data = create_fb_test_user(app_access_token=app_access_token,
+                                    facebook_app_id=facebook_app_id)
     # login user
     session_fb = requests.Session()
     session_fb.get("https://www.facebook.com/", allow_redirects=True)
@@ -237,6 +250,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
                 response
             ))
+        refresh_index('my-site__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
@@ -280,6 +294,9 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         """
         call_command('create_fb_test_users', feature='admin', size=1)
         call_command('create_fb_test_users', feature='registration', size=5)
+        call_command('create_fb_test_users', feature='registration_my_site', size=5,
+                     app_access_token='991722957558076|si3sICvrZPEYsSnQawdYwsD1JRE',
+                     facebook_app_id='991722957558076')
 
     def setup_test_environment(self, **kwargs):
         """
@@ -350,9 +367,10 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 data_new = {}
                 for feature in data.keys():
                     for user_data in data[feature]:
-                        user_data['access_token'] = access_tokens[user_data['id']]
-                        data_new.setdefault(feature, [])
-                        data_new[feature].append(user_data)
+                        if user_data['id'] in access_tokens:
+                            user_data['access_token'] = access_tokens[user_data['id']]
+                            data_new.setdefault(feature, [])
+                            data_new[feature].append(user_data)
                 f.write(json.dumps(data_new, indent=2))
                 f.close()
                 # create expires 5000 seconds

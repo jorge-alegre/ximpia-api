@@ -103,10 +103,12 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 })
             )
         )
+        print u'authenticate :: users: {}'.format(es_response)
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
+        print u'authenticate :: user_data: {}'.format(user_data)
         user = User()
         user.id = db_data['_id']
         user.email = user_data['email']
@@ -121,7 +123,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # create ximpia token with timestamp: way to check user was authenticated
         es_response_raw = req_session.post(
             '{}/{}/user/{id}/_update'.format(settings.ELASTIC_SEARCH_HOST,
-                                             settings.SITE_BASE_INDEX,
+                                             index or settings.SITE_BASE_INDEX,
                                              id=user.id),
             data=json.dumps(
                 {

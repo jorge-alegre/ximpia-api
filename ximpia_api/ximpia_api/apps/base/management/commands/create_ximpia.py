@@ -532,7 +532,8 @@ class Command(BaseCommand):
         # login access token for user to use
         social_data = SocialNetworkResolution.get_network_user_data(social_network,
                                                                     access_token=access_token,
-                                                                    app_id=app_data['id'])
+                                                                    app_id=app_data['id'],
+                                                                    social_app_id=settings.XIMPIA_FACEBOOK_APP_ID)
 
         # 2. Permissions
         permissions_data = self._create_permissions(site, app, index_name, now_es)
