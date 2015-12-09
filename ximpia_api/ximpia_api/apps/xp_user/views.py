@@ -372,7 +372,7 @@ class UserSignup(generics.CreateAPIView):
         if not user_obj:
             raise exceptions.XimpiaAPIException(u'Error in authenticate')
         # user already has token, logical user
-        print u'SetupSite :: user_obj: {}'.format(user_obj)
+        # print u'SetupSite :: user_obj: {}'.format(user_obj)
         login(request, user_obj)
         return Response(user_obj.document)
 

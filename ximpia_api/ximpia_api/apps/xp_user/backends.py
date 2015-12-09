@@ -104,15 +104,18 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             )
         )
         print u'authenticate :: users: {}'.format(es_response)
+        import random
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
         print u'authenticate :: user_data: {}'.format(user_data)
         user = User()
-        user.id = db_data['_id']
+        # user.id = db_data['_id']
+        user.id = random.randint(1, 1000000)
         user.email = user_data['email']
-        user.pk = user.id
+        # user.pk = user.id
+        user.pk = random.randint(1, 1000000)
         user.username = user.id
         user.first_name = user_data['first_name']
         user.last_name = user_data['last_name']
@@ -124,7 +127,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         es_response_raw = req_session.post(
             '{}/{}/user/{id}/_update'.format(settings.ELASTIC_SEARCH_HOST,
                                              index or settings.SITE_BASE_INDEX,
-                                             id=user.id),
+                                             id=db_data['_id']),
             data=json.dumps(
                 {
                     u'doc': {
@@ -144,8 +147,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=index or settings.SITE_BASE_INDEX,
                 document_type='user',
-                id=user.id
+                id=db_data['_id']
             )).json()
+        print user_document
         user_data = user_document['_source']
         user_document_logical = to_logical_doc('user', user_data)
         user_document_logical['id'] = user_document['_id']
