@@ -40,8 +40,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                      provider=None,
                      social_app_id=settings.XIMPIA_FACEBOOK_APP_ID,
                      social_app_secret=settings.XIMPIA_FACEBOOK_APP_SECRET,
-                     app_id=None,
-                     index=None):
+                     app_id=None):
         """
         Authenticate for all providers given access token
 
@@ -67,10 +66,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # 2. Check user_id exists for provider
         es_response = get_es_response(
             req_session.get(
-                '{host}/{index}/{document_type}/_search'.format(
+                '{host}/{index}/user/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
-                    index=index or settings.SITE_BASE_INDEX,
-                    document_type='user'),
+                    index=settings.SITE_BASE_INDEX),
                 data=json.dumps({
                     'query': {
                         'bool': {
@@ -91,6 +89,11 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                                         "term": {
                                                             "social_networks__v1.network__v1": provider
                                                         }
+                                                    },
+                                                    {
+                                                        "term": {
+                                                            "app__v1.id__v1": app_id
+                                                        }
                                                     }
                                                 ]
                                             }
@@ -104,18 +107,17 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             )
         )
         print u'authenticate :: users: {}'.format(es_response)
-        import random
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
         print u'authenticate :: user_data: {}'.format(user_data)
         user = User()
-        # user.id = db_data['_id']
-        user.id = random.randint(1, 1000000)
+        user.id = db_data['_id']
+        # user.id = random.randint(1, 1000000)
         user.email = user_data['email']
-        # user.pk = user.id
-        user.pk = random.randint(1, 1000000)
+        user.pk = user.id
+        # user.pk = random.randint(1, 1000000)
         user.username = user.id
         user.first_name = user_data['first_name']
         user.last_name = user_data['last_name']
@@ -126,7 +128,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # create ximpia token with timestamp: way to check user was authenticated
         es_response_raw = req_session.post(
             '{}/{}/user/{id}/_update'.format(settings.ELASTIC_SEARCH_HOST,
-                                             index or settings.SITE_BASE_INDEX,
+                                             settings.SITE_BASE_INDEX,
                                              id=db_data['_id']),
             data=json.dumps(
                 {
@@ -143,10 +145,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 user.id,
                 es_response_raw.content)))
         user_document = req_session.get(
-            '{host}/{index}/{document_type}/{id}'.format(
+            '{host}/{index}/user/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=index or settings.SITE_BASE_INDEX,
-                document_type='user',
+                index=settings.SITE_BASE_INDEX,
                 id=db_data['_id']
             )).json()
         print user_document
@@ -166,12 +167,24 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         """
         es_response = get_es_response(
             req_session.get(
-                '{host}/{index}/{document_type}/{user_id}'.format(
+                '{host}/{index}/user/{user_id}'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
                     index=settings.SITE_BASE_INDEX,
-                    document_type='user',
                     user_id=user_id))
         )
         if not es_response['found']:
             raise exceptions.DocumentNotFound(_(u'User document not found for "{}"'.format(user_id)))
-        return es_response
+        db_data = es_response['hits']['hits'][0]
+        user_data = to_logical_doc('user', db_data['_source'])
+        user = User()
+        user.id = db_data['_id']
+        user.email = user_data['email']
+        user.pk = user.id
+        user.username = user.id
+        user.first_name = user_data['first_name']
+        user.last_name = user_data['last_name']
+        user_document = {
+            'id': db_data['_id']
+        }
+        user.document = user_document.update(user_data)
+        return user

@@ -360,7 +360,7 @@ class Command(BaseCommand):
         return output_permissions
 
     @classmethod
-    def _create_user_groups(cls, index_name, groups, social_data, social_network, now_es):
+    def _create_user_groups(cls, index_name, groups, social_data, social_network, app_data, now_es):
         """
         Create Groups, User and User mappings to Groups
 
@@ -368,6 +368,7 @@ class Command(BaseCommand):
         :param groups:
         :param social_data:
         :param social_network:
+        :param app_data:
         :param now_es:
         :return:
         """
@@ -442,6 +443,16 @@ class Command(BaseCommand):
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
+            u'app__v1': {
+                u'id__v1': app_data['id'],
+                u'slug__v1': app_data['slug'],
+                u'name__v1': app_data['name'],
+                u'site__v1': {
+                    u'id__v1': app_data['site']['id'],
+                    u'slug__v1': app_data['site']['slug'],
+                    u'name__v1': app_data['site']['name'],
+                }
+            },
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
@@ -540,7 +551,7 @@ class Command(BaseCommand):
 
         # 3. Groups, User, UserGroup
         user_data, groups_data = self._create_user_groups(index_name, default_groups, social_data,
-                                                          social_network, now_es)
+                                                          social_network, app_data, now_es)
 
         # refresh_index(index_name)
 

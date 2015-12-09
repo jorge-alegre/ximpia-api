@@ -227,6 +227,7 @@ class UserSignup(generics.CreateAPIView):
         site_slug = get_site(request)
         print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
+        app_ximpia_base = get_base_app(slugify(settings.SITE))
         print u'app: {}'.format(app)
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
@@ -256,7 +257,8 @@ class UserSignup(generics.CreateAPIView):
         if not is_validated:
             raise exceptions.XimpiaAPIException(u'Access not allowed')
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        index_name = '{site}__base'.format(site=site_slug)
+        index_name = '{site}__base'.format(site=site)
+        index_name_ximpia = '{site}__base'.format(site=slugify(settings.SITE))
 
         if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
             raise exceptions.XimpiaAPIException(_(
@@ -309,10 +311,20 @@ class UserSignup(generics.CreateAPIView):
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
+            u'app__v1': {
+                u'id__v1': app['id'],
+                u'slug__v1': app['slug'],
+                u'name__v1': app['name'],
+                u'site__v1': {
+                    u'id__v1': app['site']['id'],
+                    u'slug__v1': app['site']['slug'],
+                    u'name__v1': app['site']['name'],
+                }
+            },
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name_ximpia),
             data=json.dumps(user_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
@@ -366,7 +378,6 @@ class UserSignup(generics.CreateAPIView):
             u'app_id': app['id'],
             u'social_app_id': app['social']['facebook']['app_id'],
             u'social_app_secret': app['social']['facebook']['app_secret'],
-            u'index': u'{}__{}'.format(app['site']['slug'], app['slug'])
         }
         user_obj = authenticate(**auth_data)
         if not user_obj:
