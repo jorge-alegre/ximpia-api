@@ -20,7 +20,7 @@ from rest_framework import routers
 
 # from ximpia_api.ximpia_api.apps.xp_user.views import User
 from base.views import SetupSite
-from xp_user.views import UserSignup
+from xp_user.views import UserSignup, Connect
 
 router = routers.DefaultRouter()
 # router.register(r'create-site', SetupSite)
@@ -32,4 +32,5 @@ urlpatterns = [
     # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
     url(r'^user-signup$', UserSignup.as_view(), name='signup'),
     url(r'^create-site$', SetupSite.as_view(), name='create_site'),
+    url(r'^connect$', Connect.as_view(), name='connect'),
 ]

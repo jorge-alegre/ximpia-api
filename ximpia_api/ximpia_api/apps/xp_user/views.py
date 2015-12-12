@@ -8,10 +8,11 @@ from datetime import datetime, timedelta
 import time
 
 # from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
+from django.core.urlresolvers import reverse
 from django.conf import settings
 
 from rest_framework import viewsets, generics, response
@@ -19,8 +20,9 @@ from rest_framework.response import Response
 
 from document.views import DocumentViewSet
 from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index, \
-    get_site
+    get_site, constants, get_resource
 from document import to_logical_doc, to_physical_doc, Document
+from xp_user import login, logout
 
 __author__ = 'jorgealegre'
 
@@ -103,108 +105,105 @@ ximpia__base: would keep general data for config
         fields = ('url', 'username', 'email', 'is_staff')"""
 
 
+class Logout(generics.CreateAPIView):
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+
 class Connect(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
+        from base import get_base_app
         # this endpoint is related to site, being app base. We get site from request, host name
         try:
-            if len(args) != 2:
-                raise exceptions.XimpiaAPIException(_(u'access_token and provider are required'))
-            access_token, provider = args
-            if settings.SITE == 'XimpiaApi':
-                if not hasattr(settings, '{}_APP_ID'.format(provider.upper())):
-                    app_id = getattr(settings, 'XIMPIA_{}_APP_ID'.format(provider.upper()))
-                    app_secret = getattr(settings, 'XIMPIA_{}_APP_SECRET'.format(provider.upper()))
-                else:
-                    app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
-                    app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
-            else:
-                app_id = getattr(settings, '{}_APP_ID'.format(provider.upper()))
-                app_secret = getattr(settings, '{}_APP_SECRET'.format(provider.upper()))
+            # get access_token and provider from request parameter, then from data
+            data = json.loads(request.body)
+            access_token = request.REQUEST.get('access_token', data.get('access_token', None))
+            provider = request.REQUEST.get('provider', data.get('provider',
+                                                                constants.DEFAULT_PROVIDER))
+            print u'Connect :: access_token: {} provider: {}'.format(
+                access_token,
+                provider
+            )
+            site_slug = get_site(request)
+            app = get_base_app(site_slug)
+            # print u'Connect :: app: {}'.format(app)
+            if not access_token:
+                raise exceptions.XimpiaAPIException(u'access_token required')
+            # Check access
+            is_validated = False
+            if not app['site']['public']:
+                # check api key
+                if 'api_key' in data:
+                    # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
+                    api_secret_db = app['site']['api_access']['api_secret']
+                    if api_secret_db != data.get('api_secret', ''):
+                        # display error
+                        raise exceptions.XimpiaAPIException(_(
+                            u'Secret does not match API access'
+                        ))
+                    is_validated = True
+                    # skip_validate = True
+                # check domain
+                """if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
+                                                                  app['site']['domains'])\
+                        and not skip_validate:
+                    raise exceptions.XimpiaAPIException(_(
+                        u'API access error'
+                    ))"""
+            if not is_validated:
+                raise exceptions.XimpiaAPIException(u'Access not allowed')
             auth_data = {
                 'access_token': access_token,
                 'provider': provider,
-                'app_id': app_id,
-                'app_secret': app_secret,
+                'social_app_id': app['social'][provider]['app_id'],
+                'social_app_secret': app['social'][provider]['app_secret'],
+                'app_id': app['id'],
             }
             user = authenticate(**auth_data)
             if user:
+                # print u'Connect :: logging in...'
                 login(request, user)
-                token = get_random_string(400, VALID_KEY_CHARS)
-                es_response_raw = req_session.put(get_path_by_id('_user', user.document.get('_id', '')),
-                                                  data=user.document['_source'].update(
-                                                      {
-                                                          'token': token
-                                                      }
-                    )
-                )
-                es_response = json.loads(es_response_raw.content)
-                return {
+                return Response({
                     'status': 'ok',
                     'action': 'login',
-                    'token': es_response['_source']['token']
-                }
+                    'token': user.document['token']['key']
+                })
             else:
-                # invite checking if active at site
-                site = Document.objects.get('site',
-                                            id=settings.SITE_ID,
-                                            es_path=get_path_site(settings.SITE_ID))
-                if site['_source']['invites'] and site['_source']['invites']['active'] and \
-                        'invite_id' not in request.REQUEST:
-                    raise exceptions.XimpiaAPIException(_(u'Site requests an invite'))
-                invite = None
-                if site['_source']['invites'] and site['_source']['invites']['active']:
-                    invite = Document.objects.get('_invite', id=request.REQUEST.get('invite_id', ''))
-                # create user
-                # we need to check user exists at provider!!!!!
-                response_provider = req_session.get('https://graph.facebook.com/debug_token?'
-                                                    'input_token={access_token}&'
-                                                    'access_token={app_token}'.format(
-                                                        access_token=access_token,
-                                                        app_token=SocialNetworkResolution.get_app_access_token(
-                                                            app_id, app_secret
-                                                        )))
-                if response_provider.status_code != 200:
-                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                fb_data = json.loads(response_provider.content)
-                if not fb_data['data']['is_valid']:
-                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-
-                token = get_random_string(400, VALID_KEY_CHARS)
-                user_raw = req_session.post(
-                    '{scheme}://{site}.ximpia.io/user-signup'.format(settings.SCHEME, settings.SITE),
+                # print u'Connect :: doing signup...'
+                # signup
+                groups = Document.objects.filter('group',
+                                                 slug__raw__in=settings.DEFAULT_GROUPS_NORMAL_USER,
+                                                 get_logical=True)
+                user_raw = get_resource(
+                    request,
+                    reverse('signup'),
+                    'post',
                     data={
-                        'token': token,
-                        'access_token': access_token,
-                        'social_network': provider
+                        u'access_token': access_token,
+                        u'social_network': provider,
+                        u'groups': groups,
+                        u'api_key': app['site']['api_access']['api_key'],
+                        u'api_secret': app['site']['api_access']['api_secret'],
+                        u'site': site_slug
                     }
                 )
-                if user_raw.status_code != 200:
-                    raise exceptions.XimpiaAPIException(_(u'Error creating user'))
-                user = json.loads(user_raw.content)['user']
-                logger.info(u'Connect :: user: '.format(user))
-                # link invite with user
-                if site['_source']['invites'] and site['_source']['invites']['active']:
-                    invite['_source']['user__v1'] = {
-                        'id__v1': user['_id'],
-                        'name__v1': user['_source']['name']
-                    }
-                    invite['_source']['consumed_on__v1'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    Document.objects.update('_invite', invite['_id'], invite['_source'])
-                return {
+                user = json.loads(user_raw.content)
+                # print u'Connect :: user: {}'.format(user)
+                return Response({
                     'status': 'ok',
-                    'action': 'create_user',
-                    'token': token
-                }
-
+                    'action': 'signup',
+                    'token': user['token']['key']
+                })
         except (exceptions.XimpiaAPIException, exceptions.DocumentNotFound) as e:
+            import traceback
+            # print traceback.print_exc()
             # error_code = e.code
-            return {
+            return Response({
                 'status': 'error',
                 'message': e.message
-            }
+            })
 
 
 class UserSignup(generics.CreateAPIView):
@@ -218,19 +217,23 @@ class UserSignup(generics.CreateAPIView):
         :param kwargs:
         :return:
         """
-        print u'UserSignup...'
+        # print u'UserSignup...'
         from base import get_base_app
-        print request.body
+        # print request.body
         data = json.loads(request.body)
         site_slug = get_site(request)
-        print u'UserSignup :: site: {}'.format(site_slug)
+        # print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
-        print u'app: {}'.format(app)
+        app_ximpia_base = get_base_app(slugify(settings.SITE))
+        # print u'UserSignup :: app: {}'.format(app)
+        app_id = app['id']
+        # print u'UserSignup :: app_id: {}'.format(app_id)
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
         # Implemented with the document features
         # skip_validate = False
         # check if public, when we don't do API access checks
+        is_validated = False
         if not app['site']['public']:
             # check api key
             if 'api_key' in data:
@@ -242,6 +245,7 @@ class UserSignup(generics.CreateAPIView):
                         u'Secret does not match for API access'
                     ))
                 # skip_validate = True
+                is_validated = True
             # check domain
             """if request.META['http_request_domain'] not in map(lambda x: x['domain_name'],
                                                               app['site']['domains'])\
@@ -249,8 +253,11 @@ class UserSignup(generics.CreateAPIView):
                 raise exceptions.XimpiaAPIException(_(
                     u'API access error'
                 ))"""
+        if not is_validated:
+            raise exceptions.XimpiaAPIException(u'Access not allowed')
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         index_name = '{site}__base'.format(site=site_slug)
+        index_name_ximpia = '{site}__base'.format(site=slugify(settings.SITE))
 
         if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
             raise exceptions.XimpiaAPIException(_(
@@ -270,7 +277,7 @@ class UserSignup(generics.CreateAPIView):
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
         # user
-        print u'groups_data: {}'.format(data['groups'])
+        # print u'groups_data: {}'.format(data['groups'])
         user_data = {
             u'username__v1': " ",
             u'alias__v1': "",
@@ -303,10 +310,20 @@ class UserSignup(generics.CreateAPIView):
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
             u'session_id__v1': None,
+            u'app__v1': {
+                u'id__v1': app['id'],
+                u'slug__v1': app['slug'],
+                u'name__v1': app['name'],
+                u'site__v1': {
+                    u'id__v1': app['site']['id'],
+                    u'slug__v1': app['site']['slug'],
+                    u'name__v1': app['site']['name'],
+                }
+            },
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name_ximpia),
             data=json.dumps(user_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
@@ -357,12 +374,15 @@ class UserSignup(generics.CreateAPIView):
         auth_data = {
             u'access_token': data['access_token'],
             u'provider': data.get('social_network', 'facebook'),
-            u'app_id': app['id'],
+            u'app_id': app_id,
             u'social_app_id': app['social']['facebook']['app_id'],
             u'social_app_secret': app['social']['facebook']['app_secret'],
         }
         user_obj = authenticate(**auth_data)
+        if not user_obj:
+            raise exceptions.XimpiaAPIException(u'Error in authenticate')
         # user already has token, logical user
+        # print u'SetupSite :: user_obj: {}'.format(user_obj)
         login(request, user_obj)
         return Response(user_obj.document)
 

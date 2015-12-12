@@ -20,7 +20,23 @@ req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 class SocialNetworkResolution(object):
 
     @classmethod
-    def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base'):
+    def get_app_access_token_from_network(cls, social_app_id, social_app_secret, provider='facebook'):
+        response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
+                                       'client_id={social_app_id}&'
+                                       'client_secret={social_app_secret}&'
+                                       'grant_type=client_credentials'.format(
+                                           social_app_id=social_app_id,
+                                           social_app_secret=social_app_secret,
+                                       ))
+        if response_raw.status_code != 200:
+            raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
+                                                code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+        app_access_token = response_raw.content.split('access_token=')[1]
+        return app_access_token
+
+    @classmethod
+    def get_app_access_token(cls, social_app_id, social_app_secret, app_id='ximpia_api__base',
+                             provider='facebook', disable_update=False):
         """
         Get app access token
 
@@ -28,23 +44,29 @@ class SocialNetworkResolution(object):
         :param social_app_secret:
         :return:
         """
-        from document import Document
+        from document import Document, to_physical_doc
         from exceptions import DocumentNotFound
         try:
             app = Document.objects.get('app', id=app_id)
             app_access_token = app['social']['facebook']['access_token']
+            if not app_access_token:
+                app_access_token = cls.get_app_access_token_from_network(social_app_id,
+                                                                         social_app_secret)
+                app['social'][provider]['access_token'] = app_access_token
+                # update app
+                response = Document.objects.update_partial('app',
+                                                           app['id'],
+                                                           {
+                                                               'social__v1': to_physical_doc('app', app['social'])
+                                                           })
+                if 'status' in response and response['status'] not in [200, 201]:
+                    raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                        response
+                    ))
+
         except DocumentNotFound:
-            response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                           'client_id={social_app_id}&'
-                                           'client_secret={social_app_secret}&'
-                                           'grant_type=client_credentials'.format(
-                                               social_app_id=social_app_id,
-                                               social_app_secret=social_app_secret,
-                                           ))
-            if response_raw.status_code != 200:
-                raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                    code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-            app_access_token = response_raw.content.split('access_token=')[1]
+            app_access_token = cls.get_app_access_token_from_network(social_app_id,
+                                                                     social_app_secret)
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
         return app_access_token
 
@@ -61,9 +83,10 @@ class SocialNetworkResolution(object):
         :param kwargs:
         :return:
         """
-        from document import Document
+        from document import Document, to_physical_doc
         from exceptions import DocumentNotFound
 
+        provider = kwargs.get('provider', 'facebook')
         request_access_token = kwargs.get('access_token', '')
         if 'app_id' not in kwargs and not kwargs['app_id']:
             raise exceptions.XimpiaAPIException(u'App Id not informed')
@@ -75,18 +98,23 @@ class SocialNetworkResolution(object):
             try:
                 app = Document.objects.get('app', id=kwargs['app_id'], get_logical=True)
                 app_access_token = app['social']['facebook']['access_token']
+                if not app_access_token:
+                    app_access_token = cls.get_app_access_token_from_network(kwargs['social_app_id'],
+                                                                             kwargs['social_app_secret'])
+                    app['social'][provider]['access_token'] = app_access_token
+                    # update app
+                    response = Document.objects.update_partial('app',
+                                                               app['id'],
+                                                               {
+                                                                   'social__v1': to_physical_doc('app', app['social'])
+                                                               })
+                    if 'status' in response and response['status'] not in [200, 201]:
+                        raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                            response
+                        ))
             except DocumentNotFound:
-                response_raw = req_session.get('https://graph.facebook.com/oauth/access_token?'
-                                               'client_id={app_id}&'
-                                               'client_secret={app_secret}&'
-                                               'grant_type=client_credentials'.format(
-                                                   app_id=kwargs['social_app_id'],
-                                                   app_secret=kwargs['social_app_secret'],
-                                               ))
-                if response_raw.status_code != 200:
-                    raise exceptions.XimpiaAPIException(u'Error in validating Facebook response',
-                                                        code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
-                app_access_token = response_raw.content.split('access_token=')[1]
+                app_access_token = cls.get_app_access_token_from_network(kwargs['social_app_id'],
+                                                                         kwargs['social_app_secret'])
         logger.info('SocialNetworkResolution :: app_access_token: {}'.format(app_access_token))
 
         """
@@ -116,7 +144,8 @@ class SocialNetworkResolution(object):
             ),
                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         fb_data = response.json()
-        if fb_data['data']['app_id'] != settings.XIMPIA_FACEBOOK_APP_ID or not fb_data['data']['is_valid']:
+        if fb_data['data']['app_id'] != kwargs.get('social_app_id', settings.XIMPIA_FACEBOOK_APP_ID) \
+                or not fb_data['data']['is_valid']:
             raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: token is not valid',
                                                 code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
         user_data = {
@@ -231,7 +260,9 @@ def get_es_response(request_object, skip_exception=False):
         if skip_exception:
             pass
         else:
-            raise exceptions.XimpiaAPIException(_(u'Error networking with database'))
+            raise exceptions.XimpiaAPIException(_(u'Error networking with database :: {}'.format(
+                es_response_raw.content
+            )))
     es_response = es_response_raw.json()
     if 'status' in es_response and es_response['status'] != 200:
         if skip_exception:
@@ -382,7 +413,7 @@ def get_resource(request, path, method_type, data=None):
     req_session.mount('{}'.format(settings.XIMPIA_IO_HOST),
                       HTTPAdapter(max_retries=3))
     if settings.DEBUG:
-        print u'get_resource :: Testing request...'
+        # print u'get_resource :: Testing request...'
         request_data = json.loads(request.body)
         if 'site' not in data:
             data['site'] = request_data.get('site', None)
@@ -390,7 +421,7 @@ def get_resource(request, path, method_type, data=None):
             raise exceptions.XimpiaAPIException(u'No site defined in tests')
         client = Client()
         if method_type == 'get':
-            print u'get_resource :: testing get...'
+            # print u'get_resource :: testing get...'
             response_raw = client.get(
                 path,
                 json.dumps(data),
@@ -398,7 +429,7 @@ def get_resource(request, path, method_type, data=None):
             )
             return response_raw
         elif method_type == 'post':
-            print u'get_resource :: testing post...'
+            # print u'get_resource :: testing post...'
             response_raw = client.post(
                 path,
                 json.dumps(data),
@@ -406,7 +437,7 @@ def get_resource(request, path, method_type, data=None):
             )
             return response_raw
         elif method_type == 'put':
-            print u'get_resource :: testing put...'
+            # print u'get_resource :: testing put...'
             response_raw = client.put(
                 path,
                 json.dumps(data),

@@ -321,7 +321,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                         data=json.dumps(query)))
     # here we have all physical fields for document
     field_dict = {}
-    print u'physical db field response: {}'.format(es_response)
+    # print u'physical db field response: {}'.format(es_response)
     for field_db in es_response['hits']['hits']:
         try:
             if field_db.split('__')[0] in fields:
@@ -458,7 +458,9 @@ class DocumentManager(object):
         else:
             raise exceptions.XimpiaAPIException(u'We only support get document by id')
         if get_logical:
-            return to_logical_doc(document_type, es_response['_source'])
+            logical_doc = to_logical_doc(document_type, es_response['_source'])
+            logical_doc['id'] = es_response['_id']
+            return logical_doc
         else:
             return es_response['_source']
 
@@ -490,10 +492,10 @@ class DocumentManager(object):
 
         # we have like ['status', 'user.value, ... ]
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
-        print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
+        # print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
         field_dict = to_physical_fields(document_type,
                                         cls.fields_to_es_format(kwargs, expand=True))
-        print u'field_dict: {}'.format(field_dict)
+        # print u'field_dict: {}'.format(field_dict)
 
         filter_data = {}
         query_items = []
@@ -532,7 +534,7 @@ class DocumentManager(object):
                     }
                 })
 
-        print u'filter_data: {}'.format(filter_data)
+        # print u'filter_data: {}'.format(filter_data)
         query_dsl = {
             'query': {
                 'filtered': {
@@ -546,11 +548,11 @@ class DocumentManager(object):
             }
         }
 
-        print u'query_dsl: {}'.format(query_dsl)
+        # print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()
-        print es_response_raw.content
+        # print es_response_raw.content
         if get_logical:
             output = []
             for item in es_response['hits']['hits']:
@@ -566,7 +568,7 @@ class DocumentManager(object):
         return output
 
     @classmethod
-    def update_partial(cls, document_type, id_, partial_document):
+    def update_partial(cls, document_type, id_, partial_document, index=settings.SITE_BASE_INDEX):
         """
         Update partial document
 
@@ -576,21 +578,22 @@ class DocumentManager(object):
         :return:
         """
         es_response_raw = req_session.post(
-            '{host}/{index}/{document_type}/{id_}'.format(
+            '{host}/{index}/{document_type}/{id_}/_update'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
+                index=index,
                 document_type=document_type,
                 id_=id_),
             data=json.dumps({
                 'doc': partial_document
             })
         )
-        if es_response_raw.status_code != 200:
+        if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could no partially update document {} '
-                                                  u'with id {} doc: {}'.format(
+                                                  u'with id {} doc: {} :: {}'.format(
                                                       document_type,
                                                       id_,
-                                                      partial_document)))
+                                                      partial_document,
+                                                      es_response_raw.content)))
         return es_response_raw.json()
 
     @classmethod

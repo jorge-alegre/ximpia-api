@@ -185,7 +185,7 @@ class SetupSite(generics.CreateAPIView):
                 es_response_raw.content
             )))
         es_response = es_response_raw.json()
-        print es_response
+        # print es_response
         if 'status' in es_response and es_response['status'] != 200:
             raise exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
                 app, es_response_raw.content)))
@@ -223,13 +223,14 @@ class SetupSite(generics.CreateAPIView):
             raise exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
                 app, es_response_raw.content)))
         es_response = es_response_raw.json()
-        print u'app: {}'.format(es_response)
+        # print u'app: {}'.format(es_response)
         if 'status' in es_response and es_response['status'] != 200:
             raise exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
                 app, es_response_raw.content)))
         app_id = es_response.get('_id', '')
         app_data_logical = to_logical_doc('app', app_data)
         app_data_logical['id'] = app_id
+        app_data_logical['site']['id'] = site_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -426,9 +427,9 @@ class SetupSite(generics.CreateAPIView):
         from django.conf import settings
         data = json.loads(request.body)
         print
-        print u'SetupSite :: request META: {}'.format(request.META)
+        # print u'SetupSite :: request META: {}'.format(request.META)
         site = request.META.get('HTTP_HOST', data.get('site', None))
-        print u'SetupSite :: site: {}'.format(site)
+        # print u'SetupSite :: site: {}'.format(site)
         if not site:
             raise exceptions.XimpiaAPIException(_(u'Site is not informed'))
 

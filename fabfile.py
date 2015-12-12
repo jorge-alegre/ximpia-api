@@ -15,8 +15,8 @@ def deploy_dev(branch):
     :return:
     """
     current_branch = local('git rev-parse --symbolic-full-name --abbrev-ref HEAD', capture=True)
-    print 'current:', current_branch
-    print 'branch:', branch
+    # print 'current:', current_branch
+    # print 'branch:', branch
     if current_branch != branch:
         abort('"deploy_dev" command pushes current git branch to your user environment. '
               'Your current branch is different from branch you want to push. Please do "git checkout {}"'

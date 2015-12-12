@@ -20,18 +20,17 @@ req_session = requests.Session()
 req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
 
 
-def create_fb_test_user():
+def create_fb_test_user(app_access_token=None, facebook_app_id=None):
     """
     Create Facebook test user
 
     :return:
     """
-    app_access_token = settings.XIMPIA_FACEBOOK_APP_TOKEN
     # /v2.5/{app-id}/accounts/test-users
     request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
                   'permissions=email'.format(
-                      app_token=app_access_token,
-                      app_id=settings.XIMPIA_FACEBOOK_APP_ID)
+                      app_token=app_access_token or settings.XIMPIA_FACEBOOK_APP_TOKEN,
+                      app_id=facebook_app_id or settings.XIMPIA_FACEBOOK_APP_ID)
     response = req_session.post(request_url,
                                 data=json.dumps({
                                     'installed': True
@@ -65,16 +64,31 @@ def get_fb_test_users(limit=2000):
         ),
             code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
     fb_data = response.json()
+    app_access_token = settings.MY_SITE_APP_ACCESS_TOKEN
+    request_url = 'https://graph.facebook.com/v2.5/{app_id}/accounts/test-users?access_token={app_token}&' \
+                  'fields=access_token&limit={limit}'.format(
+                      app_token=app_access_token,
+                      app_id=settings.MY_SITE_FACEBOOK_APP_ID,
+                      limit=limit)
+    response = req_session.get(request_url)
+    if response.status_code != 200:
+        raise exceptions.XimpiaAPIException(u'Error in validating Facebook response :: {}'.format(
+            response.content
+        ),
+            code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
+    fb_data_my_site = response.json()
+    fb_data['data'].extend(fb_data_my_site['data'])
     return fb_data['data']
 
 
-def create_fb_test_user_login():
+def create_fb_test_user_login(app_access_token=None, facebook_app_id=None):
     """
     Create and login FB user data
 
     :return:
     """
-    user_data = create_fb_test_user()
+    user_data = create_fb_test_user(app_access_token=app_access_token,
+                                    facebook_app_id=facebook_app_id)
     # login user
     session_fb = requests.Session()
     session_fb.get("https://www.facebook.com/", allow_redirects=True)
@@ -173,6 +187,8 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         :param kwargs:
         :return:
         """
+        from base import exceptions, SocialNetworkResolution
+        from document import Document, to_physical_doc
         old_names = []
         mirrors = []
         # get test user
@@ -185,7 +201,57 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                      social_network='facebook',
                      invite_only=False,
                      verbosity=self.verbosity)
+        # Create site My Site
+        user_data = get_fb_test_user_local('registration')
+        client = Client()
+        response = client.post(
+            reverse('create_site'),
+            json.dumps({
+                u'access_token': user_data['access_token'],
+                u'social_network': 'facebook',
+                u'languages': ['en'],
+                u'location': 'us',
+                u'domains': ['my-domain.com'],
+                u'organization_name': u'my-company',
+                u'account': 'my-company',
+                u'site': 'my-site',
+            }),
+            content_type="application/json"
+        )
+        if response.status_code != 200:
+            raise exceptions.XimpiaAPIException(u'Error creating My Site')
+        # Update facebook app ids to My Site
+        response_data = json.loads(response.content)
+        # print u'response_data app: {}'.format(response_data['app'])
+        app_id = response_data['app']['id']
         refresh_index('ximpia-api__base')
+        refresh_index('my-site__base')
+        # get app
+        app = Document.objects.get('app', id=app_id, index='my-site__base', get_logical=True)
+        # print app
+        app['social']['facebook']['app_id'] = settings.MY_SITE_FACEBOOK_APP_ID
+        app['social']['facebook']['app_secret'] = settings.MY_SITE_FACEBOOK_APP_SECRET
+        # Get app access token
+        # social_app_id, social_app_secret, app_id='ximpia_api__base')
+        app['social']['facebook']['access_token'] = SocialNetworkResolution.get_app_access_token(
+            app['social']['facebook']['app_id'],
+            app['social']['facebook']['app_secret'],
+            app_id=app['id'],
+            disable_update=True,
+        )
+        # update app partially for app['social']
+        response = Document.objects.update_partial('app',
+                                                   app['id'],
+                                                   {
+                                                       'social__v1': to_physical_doc('app', app['social'])
+                                                   },
+                                                   index='my-site__base'
+                                                   )
+        if 'status' in response and response['status'] not in [200, 201]:
+            raise exceptions.XimpiaAPIException(u'Error updating app :: {}'.format(
+                response
+            ))
+        refresh_index('my-site__base')
         return old_names, mirrors
 
     def teardown_databases(self, old_config, **kwargs):
@@ -229,6 +295,9 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         """
         call_command('create_fb_test_users', feature='admin', size=1)
         call_command('create_fb_test_users', feature='registration', size=5)
+        call_command('create_fb_test_users', feature='registration_my_site', size=5,
+                     app_access_token='991722957558076|si3sICvrZPEYsSnQawdYwsD1JRE',
+                     facebook_app_id='991722957558076')
 
     def setup_test_environment(self, **kwargs):
         """
@@ -293,15 +362,17 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 if self.verbosity >= 1:
                     print 'getting new access tokens...'
                 all_test_users = get_fb_test_users()
+                # print all_test_users
                 access_tokens = dict(map(lambda y: (y['id'], y['access_token']),
                                      filter(lambda x: x['id'] in user_ids, all_test_users)))
                 f = open(path, 'w')
                 data_new = {}
                 for feature in data.keys():
                     for user_data in data[feature]:
-                        user_data['access_token'] = access_tokens[user_data['id']]
-                        data_new.setdefault(feature, [])
-                        data_new[feature].append(user_data)
+                        if user_data['id'] in access_tokens:
+                            user_data['access_token'] = access_tokens[user_data['id']]
+                            data_new.setdefault(feature, [])
+                            data_new[feature].append(user_data)
                 f.write(json.dumps(data_new, indent=2))
                 f.close()
                 # create expires 5000 seconds
@@ -361,11 +432,94 @@ class CreateSite(XimpiaTestCase):
                 u'languages': ['en'],
                 u'location': 'us',
                 u'domains': ['my-domain.com'],
-                u'organization_name': u'my-company',
-                u'account': 'my-company',
-                u'site': 'my-site',
+                u'organization_name': u'my-company-test',
+                u'account': 'my-company-test',
+                u'site': 'my-site-test',
             }),
             content_type="application/json"
         )
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json.loads(response.content) and 'account' in json.loads(response.content))
+
+
+class XimpiaClient(Client):
+
+    def login(self, **credentials):
+        """
+        Sets the Factory to appear as if it has successfully logged into a site.
+
+        Returns True if login is possible; False if the provided credentials
+        are incorrect, or the user is inactive, or if the sessions framework is
+        not available.
+        """
+        from importlib import import_module
+        from django.contrib.auth import authenticate
+        from django.apps import apps
+        from django.http import HttpRequest
+        from xp_user import login
+        user = authenticate(**credentials)
+        if (user and user.is_active and
+                apps.is_installed('django.contrib.sessions')):
+            engine = import_module(settings.SESSION_ENGINE)
+
+            # Create a fake request to store login details.
+            request = HttpRequest()
+
+            if self.session:
+                request.session = self.session
+            else:
+                request.session = engine.SessionStore()
+            login(request, user)
+
+            # Save the session values.
+            request.session.save()
+
+            # Set the cookie to represent the session.
+            session_cookie = settings.SESSION_COOKIE_NAME
+            self.cookies[session_cookie] = request.session.session_key
+            cookie_data = {
+                'max-age': None,
+                'path': '/',
+                'domain': settings.SESSION_COOKIE_DOMAIN,
+                'secure': settings.SESSION_COOKIE_SECURE or None,
+                'expires': None,
+            }
+            self.cookies[session_cookie].update(cookie_data)
+
+            return True
+        else:
+            return False
+
+    def logout(self):
+        """
+        Removes the authenticated user's cookies and session object.
+
+        Causes the authenticated user to be logged out.
+        """
+        from importlib import import_module
+        from django.http import HttpRequest, SimpleCookie
+        from django.contrib.auth.models import User
+        from xp_user import SESSION_KEY
+        from xp_user import logout
+        from document import Document
+
+        request = HttpRequest()
+        engine = import_module(settings.SESSION_ENGINE)
+        if self.session:
+            request.session = self.session
+            user_id = request.session.get(SESSION_KEY, None)
+            if user_id:
+                user_db_document = Document.objects.get('user', id=user_id, get_logical=True)
+                user = User()
+                user.id = user_db_document['id']
+                user.email = user_db_document['email']
+                user.pk = user.id
+                user.username = user.id
+                user.first_name = user_db_document['first_name']
+                user.last_name = user_db_document['last_name']
+                user.document = user_db_document
+                request.user = user
+        else:
+            request.session = engine.SessionStore()
+        logout(request)
+        self.cookies = SimpleCookie()
