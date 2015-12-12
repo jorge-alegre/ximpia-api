@@ -230,6 +230,7 @@ class SetupSite(generics.CreateAPIView):
         app_id = es_response.get('_id', '')
         app_data_logical = to_logical_doc('app', app_data)
         app_data_logical['id'] = app_id
+        app_data_logical['site']['id'] = site_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id

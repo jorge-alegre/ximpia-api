@@ -229,7 +229,9 @@ class UserSignup(generics.CreateAPIView):
         print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
         app_ximpia_base = get_base_app(slugify(settings.SITE))
-        print u'app: {}'.format(app)
+        print u'UserSignup :: app: {}'.format(app)
+        app_id = app['id']
+        print u'UserSignup :: app_id: {}'.format(app_id)
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
         # Implemented with the document features
@@ -376,7 +378,7 @@ class UserSignup(generics.CreateAPIView):
         auth_data = {
             u'access_token': data['access_token'],
             u'provider': data.get('social_network', 'facebook'),
-            u'app_id': app['id'],
+            u'app_id': app_id,
             u'social_app_id': app['social']['facebook']['app_id'],
             u'social_app_secret': app['social']['facebook']['app_secret'],
         }

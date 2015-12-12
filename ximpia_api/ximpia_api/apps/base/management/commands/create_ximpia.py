@@ -229,6 +229,7 @@ class Command(BaseCommand):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
+        site_data['id__v1'] = site_id
         # app
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
@@ -256,6 +257,7 @@ class Command(BaseCommand):
         app_id = es_response.get('_id', '')
         app_data_logical = to_logical_doc('app', app_data)
         app_data_logical['id'] = app_id
+        app_data_logical['site']['id'] = site_id
         logger.info(u'SetupSite :: created app {} id: {}'.format(
             app,
             app_id
@@ -537,6 +539,7 @@ class Command(BaseCommand):
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, account_data = site_tuple
+        print 'app_data:', app_data
         refresh_index(index_name)
 
         # social

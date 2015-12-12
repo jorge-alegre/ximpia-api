@@ -49,11 +49,20 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         :param social_app_id:
         :param social_app_secret:
         :param app_id:
-        :param index:
         :return:
         """
+        from document import Document
+        from django.utils.text import slugify
 
         # 1. get social data for user
+        print u'authenticate :: app_id: {}'.format(app_id)
+        if not app_id:
+            # slugify(settings.SITE)
+            app = Document.objects.filter('app',
+                                          slug__raw='base',
+                                          site__slug__raw=slugify(settings.SITE),
+                                          get_logical=True)[0]
+            app_id = app['id']
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
                                                                         app_id=app_id,
@@ -71,36 +80,46 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                     index=settings.SITE_BASE_INDEX),
                 data=json.dumps({
                     'query': {
-                        'bool': {
-                            'must': [
-                                {
-                                    "nested": {
-                                        "path": "social_networks__v1",
-                                        "filter": {
-                                            "bool": {
-                                                "must": [
-                                                    {
-                                                        "term": {
-                                                            "social_networks__v1.user_id__v1":
-                                                                social_data.get('user_id', '')
-                                                        }
-                                                    },
-                                                    {
-                                                        "term": {
-                                                            "social_networks__v1.network__v1": provider
-                                                        }
-                                                    },
-                                                    {
-                                                        "term": {
-                                                            "app__v1.id__v1": app_id
-                                                        }
+                        'filtered': {
+                            'query': {
+                                'bool': {
+                                    'must': [
+                                        {
+                                            "nested": {
+                                                "path": "social_networks__v1",
+                                                "filter": {
+                                                    "bool": {
+                                                        "must": [
+                                                            {
+                                                                "term": {
+                                                                    "social_networks__v1.user_id__v1":
+                                                                        social_data.get('user_id', '')
+                                                                }
+                                                            },
+                                                            {
+                                                                "term": {
+                                                                    "social_networks__v1.network__v1": provider
+                                                                }
+                                                            }
+                                                        ]
                                                     }
-                                                ]
+                                                }
                                             }
                                         }
-                                    }
+                                    ]
                                 }
-                            ]
+                            },
+                            "filter": {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "term": {
+                                                "app__v1.id__v1": app_id
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
                         }
                     }
                 })

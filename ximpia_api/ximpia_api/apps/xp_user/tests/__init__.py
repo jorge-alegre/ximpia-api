@@ -81,7 +81,6 @@ class Authenticate(XimpiaTestCase):
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
         # login
-        self.c.logout()
         response = self.c.post(
             reverse('connect'),
             json.dumps({
