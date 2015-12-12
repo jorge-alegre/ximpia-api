@@ -77,7 +77,8 @@ def get_fb_test_users(limit=2000):
         ),
             code=exceptions.SOCIAL_NETWORK_AUTH_ERROR)
     fb_data_my_site = response.json()
-    return fb_data['data'].extend(fb_data_my_site['data'])
+    fb_data['data'].extend(fb_data_my_site['data'])
+    return fb_data['data']
 
 
 def create_fb_test_user_login(app_access_token=None, facebook_app_id=None):
@@ -361,6 +362,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 if self.verbosity >= 1:
                     print 'getting new access tokens...'
                 all_test_users = get_fb_test_users()
+                print all_test_users
                 access_tokens = dict(map(lambda y: (y['id'], y['access_token']),
                                      filter(lambda x: x['id'] in user_ids, all_test_users)))
                 f = open(path, 'w')

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import time
 
 # from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext as _
 from django.utils.text import slugify
@@ -22,6 +22,7 @@ from document.views import DocumentViewSet
 from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index, \
     get_site, constants, get_resource
 from document import to_logical_doc, to_physical_doc, Document
+from xp_user import login, logout
 
 __author__ = 'jorgealegre'
 
@@ -257,7 +258,7 @@ class UserSignup(generics.CreateAPIView):
         if not is_validated:
             raise exceptions.XimpiaAPIException(u'Access not allowed')
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        index_name = '{site}__base'.format(site=site)
+        index_name = '{site}__base'.format(site=site_slug)
         index_name_ximpia = '{site}__base'.format(site=slugify(settings.SITE))
 
         if not app['social']['facebook']['app_id'] or not app['social']['facebook']['app_secret']:
