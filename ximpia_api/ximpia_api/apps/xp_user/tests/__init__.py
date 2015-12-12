@@ -111,7 +111,7 @@ class Signup(XimpiaTestCase):
         pass
 
     def signup_ximpia_user(self):
-        print 'signup_ximpia_user...'
+        # print 'signup_ximpia_user...'
         # get access token
         # get site
         site = Document.objects.filter('site',

@@ -125,12 +125,12 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 })
             )
         )
-        print u'authenticate :: users: {}'.format(es_response)
+        # print u'authenticate :: users: {}'.format(es_response)
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
         user_data = to_logical_doc('user', db_data['_source'])
-        print u'authenticate :: user_data: {}'.format(user_data)
+        # print u'authenticate :: user_data: {}'.format(user_data)
         user = User()
         user.id = db_data['_id']
         # user.id = random.randint(1, 1000000)
@@ -169,7 +169,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 index=settings.SITE_BASE_INDEX,
                 id=db_data['_id']
             )).json()
-        print user_document
+        # print user_document
         user_data = user_document['_source']
         user_document_logical = to_logical_doc('user', user_data)
         user_document_logical['id'] = user_document['_id']

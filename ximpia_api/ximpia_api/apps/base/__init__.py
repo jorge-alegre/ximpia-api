@@ -413,7 +413,7 @@ def get_resource(request, path, method_type, data=None):
     req_session.mount('{}'.format(settings.XIMPIA_IO_HOST),
                       HTTPAdapter(max_retries=3))
     if settings.DEBUG:
-        print u'get_resource :: Testing request...'
+        # print u'get_resource :: Testing request...'
         request_data = json.loads(request.body)
         if 'site' not in data:
             data['site'] = request_data.get('site', None)
@@ -421,7 +421,7 @@ def get_resource(request, path, method_type, data=None):
             raise exceptions.XimpiaAPIException(u'No site defined in tests')
         client = Client()
         if method_type == 'get':
-            print u'get_resource :: testing get...'
+            # print u'get_resource :: testing get...'
             response_raw = client.get(
                 path,
                 json.dumps(data),
@@ -429,7 +429,7 @@ def get_resource(request, path, method_type, data=None):
             )
             return response_raw
         elif method_type == 'post':
-            print u'get_resource :: testing post...'
+            # print u'get_resource :: testing post...'
             response_raw = client.post(
                 path,
                 json.dumps(data),
@@ -437,7 +437,7 @@ def get_resource(request, path, method_type, data=None):
             )
             return response_raw
         elif method_type == 'put':
-            print u'get_resource :: testing put...'
+            # print u'get_resource :: testing put...'
             response_raw = client.put(
                 path,
                 json.dumps(data),

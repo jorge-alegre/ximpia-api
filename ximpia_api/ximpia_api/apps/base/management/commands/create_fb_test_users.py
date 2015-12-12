@@ -55,10 +55,10 @@ class Command(BaseCommand):
         size = int(options['size'])
         app_access_token = options['app_access_token']
         facebook_app_id=options['facebook_app_id']
-        print u'create_fb_test_users :: app_access_token: {} facebook_app_id: {}'.format(
-            app_access_token,
-            facebook_app_id
-        )
+        # print u'create_fb_test_users :: app_access_token: {} facebook_app_id: {}'.format(
+        #    app_access_token,
+        #    facebook_app_id
+        # )
         # Create and log in fb users
         path = '{}/apps/base/tests/data/fb_test_users.json'.format(settings.BASE_DIR)
         if os.path.isfile(path):

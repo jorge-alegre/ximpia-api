@@ -128,7 +128,7 @@ class Connect(generics.CreateAPIView):
             )
             site_slug = get_site(request)
             app = get_base_app(site_slug)
-            print u'Connect :: app: {}'.format(app)
+            # print u'Connect :: app: {}'.format(app)
             if not access_token:
                 raise exceptions.XimpiaAPIException(u'access_token required')
             # Check access
@@ -163,7 +163,7 @@ class Connect(generics.CreateAPIView):
             }
             user = authenticate(**auth_data)
             if user:
-                print u'Connect :: logging in...'
+                # print u'Connect :: logging in...'
                 login(request, user)
                 return Response({
                     'status': 'ok',
@@ -171,7 +171,7 @@ class Connect(generics.CreateAPIView):
                     'token': user.document['token']['key']
                 })
             else:
-                print u'Connect :: doing signup...'
+                # print u'Connect :: doing signup...'
                 # signup
                 groups = Document.objects.filter('group',
                                                  slug__raw__in=settings.DEFAULT_GROUPS_NORMAL_USER,
@@ -190,7 +190,7 @@ class Connect(generics.CreateAPIView):
                     }
                 )
                 user = json.loads(user_raw.content)
-                print u'Connect :: user: {}'.format(user)
+                # print u'Connect :: user: {}'.format(user)
                 return Response({
                     'status': 'ok',
                     'action': 'signup',
@@ -198,7 +198,7 @@ class Connect(generics.CreateAPIView):
                 })
         except (exceptions.XimpiaAPIException, exceptions.DocumentNotFound) as e:
             import traceback
-            print traceback.print_exc()
+            # print traceback.print_exc()
             # error_code = e.code
             return Response({
                 'status': 'error',
@@ -217,17 +217,17 @@ class UserSignup(generics.CreateAPIView):
         :param kwargs:
         :return:
         """
-        print u'UserSignup...'
+        # print u'UserSignup...'
         from base import get_base_app
-        print request.body
+        # print request.body
         data = json.loads(request.body)
         site_slug = get_site(request)
-        print u'UserSignup :: site: {}'.format(site_slug)
+        # print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
         app_ximpia_base = get_base_app(slugify(settings.SITE))
-        print u'UserSignup :: app: {}'.format(app)
+        # print u'UserSignup :: app: {}'.format(app)
         app_id = app['id']
-        print u'UserSignup :: app_id: {}'.format(app_id)
+        # print u'UserSignup :: app_id: {}'.format(app_id)
         # Access
         # In future, this logic would be handled by the api access modules, checking rating, etc...
         # Implemented with the document features
@@ -277,7 +277,7 @@ class UserSignup(generics.CreateAPIView):
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
         # user
-        print u'groups_data: {}'.format(data['groups'])
+        # print u'groups_data: {}'.format(data['groups'])
         user_data = {
             u'username__v1': " ",
             u'alias__v1': "",

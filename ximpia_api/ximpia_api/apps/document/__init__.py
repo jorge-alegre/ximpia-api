@@ -321,7 +321,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                         data=json.dumps(query)))
     # here we have all physical fields for document
     field_dict = {}
-    print u'physical db field response: {}'.format(es_response)
+    # print u'physical db field response: {}'.format(es_response)
     for field_db in es_response['hits']['hits']:
         try:
             if field_db.split('__')[0] in fields:
@@ -492,10 +492,10 @@ class DocumentManager(object):
 
         # we have like ['status', 'user.value, ... ]
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
-        print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
+        # print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
         field_dict = to_physical_fields(document_type,
                                         cls.fields_to_es_format(kwargs, expand=True))
-        print u'field_dict: {}'.format(field_dict)
+        # print u'field_dict: {}'.format(field_dict)
 
         filter_data = {}
         query_items = []
@@ -534,7 +534,7 @@ class DocumentManager(object):
                     }
                 })
 
-        print u'filter_data: {}'.format(filter_data)
+        # print u'filter_data: {}'.format(filter_data)
         query_dsl = {
             'query': {
                 'filtered': {
@@ -548,11 +548,11 @@ class DocumentManager(object):
             }
         }
 
-        print u'query_dsl: {}'.format(query_dsl)
+        # print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
                                           data=json.dumps(query_dsl))
         es_response = es_response_raw.json()
-        print es_response_raw.content
+        # print es_response_raw.content
         if get_logical:
             output = []
             for item in es_response['hits']['hits']:

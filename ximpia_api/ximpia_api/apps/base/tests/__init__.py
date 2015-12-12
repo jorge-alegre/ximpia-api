@@ -222,13 +222,13 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             raise exceptions.XimpiaAPIException(u'Error creating My Site')
         # Update facebook app ids to My Site
         response_data = json.loads(response.content)
-        print u'response_data app: {}'.format(response_data['app'])
+        # print u'response_data app: {}'.format(response_data['app'])
         app_id = response_data['app']['id']
         refresh_index('ximpia-api__base')
         refresh_index('my-site__base')
         # get app
         app = Document.objects.get('app', id=app_id, index='my-site__base', get_logical=True)
-        print app
+        # print app
         app['social']['facebook']['app_id'] = settings.MY_SITE_FACEBOOK_APP_ID
         app['social']['facebook']['app_secret'] = settings.MY_SITE_FACEBOOK_APP_SECRET
         # Get app access token
@@ -362,7 +362,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
                 if self.verbosity >= 1:
                     print 'getting new access tokens...'
                 all_test_users = get_fb_test_users()
-                print all_test_users
+                # print all_test_users
                 access_tokens = dict(map(lambda y: (y['id'], y['access_token']),
                                      filter(lambda x: x['id'] in user_ids, all_test_users)))
                 f = open(path, 'w')

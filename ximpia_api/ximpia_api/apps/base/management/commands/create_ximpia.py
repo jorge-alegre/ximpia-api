@@ -539,7 +539,7 @@ class Command(BaseCommand):
                                            access_token, tag_data, organization_name,
                                            public=public, account=account, domains=domains)
         site_data, app_data, settings_data, account_data = site_tuple
-        print 'app_data:', app_data
+        # print 'app_data:', app_data
         refresh_index(index_name)
 
         # social
