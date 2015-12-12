@@ -2,12 +2,13 @@ import json
 import requests
 from requests.adapters import HTTPAdapter
 
-from django.test import RequestFactory, Client
+from django.test import RequestFactory
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
 from base.tests import XimpiaTestCase, get_fb_test_user_local
 from document import Document
+from base.tests import XimpiaClient as Client, refresh_index
 
 
 __author__ = 'jorgealegre'
@@ -67,10 +68,10 @@ class Authenticate(XimpiaTestCase):
                                          get_logical=True)
         access_token = get_fb_test_user_local('registration_my_site')['access_token']
         response = self.c.post(
-            reverse('signup'),
+            reverse('connect'),
             json.dumps({
                 u'access_token': access_token,
-                u'social_network': 'facebook',
+                u'provider': 'facebook',
                 u'groups': groups,
                 u'api_key': site['api_access']['api_key'],
                 u'api_secret': site['api_access']['api_secret'],
@@ -79,8 +80,11 @@ class Authenticate(XimpiaTestCase):
             content_type="application/json"
         )
         self.assertTrue(response.status_code == 200)
-        self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['action'] == 'signup')
+        refresh_index('ximpia-api__base')
         # login
+        self.c.logout()
         response = self.c.post(
             reverse('connect'),
             json.dumps({
@@ -92,8 +96,9 @@ class Authenticate(XimpiaTestCase):
             }),
             content_type="application/json"
         )
+        self.assertTrue(response.status_code == 200)
         response_data = json.loads(response.content)
-        print response_data
+        self.assertTrue(response_data['action'] == 'login')
 
 
 class Signup(XimpiaTestCase):

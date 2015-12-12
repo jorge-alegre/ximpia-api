@@ -55,7 +55,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         from django.utils.text import slugify
 
         # 1. get social data for user
-        print u'authenticate :: app_id: {}'.format(app_id)
+        # print u'authenticate :: app_id: {}'.format(app_id)
         if not app_id:
             # slugify(settings.SITE)
             app = Document.objects.filter('app',

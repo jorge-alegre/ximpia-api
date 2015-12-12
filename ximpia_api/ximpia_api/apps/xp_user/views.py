@@ -160,10 +160,6 @@ class Connect(generics.CreateAPIView):
                 'social_app_id': app['social'][provider]['app_id'],
                 'social_app_secret': app['social'][provider]['app_secret'],
                 'app_id': app['id'],
-                'index': '{}__{}'.format(
-                    app['site']['slug'],
-                    app['slug']
-                )
             }
             user = authenticate(**auth_data)
             if user:

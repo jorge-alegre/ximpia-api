@@ -498,14 +498,27 @@ class XimpiaClient(Client):
         """
         from importlib import import_module
         from django.http import HttpRequest, SimpleCookie
-        from django.contrib.auth import get_user
+        from django.contrib.auth.models import User
+        from xp_user import SESSION_KEY
         from xp_user import logout
+        from document import Document
 
         request = HttpRequest()
         engine = import_module(settings.SESSION_ENGINE)
         if self.session:
             request.session = self.session
-            request.user = get_user(request)
+            user_id = request.session.get(SESSION_KEY, None)
+            if user_id:
+                user_db_document = Document.objects.get('user', id=user_id, get_logical=True)
+                user = User()
+                user.id = user_db_document['id']
+                user.email = user_db_document['email']
+                user.pk = user.id
+                user.username = user.id
+                user.first_name = user_db_document['first_name']
+                user.last_name = user_db_document['last_name']
+                user.document = user_db_document
+                request.user = user
         else:
             request.session = engine.SessionStore()
         logout(request)
