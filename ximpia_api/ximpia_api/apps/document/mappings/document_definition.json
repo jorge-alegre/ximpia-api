@@ -1,0 +1,146 @@
+{
+  "document_definition": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "choices__v1": {
+        "type": "object",
+        "properties": {
+          "choice_name__v1": {
+            "type": "string",
+            "fields": {
+              "name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "choice_values__v1": {
+            "type": "nested"
+            "properties": {
+              "choice_name__v1": {
+                "type": "string",
+                "fields": {
+                  "choice_name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "choice_value__v1": {
+                "type": "string",
+                "fields": {
+                  "choice_value__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "editable_fields__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "messages__v1": {
+        "type": "nested",
+        "properties": {
+
+        }
+      },
+      "content_permissions__v1": {
+        "type": "object",
+        "properties": {
+          "by_permission_name": {
+
+          },
+          "allow__v1": {
+
+          },
+          "deny__v1": {
+
+          },
+          "public__v1": {
+            "type": "boolean",
+            "null_value": false
+          }
+        }
+      },
+      "fields__v1": {
+        "type": "object",
+        "properties": {
+          "string__v1": {
+            "type": "nested",
+            "properties": {
+              "validations__v1": {
+                "type": "nested",
+                "properties": {
+
+                }
+              },
+              "choices__v1": {
+
+              },
+              "default__v1": {
+                "type": "string",
+                "fields": {
+                  "default__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "add_summary__v1": {
+                "type": "boolean",
+                "null_value": false
+              },
+              "hint__v1": {
+                "type": "string"
+              },
+              "comment__v1": {
+                "type": "string"
+              },
+              "display_name__v1": {
+                "type": "string",
+                "fields": {
+                  "default__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "max_length__v1": {
+                "type": "integer"
+              },
+              "min_length__v1": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

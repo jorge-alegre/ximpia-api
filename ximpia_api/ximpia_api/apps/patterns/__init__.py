@@ -78,6 +78,8 @@ class NotExists(object):
 
         This way we are sure that we only hit index once.
 
+        :param result: This is the logical representation of query sent
+
         :return:
         """
         if result:

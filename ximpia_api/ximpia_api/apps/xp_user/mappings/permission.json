@@ -28,6 +28,50 @@
           }
         }
       },
+      "type__v1": {
+
+      },
+      "on__v1": {
+        "type": "object",
+        "properties": {
+          "type__v1": {
+            "type": "string",
+            "fields": {
+              "type__v1": {
+                "type": "string",
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "name__v1": {
+            "type": "string",
+            "fields": {
+              "name__v1": {
+                "type": "string",
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "value__v1": {
+            "type": "string",
+            "fields": {
+              "value__v1": {
+                "type": "string",
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      },
       "apps__v1": {
         "type": "nested",
         "include_in_parent": true,
@@ -47,6 +91,10 @@
             }
           }
         }
+      },
+      "permission_modes__v1": {
+        "type": "string",
+        "index": "not_analyzed"
       },
       "data__v1": {
         "type": "nested",
