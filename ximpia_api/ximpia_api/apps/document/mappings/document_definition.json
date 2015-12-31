@@ -180,7 +180,33 @@
                 }
               },
               "choices__v1": {
-
+                "type": "object",
+                "properties": {
+                  "choice_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "choice_default_value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "choice_default_value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
               },
               "default__v1": {
                 "type": "string",
