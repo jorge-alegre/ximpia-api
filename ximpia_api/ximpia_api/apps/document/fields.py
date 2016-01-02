@@ -168,7 +168,7 @@ class StringField(object):
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
-            mappings[u'completion__v1'] = {
+            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
                 u"type": u"completion",
                 u"analyzer": u"simple_whitespace",
                 u"payloads": True,
@@ -179,7 +179,7 @@ class StringField(object):
         return mappings
 
     @classmethod
-    def validate(cls, value, field_config):
+    def validate(cls, value, field_config, doc_config):
         """
         Run all validations for the field
 
@@ -189,18 +189,33 @@ class StringField(object):
         * Run field validations
         * Run db checks through
 
+        :param value: Field value
+        :param field_config: Field config object
+        :param doc_config: Document config object
+
         :return:
         """
         check = True
         # min_length and max_length for string
         min_length = field_config.get('min_length', None)
         max_length = field_config.get('min_length', None)
+        field_choices = field_config.get('choices', None)
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
                 check = False
         if max_length:
             if len(value) > max_length:
+                check = False
+        if field_choices and value != '':
+            # If we have some value in field, validate with choices
+            choice_name = field_choices['choice_name']
+            choice_value = filter(lambda x: x['choice_item_name'] == value,
+                                  doc_config['choices'][choice_name])
+            if choice_value:
+                if choice_value[0]['choice_item_name'] != value:
+                    check = False
+            else:
                 check = False
         # field validations
         if validations:
