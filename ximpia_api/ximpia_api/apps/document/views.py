@@ -431,3 +431,73 @@ class Completion(generics.RetrieveAPIView):
             es_response = es_response.json()
             responses[document_type] = es_response
         return Response(responses)
+
+
+class DocumentDefinitionViewSet(viewsets.ModelViewSet):
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create a document definition. Algorithm done for StringField only
+
+        1. Check user can create document definition: Verify belongs to admin group for site.
+        2. Generate document mapping from fields
+        3. Create mapping for document type at ES
+        4. Build fields list for all field types received in document
+        5. Create document document definition with permissions, etc... Output sent document
+
+        Example structure received here:
+        {
+          _meta: {
+            choices: {
+              countries: {
+                es: "Spain"
+              }
+            },
+            permissions: [
+              {
+                type: "allow",
+                user: {
+                  id: "smkskjshj765"
+                }
+              },
+              {
+                type: "deny",
+                group: {
+                  slug: "users"
+                }
+              }
+            ]
+          },
+          base_code: {
+            type: "string",
+            ...
+          }
+
+        }
+
+        permissions
+        -----------
+        We have content_permissions at document definition and permission data for column permission and
+        document permission.
+
+        - When we create a document item with private permissions (only set of users can access specific content),
+        we send permissions data when creating content item, not separate API endpoint.
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def update(self, request, *args, **kwargs):
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        pass
+
+    def list(self, request, *args, **kwargs):
+        pass
+
+    def destroy(self, request, *args, **kwargs):
+        pass
