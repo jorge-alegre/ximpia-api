@@ -103,6 +103,7 @@ class StringField(object):
     max_length = None
     min_length = None
     validations = None
+    is_autocomplete = None
 
     def __init__(self, **kwargs):
         """
@@ -166,6 +167,15 @@ class StringField(object):
             mappings[u'null_value'] = self.default
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
+        if self.is_autocomplete:
+            mappings[u'completion__v1'] = {
+                u"type": u"completion",
+                u"analyzer": u"simple_whitespace",
+                u"payloads": True,
+                u"preserve_separators": True,
+                u"preserve_position_increments": True,
+                u"max_input_length": 50
+            }
         return mappings
 
     @classmethod

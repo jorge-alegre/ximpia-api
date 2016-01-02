@@ -433,7 +433,7 @@
               "display_name__v1": {
                 "type": "string",
                 "fields": {
-                  "default__v1": {
+                  "display_name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -447,6 +447,9 @@
               },
               "min_length__v1": {
                 "type": "integer"
+              },
+              "is_autocomplete__v1": {
+                "type": "boolean"
               }
             }
           }
