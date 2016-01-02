@@ -198,6 +198,7 @@ class StringField(object):
         min_length = field_config.get('min_length', None)
         max_length = field_config.get('min_length', None)
         field_choices = field_config.get('choices', None)
+        tag = field_config.get('tag', None)
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
@@ -215,6 +216,8 @@ class StringField(object):
                     check = False
             else:
                 check = False
+        if not tag:
+            check = False
         # field validations
         if validations:
             for validation in validations:

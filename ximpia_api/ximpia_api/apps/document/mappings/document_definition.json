@@ -48,7 +48,8 @@
       },
       "editable_fields__v1": {
         "type": "string",
-        "index": "not_analyzed"
+        "index": "no",
+        "null_value": []
       },
       "messages__v1": {
         "type": "nested",
