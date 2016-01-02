@@ -1,5 +1,3 @@
-from document import Document
-from base import exceptions
 
 __author__ = 'jorgealegre'
 
@@ -48,9 +46,11 @@ class NotExists(object):
     def __init__(self, data):
         self.data = data
 
-    def build_query(self):
+    def build_query(self, index=None):
         """
         Build query
+
+        :param index: Optional index
 
         :return:
         """
@@ -58,13 +58,27 @@ class NotExists(object):
         value = self.data['value']
         path_fields = path.split('.')
         document = path_fields[0]
-        query = Document.objects.build_bulk_query(
-            document,
-            **{
-                path_fields[1:].replace('.', '__'): value
+        query = {
+            'query': {
+                'filtered': {
+                    'filter': {
+                        'term': {
+                            path_fields[1:]: value
+                        }
+                    }
+                }
             }
-        )
-        return query
+        }
+        if index:
+            return '{header}\n{body}\n'.format(
+                header={'index': index, 'type': document},
+                body=query
+            )
+        else:
+            return '{header}\n{body}\n'.format(
+                header={},
+                body=query
+            )
 
     @classmethod
     def validate(cls, result):
@@ -82,7 +96,8 @@ class NotExists(object):
 
         :return:
         """
-        if result:
+        count = result['hits']['total']
+        if count >= 1:
             return False
         else:
             return True
@@ -95,9 +110,11 @@ class Exists(object):
     def __init__(self, data):
         self.data = data
 
-    def build_query(self):
+    def build_query(self, index=None):
         """
         Build query
+
+        :param index: Optional index
 
         :return:
         """
@@ -105,13 +122,27 @@ class Exists(object):
         value = self.data['value']
         path_fields = path.split('.')
         document = path_fields[0]
-        query = Document.objects.build_bulk_query(
-            document,
-            **{
-                path_fields[1:].replace('.', '__'): value
+        query = {
+            'query': {
+                'filtered': {
+                    'filter': {
+                        'term': {
+                            path_fields[1:]: value
+                        }
+                    }
+                }
             }
-        )
-        return query
+        }
+        if index:
+            return '{header}\n{body}\n'.format(
+                header={'index': index, 'type': document},
+                body=query
+            )
+        else:
+            return '{header}\n{body}\n'.format(
+                header={},
+                body=query
+            )
 
     @classmethod
     def validate(cls, result):
@@ -120,7 +151,8 @@ class Exists(object):
 
         :return:
         """
-        if result:
+        count = result['hits']['total']
+        if count >= 1:
             return True
         else:
             return False
