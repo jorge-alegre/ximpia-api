@@ -136,7 +136,7 @@ class StringField(object):
         for attr_name in kwargs:
             setattr(self, attr_name, kwargs[attr_name])
 
-    def make_mapping(self):
+    def make_mapping(self, version='v1'):
         """
         Create the mapping structure to create mappings and update mappings
 
@@ -144,8 +144,6 @@ class StringField(object):
         """
         # We could set analyzer. Default analyzer??? International chars???
         # How we set version fields??? We get field versions for name
-        # TODO: integrate version
-        version = ''
         mappings = {
             u'{}__{}'.format(
                 self.name, version
