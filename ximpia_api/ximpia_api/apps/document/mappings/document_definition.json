@@ -517,7 +517,7 @@
                   },
                   "value__v1": {
                     "type": "string",
-                    "index": "not_analyzed"
+                    "index": "no"
                   }
                 }
               },
