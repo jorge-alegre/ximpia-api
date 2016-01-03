@@ -8,6 +8,311 @@
       "enabled": false
     },
     "properties": {
+      "tag__v1": {
+        "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name__v1": {
+            "type": "string"
+          },
+          "slug__v1": {
+            "type": "string",
+            "fields": {
+              "slug__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "public__v1": {
+            "type": "boolean"
+          },
+          "tag_permissions__v1": {
+            "type": "nested",
+            "properties": {
+              "permission_id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "permission_name__v1": {
+                "type": "string",
+                "fields": {
+                  "name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "permission_user__v1": {
+                "type": "object",
+                "null_value": {},
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "user_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "user_name__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "permission_group__v1": {
+                "type": "object",
+                "null_value": {},
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "group_name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "permission_type__v1": {
+                "type": "string",
+                "fields": {
+                  "permission_type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "permission_locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "type__v1": {
+                    "type": "string",
+                    "fields": {
+                      "type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "permission_modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "branch__v1": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name__v1": {
+            "type": "string",
+            "fields": {
+              "name__v1": {
+                "type": "string"
+              },
+              "completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
+          },
+          "is_active__v1": {
+            "type": "boolean"
+          },
+          "public__v1": {
+            "type": "boolean"
+          },
+          "branch_permissions__v1": {
+            "type": "nested",
+            "properties": {
+              "permission_id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "permission_name__v1": {
+                "type": "string",
+                "fields": {
+                  "name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "permission_user__v1": {
+                "type": "object",
+                "null_value": {},
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "user_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "user_name__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "permission_group__v1": {
+                "type": "object",
+                "null_value": {},
+                "properties": {
+                  "id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "group_name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "permission_type__v1": {
+                "type": "string",
+                "fields": {
+                  "permission_type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "permission_locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "type__v1": {
+                    "type": "string",
+                    "fields": {
+                      "type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "permission_modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
       "choices__v1": {
         "type": "object",
         "properties": {
@@ -289,48 +594,6 @@
               },
               "is_autocomplete__v1": {
                 "type": "boolean"
-              },
-              "tag__v2": {
-                "type": "object",
-                "null_value": {},
-                "properties": {
-                  "id__v1": {
-                    "type": "long"
-                  },
-                  "slug__v1": {
-                    "type": "string",
-                    "fields": {
-                      "slug__v1": {
-                        "type": "string"
-                      },
-                      "raw__v1": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                      }
-                    }
-                  }
-                }
-              },
-              "branch__v2": {
-                "type": "object",
-                "null_value": {},
-                "properties": {
-                  "id__v1": {
-                    "type": "long"
-                  },
-                  "slug__v1": {
-                    "type": "string",
-                    "fields": {
-                      "slug__v1": {
-                        "type": "string"
-                      },
-                      "raw__v1": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                      }
-                    }
-                  }
-                }
               }
             }
           }
