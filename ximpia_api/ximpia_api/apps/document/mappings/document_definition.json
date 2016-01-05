@@ -614,8 +614,23 @@
       "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
+      },
+      "created_by__v1": {
+        "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "user_name__v1": {
+            "type": "string",
+            "fields": {
+              "user_name__v1": {
+                "type": "string"
+              }
+            }
+          }
+        }
       }
-
     }
   }
 }

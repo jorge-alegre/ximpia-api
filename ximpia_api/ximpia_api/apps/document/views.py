@@ -562,12 +562,12 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         db_document_definition['created_on'] = now_es
         # Create document definition document
         es_response_raw = requests.post(
-            '{host}/{}/{}'.format(
+            '{host}/{index}/{doc_type}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                '',
-                doc_type
+                index=index,
+                doc_type=doc_type
             ),
-            data=json.dumps(db_document_definition)
+            data=json.dumps(to_physical_doc(doc_type, db_document_definition))
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(es_response))
