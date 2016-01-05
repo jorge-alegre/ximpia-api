@@ -2,6 +2,7 @@ import requests
 from requests.adapters import HTTPAdapter
 import json
 import logging
+from datetime import datetime
 
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
@@ -11,8 +12,8 @@ from django.utils.translation import ugettext as _
 
 from base import exceptions
 
-from document import to_physical_doc
-from base import get_es_response, get_path_search
+from document import to_physical_doc, Document
+from base import get_es_response, get_path_search, get_site
 
 __author__ = 'jorgealegre'
 
@@ -488,7 +489,89 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
-        pass
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        if len(args) == 0:
+            raise exceptions.XimpiaAPIException(_(u'No document type sent'))
+        doc_type = args[0]
+        # resolve index based on request host for site
+        site_slug = get_site(request)
+        index = '{}__base'.format(site_slug)
+        # validations
+        # check user request and user is admin
+        if not request.user or (request.user and not request.user.id):
+            raise exceptions.XimpiaAPIException(_(u'User needs to be authenticated'))
+        user = request.user
+        groups = user.document['groups']
+        admin_groups = filter(lambda x: x['name'] == 'admin', groups)
+        if not admin_groups:
+            raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
+        # generate mappings
+        document_definition_input = json.loads(request.body)
+        if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
+            raise exceptions.XimpiaAPIException(_(u'Tag is mandatory'))
+        if Document.objects.filter('document_definition',
+                                   doc_type=doc_type).count() > 0:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        # meta_data = document_definition_input['_meta']
+        # TODO: Check mapping does not exist
+        doc_mapping = {
+            doc_type: {
+                'dynamic': 'strict',
+                '_timestamp': {
+                    "enabled": True
+                },
+                '_all': {
+                    "enabled": False
+                },
+                "properties": {
+                }
+            }
+        }
+        for field_name in document_definition_input.keys():
+            if field_name == '_meta':
+                continue
+            instance_data = document_definition_input[field_name]
+            # instantiate field class based on type
+            instance = __import__('document.fields')
+            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+            instance_data['name'] = field_name
+            field_instance = field_class(**instance_data)
+            field_mapping = field_instance.make_mapping()
+            doc_mapping[doc_type]['properties'].update(field_mapping)
+        # Create mapping
+        es_response_raw = requests.put(
+            '{host}/{index}/_mapping/{doc_type}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=index,
+                doc_type=doc_type
+            ),
+            data=json.dumps(doc_mapping)
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition.create :: response put mapping: {}'.format(es_response))
+        # Build db document definition
+        db_document_definition = {
+            'fields': []
+        }
+        for meta_field in document_definition_input['_meta'].keys():
+            db_document_definition[meta_field] = document_definition_input['_meta'][meta_field]
+        for field_name in document_definition_input.keys():
+            db_field = document_definition_input[field_name]
+            db_field['name'] = field_name
+            db_document_definition['fields'].append(db_field)
+        db_document_definition['created_on'] = now_es
+        # Create document definition document
+        es_response_raw = requests.post(
+            '{host}/{}/{}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                '',
+                doc_type
+            ),
+            data=json.dumps(db_document_definition)
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(es_response))
+        return document_definition_input
 
     def update(self, request, *args, **kwargs):
         pass

@@ -482,12 +482,15 @@ class DocumentManager(object):
         if 'get_logical' in kwargs and kwargs['get_logical']:
             get_logical = True
             del kwargs['get_logical']
+        index = None
+        if 'index' in kwargs:
+            index = kwargs.pop('es_path')
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
             es_path = '{host}/{index}/{document_type}/_search'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
+                index=index or settings.SITE_BASE_INDEX,
                 document_type=document_type)
 
         # we have like ['status', 'user.value, ... ]

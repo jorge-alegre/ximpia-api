@@ -8,6 +8,18 @@
       "enabled": false
     },
     "properties": {
+      "doc_type__v1": {
+        "type": "string",
+        "fields": {
+          "doc_type__v1": {
+            "type": "string",
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
       "tag__v1": {
         "properties": {
           "id__v1": {
@@ -598,7 +610,12 @@
             }
           }
         }
+      },
+      "created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
       }
+
     }
   }
 }
