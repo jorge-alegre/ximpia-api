@@ -513,7 +513,17 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
                                    doc_type=doc_type).count() > 0:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
         # meta_data = document_definition_input['_meta']
-        # TODO: Check mapping does not exist
+        # Check mapping does not exist
+        es_response_raw = requests.get(
+            '{host}/{index}/_mapping/{doc_type}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=index,
+                doc_type=doc_type
+            )
+        )
+        if es_response_raw.status_code in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        # Build data
         doc_mapping = {
             doc_type: {
                 'dynamic': 'strict',
@@ -538,17 +548,6 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             field_instance = field_class(**instance_data)
             field_mapping = field_instance.make_mapping()
             doc_mapping[doc_type]['properties'].update(field_mapping)
-        # Create mapping
-        es_response_raw = requests.put(
-            '{host}/{index}/_mapping/{doc_type}'.format(
-                host=settings.ELASTIC_SEARCH_HOST,
-                index=index,
-                doc_type=doc_type
-            ),
-            data=json.dumps(doc_mapping)
-        )
-        es_response = es_response_raw.json()
-        logger.info(u'DocumentDefinition.create :: response put mapping: {}'.format(es_response))
         # Build db document definition
         db_document_definition = {
             'fields': []
@@ -560,6 +559,7 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             db_field['name'] = field_name
             db_document_definition['fields'].append(db_field)
         db_document_definition['created_on'] = now_es
+        # TODO: Create field_version with all fields and tag / branch in single call
         # Create document definition document
         es_response_raw = requests.post(
             '{host}/{index}/{doc_type}'.format(
@@ -571,6 +571,17 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(es_response))
+        # Create mapping
+        es_response_raw = requests.put(
+            '{host}/{index}/_mapping/{doc_type}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=index,
+                doc_type=doc_type
+            ),
+            data=json.dumps(doc_mapping)
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition.create :: response put mapping: {}'.format(es_response))
         return document_definition_input
 
     def update(self, request, *args, **kwargs):
