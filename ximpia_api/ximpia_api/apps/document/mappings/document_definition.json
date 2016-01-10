@@ -12,7 +12,7 @@
         "type": "string",
         "fields": {
           "doc_type__v1": {
-            "type": "string",
+            "type": "string"
           },
           "raw__v1": {
             "type": "string",

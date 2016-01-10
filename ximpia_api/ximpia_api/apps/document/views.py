@@ -523,6 +523,17 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         )
         if es_response_raw.status_code in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        # Build db document definition
+        db_document_definition = {
+            'fields': []
+        }
+        for meta_field in document_definition_input['_meta'].keys():
+            db_document_definition[meta_field] = document_definition_input['_meta'][meta_field]
+        for field_name in document_definition_input.keys():
+            db_field = document_definition_input[field_name]
+            db_field['name'] = field_name
+            db_document_definition['fields'].append(db_field)
+        db_document_definition['created_on'] = now_es
         # Build data
         doc_mapping = {
             doc_type: {
@@ -537,6 +548,7 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
                 }
             }
         }
+        fields_version_str = ''
         for field_name in document_definition_input.keys():
             if field_name == '_meta':
                 continue
@@ -548,18 +560,23 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             field_instance = field_class(**instance_data)
             field_mapping = field_instance.make_mapping()
             doc_mapping[doc_type]['properties'].update(field_mapping)
-        # Build db document definition
-        db_document_definition = {
-            'fields': []
-        }
-        for meta_field in document_definition_input['_meta'].keys():
-            db_document_definition[meta_field] = document_definition_input['_meta'][meta_field]
-        for field_name in document_definition_input.keys():
-            db_field = document_definition_input[field_name]
-            db_field['name'] = field_name
-            db_document_definition['fields'].append(db_field)
-        db_document_definition['created_on'] = now_es
-        # TODO: Create field_version with all fields and tag / branch in single call
+            bulk_header = '{ "create": { "_index": "' + index + '", "_type": "' + doc_type + '"} }\n'
+            bulk_data = json.dumps(
+                {
+                    'doc_type__v1': doc_type,
+                    'field__v1': field_name + '__v1',
+                    'tag__v1': db_document_definition['tag'],
+                    'branch__v1': db_document_definition['branch'],
+                    'is_activate__v1': True,
+                    'created_on__v1': now_es
+                }
+            ) + '\n'
+            if not fields_version_str:
+                fields_version_str = bulk_header
+                fields_version_str += bulk_data
+            else:
+                fields_version_str += bulk_header
+                fields_version_str += bulk_data
         # Create document definition document
         es_response_raw = requests.post(
             '{host}/{index}/{doc_type}'.format(
@@ -570,7 +587,18 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             data=json.dumps(to_physical_doc(doc_type, db_document_definition))
         )
         es_response = es_response_raw.json()
-        logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(es_response))
+        logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(
+            es_response
+        ))
+        es_response_raw = requests.post(
+            '{host}/_bulk',
+            data=fields_version_str,
+            headers={'Content-Type': 'application/octet-stream'},
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition.create :: response create field versions: {}'.format(
+            es_response
+        ))
         # Create mapping
         es_response_raw = requests.put(
             '{host}/{index}/_mapping/{doc_type}'.format(
