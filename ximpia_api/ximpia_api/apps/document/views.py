@@ -534,6 +534,10 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             db_field['name'] = field_name
             db_document_definition['fields'].append(db_field)
         db_document_definition['created_on'] = now_es
+        db_document_definition['created_by'] = {
+            'id': user.id,
+            'user_name': user.username
+        }
         # Build data
         doc_mapping = {
             doc_type: {
@@ -568,7 +572,11 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
                     'tag__v1': db_document_definition['tag'],
                     'branch__v1': db_document_definition['branch'],
                     'is_activate__v1': True,
-                    'created_on__v1': now_es
+                    'created_on__v1': now_es,
+                    'created_by__v1': {
+                        'id__v1': user.id,
+                        'user_name__v1': user.username
+                    }
                 }
             ) + '\n'
             if not fields_version_str:
