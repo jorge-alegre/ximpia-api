@@ -523,6 +523,11 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         )
         if es_response_raw.status_code in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        # Check no fields for doc type
+        if Document.objects.filter('field_version',
+                                   doc_type=doc_type).count() > 0:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        # End validations
         # Build db document definition
         db_document_definition = {
             'fields': []
@@ -592,7 +597,11 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
                 index=index,
                 doc_type=doc_type
             ),
-            data=json.dumps(to_physical_doc(doc_type, db_document_definition))
+            data=json.dumps(
+                to_physical_doc(
+                    doc_type, db_document_definition
+                )
+            )
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(
