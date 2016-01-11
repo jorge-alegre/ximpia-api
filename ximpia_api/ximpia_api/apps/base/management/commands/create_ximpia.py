@@ -133,7 +133,7 @@ class Command(BaseCommand):
             ))
 
     @classmethod
-    def _create_tag(cls, index_name, now_es, version='v1'):
+    def _create_tag(cls, index_name, now_es, version=settings.DEFAULT_VERSION):
         """
         Create tag v1
 

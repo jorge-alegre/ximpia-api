@@ -450,6 +450,7 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         Example structure received here:
         {
           _meta: {
+            tag: 'v1',                  # Optional, v1 is nothing sent
             choices: {
               countries: {
                 es: "Spain"
@@ -509,8 +510,9 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         # generate mappings
         document_definition_input = json.loads(request.body)
         if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
-            raise exceptions.XimpiaAPIException(_(u'Tag is mandatory'))
-        tag = document_definition_input['_meta']['tag']
+            tag = settings.DEFAULT_VERSION
+        else:
+            tag = document_definition_input['_meta']['tag']
         bulk_queries = list()
         # Check db validations: tag exists, document definition not exists, no fields
         bulk_queries.append(
