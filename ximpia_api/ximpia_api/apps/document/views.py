@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.utils.text import slugify
 
 from base import exceptions
 
@@ -509,9 +510,29 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         document_definition_input = json.loads(request.body)
         if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
             raise exceptions.XimpiaAPIException(_(u'Tag is mandatory'))
-        if Document.objects.filter('document_definition',
-                                   doc_type=doc_type).count() > 0:
-            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        tag = document_definition_input['_meta']['tag']
+        bulk_queries = list()
+        # Check db validations: tag exists, document definition not exists, no fields
+        bulk_queries.append(
+            (json.dumps(
+                {
+                    'index': index,
+                    'type': 'document_definition'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'doc_type__v1': doc_type
+                        }
+                    }
+                }
+            )
+            )
+        )
         # meta_data = document_definition_input['_meta']
         # Check mapping does not exist
         es_response_raw = requests.get(
@@ -524,9 +545,63 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         if es_response_raw.status_code in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
         # Check no fields for doc type
-        if Document.objects.filter('field_version',
-                                   doc_type=doc_type).count() > 0:
+        bulk_queries.append(
+            (json.dumps(
+                {
+                    'index': index,
+                    'type': 'field_version'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'doc_type__v1': doc_type
+                        }
+                    }
+                }
+            )
+            )
+        )
+        # Validate tag exists
+        bulk_queries.append(
+            (json.dumps(
+                {
+                    'index': index,
+                    'type': 'tag'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'slug__v1': slugify(tag)
+                        }
+                    }
+                }
+            )
+            )
+        )
+        es_response_raw = requests.get(
+            '{host}/_msearch',
+            data=json.dumps(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]),
+                                bulk_queries))
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition.create :: response validations: {}'.format(
+            es_response
+        ))
+        responses = es_response.get('responses', [])
+        if responses[0]['hits']['total'] > 0:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        if responses[1]['hits']['total'] > 0:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        if responses[1]['hits']['total'] == 0:
+            raise exceptions.XimpiaAPIException(_(u'Tag does not exist'))
         # End validations
         # Build db document definition
         db_document_definition = {
