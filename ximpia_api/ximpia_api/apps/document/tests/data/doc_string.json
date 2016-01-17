@@ -7,8 +7,8 @@
       ]
     },
     "messages": {
-      "$ref.msg.name_not_valid": "This name is not valid",
-      "$ref.msg.thank-you": "Thanks for submitting info"
+      "name_not_valid": "This name is not valid",
+      "thank-you": "Thanks for submitting info"
     },
     "validations": [
       {
