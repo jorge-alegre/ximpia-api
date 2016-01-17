@@ -2,8 +2,8 @@
   "_meta": {
     "choices": {
       "customer_status": [
-        ["$ref.cod.approved", "Approved"],
-        ["$ref.cod.created", "Created"]
+        ["approved", "Approved"],
+        ["created", "Created"]
       ]
     },
     "messages": {
@@ -12,9 +12,9 @@
     },
     "validations": [
       {
-        "type": "equals",
-        "fields": ["field_1", "field_2"],
-        "context": "request"
+        "type": "not-exists",
+        "path": "mydoc.status",
+        "value": "created"
       }
     ],
     "tag": "v1",
@@ -27,9 +27,9 @@
         "type": "allow",
         "locations": [
           {
-            "type": "",
-            "name": "",
-            "value": ""
+            "type": "site",
+            "name": "site",
+            "value": "my-site"
           }
         ],
         "modes": ["insert", "update", "display", "delete"]
@@ -44,7 +44,7 @@
     "max_length": 30,
     "choices": {
       "name": "customer_status",
-      "default": "$ref.cod.created"
+      "default": "created"
     }
   },
   "name": {
