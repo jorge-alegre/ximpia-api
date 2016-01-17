@@ -63,7 +63,7 @@
           }
         }
       },
-      "group_permissions__v1": {
+      "permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
@@ -78,7 +78,7 @@
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "completion__v1": {
+              "group_permission_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
