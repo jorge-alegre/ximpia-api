@@ -568,7 +568,9 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         # resolve index based on request host for site
         site_slug = get_site(request)
         index = '{}__base'.format(site_slug)
+        ###############
         # validations
+        ###############
         # check user request and user is admin
         if not request.user or (request.user and not request.user.id):
             raise exceptions.XimpiaAPIException(_(u'User needs to be authenticated'))
@@ -676,7 +678,9 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
         if responses[1]['hits']['total'] == 0:
             raise exceptions.XimpiaAPIException(_(u'Tag does not exist'))
+        ##################
         # End validations
+        ##################
         # Build db document definition
         db_document_definition = {
             'fields': []
