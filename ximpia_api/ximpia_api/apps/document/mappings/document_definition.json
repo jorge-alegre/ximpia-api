@@ -326,7 +326,7 @@
         }
       },
       "choices__v1": {
-        "type": "object",
+        "type": "nested",
         "properties": {
           "choice_name__v1": {
             "type": "nested",

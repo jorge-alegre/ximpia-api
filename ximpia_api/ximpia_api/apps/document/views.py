@@ -437,6 +437,76 @@ class Completion(generics.RetrieveAPIView):
 
 class DocumentDefinitionViewSet(viewsets.ModelViewSet):
 
+    @classmethod
+    def _generate_input_document(cls, input_document_request, doc_type):
+        """
+        Generate internal definition document for ES, same structure as mappings
+
+        :param input_document_request:
+        :param doc_type:
+        :return:
+        """
+        input_document = dict()
+        input_document['_meta'] = {}
+        for doc_field in input_document_request['_meta']:
+            if doc_field == 'choices':
+                input_document['_meta']['choices'] = []
+                for choice_name in input_document_request['_meta']['choices']:
+                    request_list = input_document_request['_meta']['choices'][choice_name]
+                    choice_list = []
+                    for choice_item in request_list:
+                        choice_list.append(
+                            {
+                                'name': input_document_request['_meta']['choices'][choice_item][0],
+                                'value': input_document_request['_meta']['choices'][choice_item][1]
+                            }
+                        )
+                    input_document['_meta']['choices'].append(
+                        {
+                            'choice_name': choice_list
+                        }
+                    )
+            if doc_field == 'messages':
+                input_document['_meta']['messages'] = []
+                for message_name in input_document_request['_meta']['messages']:
+                    input_document['_meta']['messages'].append(
+                        {
+                            'name': message_name,
+                            'value': input_document_request['_meta']['messages'][message_name]
+                        }
+                    )
+            if doc_field == 'validations':
+                # We need to generate from pattern class
+                # So far, exists, not-exists have same structure
+                input_document['_meta']['validations'] = []
+                for validation_data in input_document_request['_meta']['validations']:
+                        input_document['_meta']['validations'].append(
+                            validation_data
+                        )
+            else:
+                input_document['_meta'][doc_field] = input_document_request['_meta'][doc_field]
+        for field in input_document_request:
+            if field != '_meta':
+                # we check validations. Only support is-unique, exists and not-exists
+                field_data = input_document_request[field]
+                if 'validations' in field_data and filter(lambda x: x['type'] == 'is-unique',
+                                                          field_data['validations']):
+                    validations_new = []
+                    for validation_data in field_data['validations']:
+                        if validation_data['type'] == 'is-unique':
+                            validation_data_item = {
+                                'type': 'not-exists',
+                                'path': '{doc_type}.{field}'.format(
+                                    doc_type=doc_type,
+                                    field=field
+                                ),
+                                'value': 'self'
+                            }
+                            validations_new.append(validation_data_item)
+                    field_data['validations'] = validations_new
+                input_document[field] = field_data
+        return input_document
+
     def create(self, request, *args, **kwargs):
         """
         Create a document definition. Algorithm done for StringField only
@@ -508,7 +578,9 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         if not admin_groups:
             raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
         # generate mappings
-        document_definition_input = json.loads(request.body)
+        document_definition_input = self._generate_input_document(
+            json.loads(request.body), doc_type
+        )
         if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
             tag = settings.DEFAULT_VERSION
         else:
