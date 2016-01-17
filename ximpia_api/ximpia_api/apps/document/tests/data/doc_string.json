@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "choices": {
+      "customer_status": [
+        ["$ref.cod.approved", "Approved"],
+        ["$ref.cod.created", "Created"]
+      ]
+    },
+    "messages": {
+      "$ref.msg.name_not_valid": "This name is not valid",
+      "$ref.msg.thank-you": "Thanks for submitting info"
+    },
+    "validations": [
+      {
+        "type": "equals",
+        "fields": ["field_1", "field_2"],
+        "context": "request"
+      }
+    ],
+    "tag": "v1",
+    "permissions": [
+      {
+        "name": "can-create",
+        "user": {
+          "id": "dskjfdhjs8$"
+        },
+        "type": "allow",
+        "locations": [
+          {
+            "type": "",
+            "name": "",
+            "value": ""
+          }
+        ],
+        "modes": ["insert", "update", "display", "delete"]
+      }
+    ]
+  },
+  "status": {
+    "type": "string",
+    "display_name": "Status",
+    "hint": "Customer status",
+    "comment": "This is the customer status before purchasing",
+    "max_length": 30,
+    "choices": {
+      "name": "customer_status",
+      "default": "$ref.cod.created"
+    }
+  },
+  "name": {
+    "type": "string",
+    "display_name": "Name",
+    "hint": "Customer name",
+    "validations": [
+      {
+        "type": "is-unique"
+      }
+    ]
+  }
+}
