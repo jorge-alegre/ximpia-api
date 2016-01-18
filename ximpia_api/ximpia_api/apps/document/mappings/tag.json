@@ -68,7 +68,6 @@
           },
           "user__v1": {
             "type": "object",
-            "null_value": {},
             "properties": {
               "id__v1": {
                 "type": "string",
@@ -87,7 +86,6 @@
           },
           "group__v1": {
             "type": "object",
-            "null_value": {},
             "properties": {
               "id__v1": {
                 "type": "string",

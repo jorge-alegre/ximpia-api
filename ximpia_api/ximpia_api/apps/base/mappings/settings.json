@@ -145,14 +145,14 @@
           "is_active__v1": {
             "type": "boolean"
           },
-          "tag_permissions__v1": {
+          "permissions__v1": {
             "type": "nested",
             "properties": {
-              "permission_id__v1": {
+              "id__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "permission_name__v1": {
+              "name__v1": {
                 "type": "string",
                 "fields": {
                   "name__v1": {
@@ -162,7 +162,7 @@
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "completion__v1": {
+                  "permission_name_completion__v1": {
                     "type": "completion",
                     "analyzer": "simple_whitespace",
                     "payloads": true,
@@ -172,9 +172,8 @@
                   }
                 }
               },
-              "permission_user__v1": {
+              "user__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -191,9 +190,8 @@
                   }
                 }
               },
-              "permission_group__v1": {
+              "group__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -205,7 +203,7 @@
                   }
                 }
               },
-              "permission_type__v1": {
+              "type__v1": {
                 "type": "string",
                 "fields": {
                   "permission_type__v1": {
@@ -217,7 +215,7 @@
                   }
                 }
               },
-              "permission_locations__v1": {
+              "locations__v1": {
                 "type": "nested",
                 "properties": {
                   "type__v1": {
@@ -258,7 +256,7 @@
                   }
                 }
               },
-              "permission_modes__v1": {
+              "modes__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
@@ -297,14 +295,14 @@
           "is_active__v1": {
             "type": "boolean"
           },
-          "branch_permissions__v1": {
+          "permissions__v1": {
             "type": "nested",
             "properties": {
-              "permission_id__v1": {
+              "id__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "permission_name__v1": {
+              "name__v1": {
                 "type": "string",
                 "fields": {
                   "name__v1": {
@@ -314,7 +312,7 @@
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "completion__v1": {
+                  "permission_name_completion__v1": {
                     "type": "completion",
                     "analyzer": "simple_whitespace",
                     "payloads": true,
@@ -324,9 +322,8 @@
                   }
                 }
               },
-              "permission_user__v1": {
+              "user__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -343,9 +340,8 @@
                   }
                 }
               },
-              "permission_group__v1": {
+              "group__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -357,7 +353,7 @@
                   }
                 }
               },
-              "permission_type__v1": {
+              "type__v1": {
                 "type": "string",
                 "fields": {
                   "permission_type__v1": {
@@ -369,7 +365,7 @@
                   }
                 }
               },
-              "permission_locations__v1": {
+              "locations__v1": {
                 "type": "nested",
                 "properties": {
                   "type__v1": {
@@ -410,7 +406,7 @@
                   }
                 }
               },
-              "permission_modes__v1": {
+              "modes__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }

@@ -76,7 +76,6 @@
               },
               "user__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -95,7 +94,6 @@
               },
               "group__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -229,7 +227,6 @@
               },
               "user__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -248,7 +245,6 @@
               },
               "group__v1": {
                 "type": "object",
-                "null_value": {},
                 "properties": {
                   "id__v1": {
                     "type": "string",
@@ -360,13 +356,11 @@
         }
       },
       "public__v1": {
-        "type": "boolean",
-        "null_value": false
+        "type": "boolean"
       },
       "editable_fields__v1": {
         "type": "string",
-        "index": "no",
-        "null_value": []
+        "index": "no"
       },
       "messages__v1": {
         "type": "nested",
@@ -421,7 +415,6 @@
           },
           "user__v1": {
             "type": "object",
-            "null_value": {},
             "properties": {
               "id__v1": {
                 "type": "string",
@@ -440,7 +433,6 @@
           },
           "group__v1": {
             "type": "object",
-            "null_value": {},
             "properties": {
               "id__v1": {
                 "type": "string",
@@ -528,13 +520,11 @@
           },
           "modes__v1": {
             "type": "string",
-            "index": "not_analyzed",
-            "null_value": "all"
+            "index": "not_analyzed"
           },
           "context__v1": {
             "type": "string",
-            "index": "not_analyzed",
-            "null_value": "db"
+            "index": "not_analyzed"
           }
         }
       },
@@ -545,8 +535,7 @@
             "type": "nested",
             "properties": {
               "active__v1": {
-                "type": "boolean",
-                "null_value": true
+                "type": "boolean"
               },
               "validations__v1": {
                 "type": "nested",
@@ -565,13 +554,11 @@
                   },
                   "modes__v1": {
                     "type": "string",
-                    "index": "not_analyzed",
-                    "null_value": "all"
+                    "index": "not_analyzed"
                   },
                   "context__v1": {
                     "type": "string",
-                    "index": "not_analyzed",
-                    "null_value": "db"
+                    "index": "not_analyzed"
                   }
                 }
               },
@@ -617,8 +604,7 @@
                 }
               },
               "add_summary__v1": {
-                "type": "boolean",
-                "null_value": false
+                "type": "boolean"
               },
               "hint__v1": {
                 "type": "string",

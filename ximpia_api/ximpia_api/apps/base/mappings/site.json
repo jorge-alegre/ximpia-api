@@ -85,8 +85,7 @@
             "type": "integer"
           },
           "active": {
-            "type": "boolean",
-            "null_value": false
+            "type": "boolean"
           },
           "created_on": {
             "type" : "date",

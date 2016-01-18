@@ -82,8 +82,7 @@
                   "index": "not_analyzed"
                 },
                 "has_auth__v1": {
-                  "type": "boolean",
-                  "null_value": false
+                  "type": "boolean"
                 },
                 "link__v1": {
                   "type": "string",
@@ -156,8 +155,7 @@
                 "type": "string"
               },
               "is_hash__v1": {
-                "type": "boolean",
-                "null_value": false
+                "type": "boolean"
               }
             }
           },

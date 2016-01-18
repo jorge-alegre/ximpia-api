@@ -435,7 +435,7 @@ class Completion(generics.RetrieveAPIView):
         return Response(responses)
 
 
-class DocumentDefinitionViewSet(viewsets.ModelViewSet):
+class DocumentDefinition(viewsets.ModelViewSet):
 
     @classmethod
     def _generate_input_document(cls, input_document_request, doc_type):
@@ -561,6 +561,7 @@ class DocumentDefinitionViewSet(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
+        logger.debug(u'DocumentDefinition.create ...')
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         if len(args) == 0:
             raise exceptions.XimpiaAPIException(_(u'No document type sent'))

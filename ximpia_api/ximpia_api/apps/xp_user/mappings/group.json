@@ -58,8 +58,7 @@
             }
           },
           "is_hash__v1": {
-            "type": "boolean",
-            "null_value": false
+            "type": "boolean"
           }
         }
       },

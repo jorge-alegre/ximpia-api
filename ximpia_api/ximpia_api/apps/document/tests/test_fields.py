@@ -1,8 +1,14 @@
-from django.test import RequestFactory, Client
+import json
+import logging
 
-from base.tests import XimpiaTestCase
+from django.test import RequestFactory
+from django.core.urlresolvers import reverse
+
+from base.tests import XimpiaClient as Client, XimpiaTestCase
 
 __author__ = 'jorgealegre'
+
+logger = logging.getLogger(__name__)
 
 
 class StringFieldTest(XimpiaTestCase):
@@ -15,4 +21,13 @@ class StringFieldTest(XimpiaTestCase):
         pass
 
     def test_string(self):
-        pass
+        with open('data/doc_string.json') as f:
+            doc_string_str = f.read()
+        doc_string = json.loads(doc_string_str)
+        response = self.c.post(
+            reverse('document_definition'),
+            json.dumps(doc_string),
+            content_type="application/json"
+        )
+        response_data = json.loads(response.content)
+        logger.debug(u'test_string:: create document: {}'.format(response_data))

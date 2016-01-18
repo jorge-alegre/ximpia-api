@@ -92,8 +92,7 @@
                 "type": "integer"
               },
               "active__v1": {
-                "type": "boolean",
-                "null_value": false
+                "type": "boolean"
               },
               "created_on__v1": {
                 "type" : "date",
