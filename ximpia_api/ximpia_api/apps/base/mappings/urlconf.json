@@ -8,7 +8,7 @@
       "enabled": false
     },
     "properties": {
-      "url__v1": {
+      "urlconf__url__v1": {
         "type": "string",
         "fields": {
           "url__v1": {
@@ -21,33 +21,58 @@
           }
         }
       },
-      "mode__v1": {
+      "urlconf__mode__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "document_type__v1": {
+      "urlconf__document_type__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
       "app__v1": {
         "properties": {
           "id": {
-            "type": "long"
+            "type": "string",
+            "index": "not_analyzed"
           }
         }
       },
       "site__v1": {
         "properties": {
-          "id": {
-            "type": "long"
+          "account__v1": {
+            "properties": {
+              "account__name__v1": {
+                "type": "string",
+                "fields": {
+                  "account__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "account__organization__v1": {
+                "properties": {
+                  "name__v1": {
+                    "type": "string"
+                  }
+                }
+              },
+              "created_on__v1": {
+                "type": "date",
+                "format": "dateOptionalTime"
+              }
+            }
           },
-          "name__v1": {
+          "site__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "site__name__v1": {
                 "type": "string"
               },
-              "completion__v1": {
+              "site__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -57,10 +82,10 @@
               }
             }
           },
-          "slug__v1": {
+          "site__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "site__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -69,10 +94,10 @@
               }
             }
           },
-          "url__v1": {
+          "site__url__v1": {
             "type": "string",
             "fields": {
-              "url__v1": {
+              "site__url__v1": {
                 "type": "string",
                 "analyzer": "link_analyzer"
               },
@@ -82,60 +107,95 @@
               }
             }
           },
-          "is_active__v1": {
+          "site__is_active__v1": {
             "type": "boolean"
           },
-          "invites": {
+          "site__invites__v1": {
+            "type": "object",
             "properties": {
-              "age_days": {
+              "site__invites__age_days__v1": {
                 "type": "integer"
               },
-              "active": {
+              "site__invites__active__v1": {
                 "type": "boolean"
               },
-              "created_on": {
-                "type" : "date",
-                "format" : "dateOptionalTime"
+              "created_on__v1": {
+                "type": "date",
+                "format": "dateOptionalTime"
               },
-              "updated_on": {
-                "type" : "date",
-                "format" : "dateOptionalTime"
+              "updated_on__v1": {
+                "type": "date",
+                "format": "dateOptionalTime"
               }
             }
           },
           "text__v1": {
             "type": "string",
-            "term_vector" : "with_positions_offsets",
-            "analyzer" : "snowball"
+            "term_vector": "with_positions_offsets",
+            "analyzer": "snowball"
           },
-          "created_on__v1" : {
-            "type" : "date",
-            "format" : "dateOptionalTime"
+          "site__public__v1": {
+            "type": "boolean"
+          },
+          "site__domains__v1": {
+            "type": "nested",
+            "include_in_parent": true,
+            "dynamic": "false",
+            "properties": {
+              "site__domains__name__v1": {
+                "type": "string",
+                "fields": {
+                  "site__domains__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          },
+          "site__api_access__v1": {
+            "properties": {
+              "site__api_access__key__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "site__api_access__secret__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "site__api_access__rate_hour__v1": {
+                "type": "integer"
+              },
+              "site__api_access__rate_day__v1": {
+                "type": "integer"
+              },
+              "site__api_access__rate_month__v1": {
+                "type": "integer"
+              },
+              "created_on__v1": {
+                "type": "date",
+                "format": "dateOptionalTime"
+              }
+            }
+          },
+          "created_on__v1": {
+            "type": "date",
+            "format": "dateOptionalTime"
           }
         }
       },
       "tag__v1": {
         "properties": {
-          "name__v1": {
-            "type": "string",
-            "fields": {
-              "name__v1": {
-                "type": "string"
-              },
-              "completion__v1": {
-                "type": "completion",
-                "analyzer": "simple_whitespace",
-                "payloads": true,
-                "preserve_separators": true,
-                "preserve_position_increments": true,
-                "max_input_length": 50
-              }
-            }
+          "tag__name__v1": {
+            "type": "string"
           },
-          "slug__v1": {
+          "tag__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "tag__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -144,46 +204,110 @@
               }
             }
           },
-          "is_active__v1": {
+          "tag__is_active__v1": {
             "type": "boolean"
           },
-          "permissions__v1": {
+          "tag__permissions__v1": {
+            "type": "nested",
             "properties": {
-              "users__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
-                "properties": {
-                  "id__v1": {
+              "tag__permissions__id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "tag__permissions__name__v1": {
+                "type": "string",
+                "fields": {
+                  "tag__permissions__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "name__v1": {
+                  "tag__permissions__name_completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "tag__permissions__user__v1": {
+                "type": "object",
+                "properties": {
+                  "tag__permissions__user__id__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "tag__permissions__user__user_name__v1": {
                     "type": "string",
                     "fields": {
-                      "name__v1": {
+                      "tag__permissions__user__user_name__v1": {
                         "type": "string",
-                        "term_vector": "with_positions_offsets",
-                        "analyzer": "snowball",
-                        "copy_to": "text__v1"
+                        "index": "not_analyzed"
                       }
                     }
                   }
                 }
               },
-              "groups__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
+              "tag__permissions__group__v1": {
+                "type": "object",
                 "properties": {
-                  "id_v1": {
+                  "tag__permissions__group__id__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "name__v1": {
+                  "tag__permissions__group__name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "tag__permissions__type__v1": {
+                "type": "string",
+                "fields": {
+                  "tag__permissions__type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "tag__permissions__locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "tag__permissions__locations__type__v1": {
                     "type": "string",
                     "fields": {
-                      "name__v1": {
+                      "tag__permissions__locations__type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "tag__permissions__locations__name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__locations__name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "tag__permissions__locations__value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__locations__value__v1": {
                         "type": "string"
                       },
                       "raw__v1": {
@@ -193,35 +317,34 @@
                     }
                   }
                 }
+              },
+              "tag__permissions__modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
               }
             }
           },
-          "public__v1": {
+          "tag__public__v1": {
             "type": "boolean"
           },
-          "text__v1": {
-            "type": "string",
-            "term_vector" : "with_positions_offsets",
-            "analyzer" : "snowball"
-          },
-          "created_on__v1" : {
-            "type" : "date",
-            "format" : "dateOptionalTime"
+          "created_on__v1": {
+            "type": "date",
+            "format": "dateOptionalTime"
           }
         }
       },
       "branch__v1": {
         "properties": {
-          "id": {
+          "branch__id": {
             "type": "long"
           },
-          "name__v1": {
+          "branch__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "branch__name__v1": {
                 "type": "string"
               },
-              "completion__v1": {
+              "branch__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -231,46 +354,110 @@
               }
             }
           },
-          "is_active__v1": {
+          "branch__is_active__v1": {
             "type": "boolean"
           },
-          "permissions__v1": {
+          "branch__permissions__v1": {
+            "type": "nested",
             "properties": {
-              "users__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
-                "properties": {
-                  "id__v1": {
+              "branch__permissions__id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "branch__permissions__name__v1": {
+                "type": "string",
+                "fields": {
+                  "branch__permissions__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "name__v1": {
+                  "branch__permissions__name_completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "branch__permissions__user__v1": {
+                "type": "object",
+                "properties": {
+                  "branch__permissions__user__id": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "branch__permissions__user__user_name__v1": {
                     "type": "string",
                     "fields": {
-                      "name__v1": {
+                      "branch__permissions__user__user_name__v1": {
                         "type": "string",
-                        "term_vector" : "with_positions_offsets",
-                        "analyzer" : "snowball",
-                        "copy_to": "text__v1"
+                        "index": "not_analyzed"
                       }
                     }
                   }
                 }
               },
-              "groups__v1": {
-                "type": "nested",
-                "include_in_parent": true,
-                "dynamic": "false",
+              "branch__permissions__group__v1": {
+                "type": "object",
                 "properties": {
-                  "id_v1": {
+                  "id": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "name__v1": {
+                  "branch__permissions__group__name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "branch__permissions__type__v1": {
+                "type": "string",
+                "fields": {
+                  "branch__permissions__type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "branch__permissions__locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "branch__permissions__locations__type__v1": {
                     "type": "string",
                     "fields": {
-                      "name__v1": {
+                      "branch__permissions__locations__type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "branch__permissions__locations__name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__locations__name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "branch__permissions__locations__value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__locations__value__v1": {
                         "type": "string"
                       },
                       "raw__v1": {
@@ -280,10 +467,14 @@
                     }
                   }
                 }
+              },
+              "branch__permissions__modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
               }
             }
           },
-          "public__v1": {
+          "branch__public__v1": {
             "type": "boolean"
           },
           "created_on__v1" : {
@@ -292,16 +483,16 @@
           }
         }
       },
-      "data__v1": {
+      "urlconf__data__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name": {
+          "urlconf__data__name": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "value": {
+          "urlconf__data__value": {
             "type": "string",
             "index": "not_analyzed"
           }

@@ -8,19 +8,19 @@
       "enabled": false
     },
     "properties": {
-      "account_name__v1": {
+      "account__name__v1": {
         "type": "string",
         "fields": {
-          "account_name__v1": {
+          "account__name__v1": {
             "type": "string"
           },
-          "raw": {
+          "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "organization__v1": {
+      "account__organization__v1": {
         "properties": {
           "name__v1": {
             "type": "string"

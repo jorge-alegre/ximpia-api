@@ -17,13 +17,13 @@
           },
           "account__v1": {
             "properties": {
-              "id": {
+              "id__v1": {
                 "type": "string",
                 "fields": {
-                  "account__v1": {
+                  "id__v1": {
                     "type": "string"
                   },
-                  "raw": {
+                  "raw__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   }
@@ -157,13 +157,13 @@
           }
         }
       },
-      "name__v1": {
+      "app__name__v1": {
         "type": "string",
         "fields": {
-          "name__v1": {
+          "app__name__v1": {
             "type": "string"
           },
-          "completion__v1": {
+          "app__name_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": true,
@@ -173,10 +173,10 @@
           }
         }
       },
-      "slug__v1": {
+      "app__slug__v1": {
         "type": "string",
         "fields": {
-          "slug__v1": {
+          "app__slug__v1": {
             "type": "string"
           },
           "raw__v1": {
@@ -185,19 +185,20 @@
           }
         }
       },
-      "social__v1": {
+      "app__social__v1": {
         "properties": {
-          "facebook__v1": {
+          "app__facebook__v1": {
+            "type": "object",
             "properties": {
-              "access_token__v1": {
+              "app__access_token__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "app_id__v1": {
+              "app__app_id__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "app_secret__v1": {
+              "app__app_secret__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
@@ -205,7 +206,7 @@
           }
         }
       },
-      "is_active__v1": {
+      "app__is_active__v1": {
         "type": "boolean"
       },
       "created_on__v1" : {
