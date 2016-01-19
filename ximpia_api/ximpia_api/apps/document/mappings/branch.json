@@ -8,13 +8,13 @@
       "enabled": false
     },
     "properties": {
-      "name__v1": {
+      "branch__name__v1": {
         "type": "string",
         "fields": {
-          "name__v1": {
+          "branch__name__v1": {
             "type": "string"
           },
-          "completion__v1": {
+          "branch__name_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": true,
@@ -24,30 +24,30 @@
           }
         }
       },
-      "is_active__v1": {
+      "branch__is_active__v1": {
         "type": "boolean"
       },
-      "public__v1": {
+      "branch__public__v1": {
         "type": "boolean"
       },
-      "permissions__v1": {
+      "branch__permissions__v1": {
         "type": "nested",
         "properties": {
-          "id__v1": {
+          "branch__permissions__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "name__v1": {
+          "branch__permissions__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "branch__permissions__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "permission_name_completion__v1": {
+              "branch__permissions__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -57,17 +57,17 @@
               }
             }
           },
-          "user__v1": {
+          "branch__permissions__user__v1": {
             "type": "object",
             "properties": {
-              "id__v1": {
+              "branch__permissions__user__id": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "user_name__v1": {
+              "branch__permissions__user__user_name__v1": {
                 "type": "string",
                 "fields": {
-                  "user_name__v1": {
+                  "branch__permissions__user__user_name__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   }
@@ -75,23 +75,23 @@
               }
             }
           },
-          "group__v1": {
+          "branch__permissions__group__v1": {
             "type": "object",
             "properties": {
-              "id__v1": {
+              "branch__permissions__group__id": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "group_name__v1": {
+              "branch__permissions__group__name__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
             }
           },
-          "type__v1": {
+          "branch__permissions__type__v1": {
             "type": "string",
             "fields": {
-              "permission_type__v1": {
+              "branch__permissions__type__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -100,13 +100,13 @@
               }
             }
           },
-          "locations__v1": {
+          "branch__permissions__locations__v1": {
             "type": "nested",
             "properties": {
-              "type__v1": {
+              "branch__permissions__locations__type__v1": {
                 "type": "string",
                 "fields": {
-                  "type__v1": {
+                  "branch__permissions__locations__type__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -115,10 +115,10 @@
                   }
                 }
               },
-              "name__v1": {
+              "branch__permissions__locations__name__v1": {
                 "type": "string",
                 "fields": {
-                  "name__v1": {
+                  "branch__permissions__locations__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -127,10 +127,10 @@
                   }
                 }
               },
-              "value__v1": {
+              "branch__permissions__locations__value__v1": {
                 "type": "string",
                 "fields": {
-                  "value__v1": {
+                  "branch__permissions__locations__value__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -141,7 +141,7 @@
               }
             }
           },
-          "modes__v1": {
+          "branch__permissions__modes__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
