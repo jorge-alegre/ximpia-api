@@ -8,10 +8,10 @@
       "enabled": false
     },
     "properties": {
-      "group_name__v1": {
+      "group__name__v1": {
         "type": "string",
         "fields": {
-          "completion__v1": {
+          "group__name_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": false,
@@ -19,16 +19,16 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "group_name__v1": {
+          "group__name__v1": {
             "type": "string",
             "copy_to": "text__v1"
           }
         }
       },
-      "slug__v1": {
+      "group__slug__v1": {
         "type": "string",
         "fields": {
-          "slug__v1": {
+          "group__slug__v1": {
             "type": "string"
           },
           "raw__v1": {
@@ -37,18 +37,18 @@
           }
         }
       },
-      "tags__v1": {
+      "group__tags__v1": {
         "type": "nested",
         "include_in_parent": true,
         "properties": {
-          "name__v1": {
+          "group__tags__name__v1": {
             "type": "string",
             "copy_to": "text__v1"
           },
-          "slug__v1": {
+          "group__tags__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "group__tags__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -57,27 +57,27 @@
               }
             }
           },
-          "is_hash__v1": {
+          "group__tags__is_hash__v1": {
             "type": "boolean"
           }
         }
       },
-      "permissions__v1": {
+      "group__tags__permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name__v1": {
+          "group__tags__permissions__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "group__tags__permissions__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "group_permission_completion__v1": {
+              "group__tags__permissions__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
