@@ -426,7 +426,7 @@
       "site__v1": {
         "type": "object",
         "properties": {
-          "id": {
+          "site__id": {
             "type": "string",
             "index": "not_analyzed"
           },

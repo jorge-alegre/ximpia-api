@@ -146,11 +146,11 @@ class Command(BaseCommand):
         :return:
         """
         tag_data = {
-            u'name__v1': version,
-            u'slug__v1': version,
-            u'is_active__v1': True,
-            u'permissions__v1': None,
-            u'public__v1': True,
+            u'tag__name__v1': version,
+            u'tag__slug__v1': version,
+            u'tag__is_active__v1': True,
+            u'tag__permissions__v1': None,
+            u'tag__public__v1': True,
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
@@ -199,23 +199,23 @@ class Command(BaseCommand):
             counter += 1
         # site
         site_data = {
-            u'name__v1': site,
-            u'slug__v1': slugify(site),
-            u'url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
-            u'is_active__v1': True,
-            u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
-            u'public__v1': public,
-            u'api_access__v1': {
-                u'api_key__v1': api_access_key,
-                u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
+            u'site__name__v1': site,
+            u'site__slug__v1': slugify(site),
+            u'site__url__v1': u'http://{}.ximpia.io/'.format(slugify(site)),
+            u'site__is_active__v1': True,
+            u'site__domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
+            u'site__public__v1': public,
+            u'site__api_access__v1': {
+                u'site__api_access__key__v1': api_access_key,
+                u'site__api_access__secret__v1': get_random_string(32, VALID_KEY_CHARS),
                 u'created_on__v1': now_es,
             },
             u'created_on__v1': now_es
         }
         if invite_only:
-            site_data[u'invites'] = {
-                u'age_days__v1': 2,
-                u'active__v1': True,
+            site_data[u'site__invites__v1'] = {
+                u'site__invites__age_days__v1': 2,
+                u'site__invites__active__v1': True,
                 u'created_on__v1': now_es,
                 u'updated_on__v1': now_es,
             }
@@ -233,20 +233,20 @@ class Command(BaseCommand):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
-        site_data['id__v1'] = site_id
+        site_data['id'] = site_id
         # app
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
         app_data = {
             u'site__v1': site_data,
-            u'name__v1': app,
-            u'slug__v1': slugify(app),
-            u'is_active__v1': True,
-            u'social__v1': {
-                u'facebook__v1': {
-                    u'access_token__v1': app_access_token,
-                    u"app_id__v1": settings.XIMPIA_FACEBOOK_APP_ID,
-                    u"app_secret__v1": settings.XIMPIA_FACEBOOK_APP_SECRET
+            u'app__name__v1': app,
+            u'app__slug__v1': slugify(app),
+            u'app__is_active__v1': True,
+            u'app__social__v1': {
+                u'app__social__facebook__v1': {
+                    u'app__social__facebook__access_token__v1': app_access_token,
+                    u"app__social__facebook__app_id__v1": settings.XIMPIA_FACEBOOK_APP_ID,
+                    u"app__social__facebook__app_secret__v1": settings.XIMPIA_FACEBOOK_APP_SECRET
                 }
             },
             u'created_on__v1': now_es
@@ -272,20 +272,20 @@ class Command(BaseCommand):
             (u'location', location)]
         settings_data = {
             u'site__v1': {
-                u'id__v1': site_id,
-                u'name__v1': site,
-                u'slug__v1': slugify(site)
+                u'site__id': site_id,
+                u'site__name__v1': site,
+                u'site__slug__v1': slugify(site)
             },
             u'app__v1': None,
             u'tag__v1': tag_data,
-            u'fields__v1': None,
+            u'settings__fields__v1': None,
             u'created_on__v1': now_es
         }
         settings_output = []
         for setting_item in settings_input:
             settings_data.update({
-                u'setting_name__v1': setting_item[0],
-                u'setting_value__v1': setting_item[1]
+                u'settings__setting_name__v1': setting_item[0],
+                u'settings__setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
                 '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -301,10 +301,10 @@ class Command(BaseCommand):
             settings_output.append(settings_data_logical)
         # account
         account_data = {
-            u'organization__v1': {
+            u'account__organization__v1': {
                 u'name__v1': organization_name
             },
-            u'account_name__v1': account,
+            u'account__name__v1': account,
             u'created_on__v1': now_es,
         }
         es_response_raw = requests.post(
@@ -338,14 +338,14 @@ class Command(BaseCommand):
         output_permissions = []
         for permission in permissions:
             db_permission = {
-                u'name__v1': permission,
-                u'apps__v1': [
+                u'permission__name__v1': permission,
+                u'permission__apps__v1': [
                     {
-                        u'site_slug__v1': slugify(site),
-                        u'app_slug__v1': slugify(app)
+                        u'permission__apps__site_slug__v1': slugify(site),
+                        u'permission__apps__app_slug__v1': slugify(app)
                     }
                 ],
-                u'data__v1': None,
+                u'permission__data__v1': None,
                 u'created_on__v1': now_es
             }
             es_response_raw = requests.post(
@@ -386,15 +386,15 @@ class Command(BaseCommand):
         groups_data_logical = {}
         for group in groups:
             group_data = {
-                u'group_name__v1': group,
-                u'slug__v1': slugify(group),
-                u'tags__v1': None,
+                u'group__name__v1': group,
+                u'group__slug__v1': slugify(group),
+                u'group__tags__v1': None,
                 u'created_on__v1': now_es,
             }
             if group in permissions:
-                group_data[u'group_permissions__v1'] = [
+                group_data[u'group__permissions__v1'] = [
                     {
-                        u'name__v1': permissions[group],
+                        u'group__permissions__name__v1': permissions[group],
                         u'created_on__v1': now_es
                     }
                 ]
@@ -418,45 +418,45 @@ class Command(BaseCommand):
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
         user_data = {
-            u'username__v1': " ",
-            u'alias__v1': "",
-            u'email__v1': social_data.get('email', None),
-            u'password__v1': None,
-            u'avatar__v1': social_data.get('profile_picture', None),
-            u'user_name__v1': social_data.get('name', None),
-            u'first_name__v1': social_data.get('first_name', ''),
-            u'last_name__v1': social_data.get('last_name', ''),
-            u'social_networks__v1': [
+            u'user__username__v1': " ",
+            u'user__alias__v1': "",
+            u'user__email__v1': social_data.get('email', None),
+            u'user__password__v1': None,
+            u'user__avatar__v1': social_data.get('profile_picture', None),
+            u'user__user_name__v1': social_data.get('name', None),
+            u'user__first_name__v1': social_data.get('first_name', ''),
+            u'user__last_name__v1': social_data.get('last_name', ''),
+            u'user__social_networks__v1': [
                 {
-                    u'network__v1': social_network,
-                    u'user_id__v1': social_data.get('user_id', None),
-                    u'access_token__v1': social_data.get('access_token', None),
-                    u'state__v1': None,
-                    u'scopes__v1': social_data.get('scopes', None),
-                    u'has_auth__v1': True,
-                    u'link__v1': social_data.get('link', None),
-                    u'expires_at__v1': social_data.get('expires_at', None),
+                    u'user__social_networks__network__v1': social_network,
+                    u'user__social_networks__user_id__v1': social_data.get('user_id', None),
+                    u'user__social_networks__access_token__v1': social_data.get('access_token', None),
+                    u'user__social_networks__state__v1': None,
+                    u'user__social_networks__scopes__v1': social_data.get('scopes', None),
+                    u'user__social_networks__has_auth__v1': True,
+                    u'user__social_networks__link__v1': social_data.get('link', None),
+                    u'user__social_networks__expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
-            u'user_permissions__v1': None,
+            u'user__user_permissions__v1': None,
             u'groups__v1': map(lambda x: {
-                u'id__v1': x['id'],
-                u'name__v1': x['group_name']
+                u'group__id': x['id'],
+                u'group__name__v1': x['group_name']
             }, groups_data),
-            u'is_active__v1': True,
-            u'token__v1': None,
-            u'expires_at__v1': time.strftime(
+            u'user__is_active__v1': True,
+            u'user__token__v1': None,
+            u'user__expires_at__v1': time.strftime(
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
-            u'session_id__v1': None,
+            u'user__session_id__v1': None,
             u'app__v1': {
-                u'id__v1': app_data['id'],
-                u'slug__v1': app_data['slug'],
-                u'name__v1': app_data['name'],
+                u'app__id': app_data['id'],
+                u'app__slug__v1': app_data['slug'],
+                u'app__name__v1': app_data['name'],
                 u'site__v1': {
-                    u'id__v1': app_data['site']['id'],
-                    u'slug__v1': app_data['site']['slug'],
-                    u'name__v1': app_data['site']['name'],
+                    u'site__id': app_data['site']['id'],
+                    u'site__slug__v1': app_data['site']['slug'],
+                    u'site__name__v1': app_data['site']['name'],
                 }
             },
             u'created_on__v1': now_es,
@@ -482,20 +482,20 @@ class Command(BaseCommand):
                 '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps({
                     u'user__v1': {
-                        u'id__v1': user_data_logical[u'id'],
-                        u'username__v1': user_data_logical[u'username'],
-                        u'email__v1': user_data_logical[u'email'],
-                        u'avatar__v1': user_data_logical[u'avatar'],
-                        u'user_name__v1': user_data_logical[u'user_name'],
-                        u'social_networks__v1': user_data_logical[u'social_networks'],
-                        u'user_permissions__v1': user_data_logical[u'user_permissions'],
+                        u'user__id': user_data_logical[u'id'],
+                        u'user__username__v1': user_data_logical[u'username'],
+                        u'user__email__v1': user_data_logical[u'email'],
+                        u'user__avatar__v1': user_data_logical[u'avatar'],
+                        u'user__user_name__v1': user_data_logical[u'user_name'],
+                        u'user__social_networks__v1': user_data_logical[u'social_networks'],
+                        u'user__user_permissions__v1': user_data_logical[u'user_permissions'],
                         u'created_on__v1': user_data_logical[u'created_on'],
                     },
                     u'group__v1': {
-                        u'id__v1': group_data[u'id'],
-                        u'group_name__v1': group_data[u'group_name'],
-                        u'slug__v1': group_data[u'slug'],
-                        u'tags__v1': group_data[u'tags'],
+                        u'group__id': group_data[u'id'],
+                        u'group__name__v1': group_data[u'group_name'],
+                        u'group__slug__v1': group_data[u'slug'],
+                        u'group__tags__v1': group_data[u'tags'],
                         u'created_on__v1': group_data[u'created_on']
                     },
                     u'created_on__v1': now_es,

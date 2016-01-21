@@ -187,18 +187,18 @@
       },
       "app__social__v1": {
         "properties": {
-          "app__facebook__v1": {
+          "app__social__facebook__v1": {
             "type": "object",
             "properties": {
-              "app__access_token__v1": {
+              "app__social__facebook__access_token__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "app__app_id__v1": {
+              "app__social__facebook__app_id__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "app__app_secret__v1": {
+              "app__social__facebook__app_secret__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }

@@ -155,16 +155,16 @@
           }
         }
       },
-      "user__groups__v1": {
+      "groups__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "id": {
+          "group__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "user__groups__name__v1": {
+          "group__name__v1": {
             "type": "string",
             "copy_to": "text__v1"
           }
@@ -199,17 +199,17 @@
         "type": "string",
         "index": "not_analyzed"
       },
-      "user__app__v1": {
+      "app__v1": {
         "type": "object",
         "properties": {
-          "user__app__id": {
+          "app__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "user__app__slug__v1": {
+          "app__slug__v1": {
             "type": "string",
             "fields": {
-              "user__app__slug__v1": {
+              "app__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -218,13 +218,13 @@
               }
             }
           },
-          "user__app__name__v1": {
+          "app__name__v1": {
             "type": "string",
             "fields": {
-              "user__app__name__v1": {
+              "app__name__v1": {
                 "type": "string"
               },
-              "user__app__name_completion__v1": {
+              "app__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -234,17 +234,17 @@
               }
             }
           },
-          "user__app__site__v1": {
+          "site__v1": {
             "type": "object",
             "properties": {
-              "user__app__site__id": {
+              "site__id": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "user__app__site__slug__v1": {
+              "site__slug__v1": {
                 "type": "string",
                 "fields": {
-                  "user__app__site__slug__v1": {
+                  "site__slug__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -253,13 +253,13 @@
                   }
                 }
               },
-              "user__app__site__name__v1": {
+              "site__name__v1": {
                 "type": "string",
                 "fields": {
-                  "user__app__site__name__v1": {
+                  "site__name__v1": {
                     "type": "string"
                   },
-                  "user__app__site__name_completion__v1": {
+                  "site__name_completion__v1": {
                     "type": "completion",
                     "analyzer": "simple_whitespace",
                     "payloads": true,

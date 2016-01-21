@@ -62,22 +62,22 @@
           }
         }
       },
-      "group__tags__permissions__v1": {
+      "group__permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "group__tags__permissions__name__v1": {
+          "group__permissions__name__v1": {
             "type": "string",
             "fields": {
-              "group__tags__permissions__name__v1": {
+              "group__permissions__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "group__tags__permissions__name_completion__v1": {
+              "group__permissions__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
