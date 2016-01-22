@@ -83,7 +83,7 @@ class Command(BaseCommand):
         with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/field_version.json'.format(document_path)) as f:
+        with open('{}/field-version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                                                 'user-group': user_group_dict,
                                                 'permission': permissions_dict,
                                                 'tag': tag_dict,
-                                                'field_version': field_version_dict,
+                                                'field-version': field_version_dict,
                                                 'invite': invite_dict,
                                                 'session': session_dict,
                                                 'document-definition': document_definition_dict,

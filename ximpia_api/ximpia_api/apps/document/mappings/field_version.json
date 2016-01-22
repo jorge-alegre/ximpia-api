@@ -1,5 +1,5 @@
 {
-  "field_version": {
+  "field-version": {
     "dynamic": "strict",
     "_timestamp": {
       "enabled": true
@@ -8,20 +8,20 @@
       "enabled": false
     },
     "properties": {
-      "field_version__doc_type__v1": {
+      "field-version__doc_type__v1": {
         "type": "string"
       },
-      "field_version__field__v1": {
+      "field-version__field__v1": {
         "type": "string",
         "fields": {
-          "field_version__field__v1": {
+          "field-version__field__v1": {
             "type": "string"
           },
           "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "field_version__field_completion__v1": {
+          "field-version__field_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": true,
@@ -342,7 +342,7 @@
           }
         }
       },
-      "field_version__is_active__v1": {
+      "field-version__is_active__v1": {
         "type": "boolean"
       },
       "text__v1": {
@@ -354,16 +354,16 @@
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "field_version__created_by__v1": {
+      "field-version__created_by__v1": {
         "properties": {
-          "field_version__created_by__id": {
+          "field-version__created_by__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "field_version__created_by__user_name__v1": {
+          "field-version__created_by__user_name__v1": {
             "type": "string",
             "fields": {
-              "field_version__created_by__user_name__v1": {
+              "field-version__created_by__user_name__v1": {
                 "type": "string"
               }
             }

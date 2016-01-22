@@ -166,7 +166,7 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
             ]
         es_response = get_es_response(
             req_session.get(
-                get_path_search('_field_version'),
+                get_path_search('field-version'),
                 data=json.dumps(query_dsl)
             )
         )
@@ -243,7 +243,7 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                 }
             ]
     es_response = get_es_response(
-        req_session.get(get_path_search('_field_version'),
+        req_session.get(get_path_search('field-version'),
                         data=json.dumps(query)))
     return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
 
@@ -317,7 +317,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 }
             ]
     es_response = get_es_response(
-        req_session.get(get_path_search('field_version'),
+        req_session.get(get_path_search('field-version'),
                         data=json.dumps(query)))
     # here we have all physical fields for document
     field_dict = {}

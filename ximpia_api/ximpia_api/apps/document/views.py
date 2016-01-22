@@ -129,7 +129,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                     }
                 ]
         es_response_raw = get_es_response(
-            req_session.get(get_path_search('_field_version'),
+            req_session.get(get_path_search('field-version'),
                             data=json.dumps(query)))
         es_response = es_response_raw.json()
         db_fields = map(lambda x: x['field__v1'], es_response['hits']['hits'])
@@ -626,7 +626,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
             (json.dumps(
                 {
                     'index': index,
-                    'type': 'field_version'
+                    'type': 'field-version'
                 }
             ), json.dumps(
                 {
