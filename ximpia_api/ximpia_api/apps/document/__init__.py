@@ -60,8 +60,8 @@ def walk(node, **kwargs):
             if not fields_version:
                 target_version = max(versions_map[field].keys())
             else:
-                target_version = int(filter(lambda x: x.split('__')[0] == field,
-                                            fields_version)[0].split('__')[1][1:])
+                target_version = int(filter(lambda x: x.split('__')[-2] == field,
+                                            fields_version)[0].split('__')[-1][1:])
             # print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
             if isinstance(item, dict):
@@ -77,11 +77,12 @@ def walk(node, **kwargs):
                 if tag:
                     # like status__v7
                     field = map(lambda x: x,
-                                filter(lambda y: y['field__v1'] == key, fields_data))[0]
+                                filter(lambda y: y['field-version__field__v1'] == key, fields_data))[0]
                 else:
-                    fields = map(lambda x: x['field__v1'], fields_data)
+                    fields = map(lambda x: x['field-version__field__v1'], fields_data)
                     # field: {version}
-                    versions_map = map(lambda x: (x['field__v1'].split('__')[0], {x['field__v1'].split('__')[1]}),
+                    versions_map = map(lambda x: (x['field-version__field__v1'].split('__')[0],
+                                                  {x['field-version__field__v1'].split('__')[1]}),
                                        fields_data)
                     # like status__v7
                     field = map(lambda y: max(list(versions_map[y.split('__')[0]])),
@@ -120,12 +121,12 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
                         },
                         {
                             "term": {
-                                "doc_type__v1": doc_type
+                                "field-version__doc_type__v1": doc_type
                             }
                         },
                         {
                             "term": {
-                                "is_active__v1": True
+                                "field-version__is_active__v1": True
                             }
                         }
                     ]
@@ -136,11 +137,11 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
             query_dsl['query']['bool']['should'] = [
                 {
                     'nested': {
-                        'path': 'tag__v1.permissions__v1.users__v1',
+                        'path': 'tag__v1.tag__permissions__v1.tag__permissions__users__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'tag__v1.permissions__v1.users__v1.id': user['id']
+                                    'tag__v1.tag__permissions__v1.tag__permissions__users__v1.id': user['id']
                                 }
                             }
                         }
@@ -148,11 +149,12 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
                 },
                 {
                     'nested': {
-                        'path': 'tag__v1.permissions__v1.groups__v1',
+                        'path': 'tag__v1.tag__permissions__v1.tag__permissions__groups__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'tag__v1.permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                    'tag__v1.tag__permissions__v1.tag__permissions__groups__v1.id':
+                                        u' OR '.join(user['groups'])
                                 }
                             }
                         }
@@ -160,7 +162,7 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
                 },
                 {
                     'term': {
-                        'tag__v1.public__v1': True
+                        'tag__v1.tag__public__v1': True
                     }
                 }
             ]
@@ -190,12 +192,12 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                 'must': [
                     {
                         "term": {
-                            "doc_type__v1": doc_type
+                            "field-version__doc_type__v1": doc_type
                         }
                     },
                     {
                         "term": {
-                            "is_active__v1": True
+                            "field-version__is_active__v1": True
                         }
                     }
                 ]
@@ -214,11 +216,11 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
             query['query']['bool']['should'] = [
                 {
                     'nested': {
-                        'path': 'permissions__v1.users__v1',
+                        'path': 'tag__permissions__v1.tag__permissions__users__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'permissions__v1.users__v1.id': user['id']
+                                    'tag__permissions__v1.tag__permissions__users__v1.id': user['id']
                                 }
                             }
                         }
@@ -226,11 +228,12 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                 },
                 {
                     'nested': {
-                        'path': 'permissions__v1.groups__v1',
+                        'path': 'tag__permissions__v1.tag__permissions__groups__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                    'tag__permissions__v1.tag__permissions__groups__v1.id':
+                                        u' OR '.join(user['groups'])
                                 }
                             }
                         }
@@ -238,7 +241,7 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                 },
                 {
                     'term': {
-                        'tag.public': True
+                        'tag__v1.tag__public__v1': True
                     }
                 }
             ]
@@ -264,12 +267,12 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 'must': [
                     {
                         "term": {
-                            "doc_type__v1": document_type
+                            "field-version__doc_type__v1": document_type
                         }
                     },
                     {
                         "term": {
-                            "is_active__v1": True
+                            "field-version__is_active__v1": True
                         }
                     }
                 ]
@@ -288,11 +291,11 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
             query['query']['bool']['should'] = [
                 {
                     'nested': {
-                        'path': 'permissions__v1.users__v1',
+                        'path': 'tag__permissions__v1.tag__permissions__users__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'permissions__v1.users__v1.id': user['id']
+                                    'tag__permissions__v1.tag__permissions__users__v1.id': user['id']
                                 }
                             }
                         }
@@ -300,11 +303,11 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 },
                 {
                     'nested': {
-                        'path': 'permissions__v1.groups__v1',
+                        'path': 'tag__permissions__v1.tag__permissions__groups__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'permissions__v1.groups__v1.id': u' OR '.join(user['groups'])
+                                    'tag__permissions__v1.tag__permisions__groups__v1.id': u' OR '.join(user['groups'])
                                 }
                             }
                         }
@@ -312,7 +315,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 },
                 {
                     'term': {
-                        'tag.public': True
+                        'tag__v1.tag__public__v1': True
                     }
                 }
             ]
