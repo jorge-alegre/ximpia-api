@@ -49,7 +49,10 @@ def walk(node, **kwargs):
             # key might have version, or key should strip version
             if key.find('__') == -1:
                 continue
-            field, version_str = key.split('__')
+            # field, version_str = key.split('__')
+            field_items = key.split('__')
+            version_str = field_items[-1]
+            field = field_items[-2]
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})
             versions_map[field][version_int] = item
