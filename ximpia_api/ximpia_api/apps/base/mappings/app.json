@@ -11,16 +11,16 @@
       "site__v1": {
         "type": "object",
         "properties": {
-          "id__v1": {
+          "site__id": {
             "type": "string",
             "index": "not_analyzed"
           },
           "account__v1": {
             "properties": {
-              "id__v1": {
+              "account__name__v1": {
                 "type": "string",
                 "fields": {
-                  "id__v1": {
+                  "account__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -29,7 +29,7 @@
                   }
                 }
               },
-              "organization__v1": {
+              "account__organization__v1": {
                 "properties": {
                   "name__v1": {
                     "type": "string"
@@ -42,13 +42,13 @@
               }
             }
           },
-          "name__v1": {
+          "site__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "site__name__v1": {
                 "type": "string"
               },
-              "completion__v1": {
+              "site__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -58,10 +58,10 @@
               }
             }
           },
-          "slug__v1": {
+          "site__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "site__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -70,10 +70,10 @@
               }
             }
           },
-          "url__v1": {
+          "site__url__v1": {
             "type": "string",
             "fields": {
-              "url__v1": {
+              "site__url__v1": {
                 "type": "string",
                 "analyzer": "link_analyzer"
               },
@@ -83,15 +83,16 @@
               }
             }
           },
-          "is_active__v1": {
+          "site__is_active__v1": {
             "type": "boolean"
           },
-          "invites__v1": {
+          "site__invites__v1": {
+            "type": "object",
             "properties": {
-              "age_days__v1": {
+              "site__invites__age_days__v1": {
                 "type": "integer"
               },
-              "active__v1": {
+              "site__invites__active__v1": {
                 "type": "boolean"
               },
               "created_on__v1": {
@@ -104,18 +105,23 @@
               }
             }
           },
-          "public__v1": {
+          "text__v1": {
+            "type": "string",
+            "term_vector" : "with_positions_offsets",
+            "analyzer" : "snowball"
+          },
+          "site__public__v1": {
             "type": "boolean"
           },
-          "domains__v1": {
+          "site__domains__v1": {
             "type": "nested",
             "include_in_parent": true,
             "dynamic": "false",
             "properties": {
-              "domain_name__v1": {
+              "site__domains__name__v1": {
                 "type": "string",
                 "fields": {
-                  "domain_name__v1": {
+                  "site__domains__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -126,23 +132,23 @@
               }
             }
           },
-          "api_access__v1": {
+          "site__api_access__v1": {
             "properties": {
-              "api_key__v1": {
+              "site__api_access__key__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "api_secret__v1": {
+              "site__api_access__secret__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "rate_hour__v1": {
+              "site__api_access__rate_hour__v1": {
                 "type": "integer"
               },
-              "rate_day__v1": {
+              "site__api_access__rate_day__v1": {
                 "type": "integer"
               },
-              "rate_month__v1": {
+              "site__api_access__rate_month__v1": {
                 "type": "integer"
               },
               "created_on__v1" : {

@@ -51,6 +51,8 @@ def walk(node, **kwargs):
                 continue
             # field, version_str = key.split('__')
             field_items = key.split('__')
+            if field_items[-1] == 'id':
+                continue
             version_str = field_items[-1]
             field = field_items[-2]
             version_int = int(version_str[1:])

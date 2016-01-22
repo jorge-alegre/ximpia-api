@@ -233,7 +233,7 @@ class Command(BaseCommand):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
-        site_data['id'] = site_id
+        site_data['site__id'] = site_id
         # app
         app_access_token = SocialNetworkResolution.get_app_access_token(settings.XIMPIA_FACEBOOK_APP_ID,
                                                                         settings.XIMPIA_FACEBOOK_APP_SECRET)
@@ -414,6 +414,7 @@ class Command(BaseCommand):
             group_data_logical['id'] = es_response.get('_id', '')
             groups_data_logical[group_data_logical['id']] = group_data_logical
             groups_data.append(group_data_logical)
+        logger.debug(u'groups_data : {}'.format(groups_data))
         # user
         seconds_two_months = str(int((datetime.now() + timedelta(days=60) -
                                       datetime(1970, 1, 1)).total_seconds()))
@@ -438,10 +439,10 @@ class Command(BaseCommand):
                     u'user__social_networks__expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
-            u'user__user_permissions__v1': None,
+            u'user__permissions__v1': None,
             u'groups__v1': map(lambda x: {
                 u'group__id': x['id'],
-                u'group__name__v1': x['group_name']
+                u'group__name__v1': x['name']
             }, groups_data),
             u'user__is_active__v1': True,
             u'user__token__v1': None,
@@ -488,12 +489,12 @@ class Command(BaseCommand):
                         u'user__avatar__v1': user_data_logical[u'avatar'],
                         u'user__user_name__v1': user_data_logical[u'user_name'],
                         u'user__social_networks__v1': user_data_logical[u'social_networks'],
-                        u'user__user_permissions__v1': user_data_logical[u'user_permissions'],
+                        u'user__permissions__v1': user_data_logical[u'permissions'],
                         u'created_on__v1': user_data_logical[u'created_on'],
                     },
                     u'group__v1': {
                         u'group__id': group_data[u'id'],
-                        u'group__name__v1': group_data[u'group_name'],
+                        u'group__name__v1': group_data[u'name'],
                         u'group__slug__v1': group_data[u'slug'],
                         u'group__tags__v1': group_data[u'tags'],
                         u'created_on__v1': group_data[u'created_on']
