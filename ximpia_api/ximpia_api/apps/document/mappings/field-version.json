@@ -57,6 +57,10 @@
       },
       "tag__v1": {
         "properties": {
+          "tag__id": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
           "tag__name__v1": {
             "type": "string",
             "fields": {
@@ -221,6 +225,10 @@
       },
       "branch__v1": {
         "properties": {
+          "tag__id": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
           "branch__name__v1": {
             "type": "string",
             "fields": {

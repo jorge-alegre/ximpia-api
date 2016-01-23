@@ -164,7 +164,7 @@ class Command(BaseCommand):
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
-        tag_data['id'] = es_response.get('_id', '')
+        tag_data['tag__id'] = es_response.get('_id', '')
         tag_logical = to_logical_doc('tag', tag_data)
         # field-version
         # For each mapping: call common method to fetch field data: field, field_name and version

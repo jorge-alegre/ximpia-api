@@ -688,10 +688,10 @@ def get_fields_from_mapping(mapping):
     field_versions = []
     root_fields_map = mapping[document_type]['properties']
     for root_field in root_fields_map:
-        logger.debug(u'get_fields_from_mapping :: root_field: {}'.format(root_field))
+        # logger.debug(u'get_fields_from_mapping :: root_field: {}'.format(root_field))
         root_field_data = root_fields_map[root_field]
         field_type = root_field_data.get('type', 'object')
-        logger.debug(u'get_fields_from_mapping :: field_type: {}'.format(field_type))
+        # logger.debug(u'get_fields_from_mapping :: field_type: {}'.format(field_type))
         version = root_field.split('__')[-1]
         if version == 'id':
             version = None
@@ -726,27 +726,29 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
     :param mapping:
     :return:
     """
+    # logger.debug(u'save_field_versions_from_mapping...')
     from datetime import datetime
     now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     fields = get_fields_from_mapping(mapping)
     fields_version_str = ''
+    doc_type = mapping.keys()[0]
     user_id = getattr(user, 'id', None)
     user_name = getattr(user, 'username', None)
     for field in fields:
         bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
         bulk_data = json.dumps(
             {
-                'doc_type__v1': 'field-version',
-                'field__v1': field['field'],
-                'field_name__v1': field['field_name'],
-                'version__v1': field['version'],
+                'field-version__doc_type__v1': doc_type,
+                'field-version__field__v1': field['field'],
+                'field-version__field_name__v1': field['field_name'],
+                'field-version__version__v1': field['version'],
                 'tag__v1': tag,
                 'branch__v1': branch,
-                'is_activate__v1': True,
+                'field-version__is_active__v1': True,
                 'created_on__v1': now_es,
-                'created_by__v1': {
-                    'id__v1': user_id,
-                    'user_name__v1': user_name
+                'field-version__created_by__v1': {
+                    'field-version__created_by__id': user_id,
+                    'field-version__created_by__user_name__v1': user_name
                 }
             }
         ) + '\n'
@@ -756,3 +758,15 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
         else:
             fields_version_str += bulk_header
             fields_version_str += bulk_data
+    es_response_raw = requests.post(
+        '{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+        data=fields_version_str,
+        headers={'Content-Type': 'application/octet-stream'},
+    )
+    # logger.debug(u'save_field_versions_from_mapping :: status: {}'.format(es_response_raw.status_code))
+    es_response = es_response_raw.json()
+    # logger.debug(u'save_field_versions_from_mapping :: response: {}'.format(es_response))
+    logger.info(u'save_field_versions_from_mapping :: doc_type: {} is OK: {}'.format(
+        doc_type,
+        es_response_raw.status_code in [200, 201] and es_response['errors'] is False
+    ))
