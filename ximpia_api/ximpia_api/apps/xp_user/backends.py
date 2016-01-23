@@ -86,19 +86,19 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                     'must': [
                                         {
                                             "nested": {
-                                                "path": "social_networks__v1",
+                                                "path": "user__social_networks__v1",
                                                 "filter": {
                                                     "bool": {
                                                         "must": [
                                                             {
                                                                 "term": {
-                                                                    "social_networks__v1.user_id__v1":
+                                                                    "user__social_networks__v1.user__social_networks__user_id__v1":
                                                                         social_data.get('user_id', '')
                                                                 }
                                                             },
                                                             {
                                                                 "term": {
-                                                                    "social_networks__v1.network__v1": provider
+                                                                    "user__social_networks__v1.user__social_networks__network__v1": provider
                                                                 }
                                                             }
                                                         ]
@@ -114,7 +114,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                     "must": [
                                         {
                                             "term": {
-                                                "app__v1.id__v1": app_id
+                                                "app__v1.app__id": app_id
                                             }
                                         }
                                     ]

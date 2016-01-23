@@ -338,14 +338,14 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 field_dict[target_field] = field_db
         except (IndexError, KeyError):
             pass
-    if not es_response['hits']['hits']:
+    """if not es_response['hits']['hits']:
         for field in fields:
             # mine.cost -> mine__v1.cost__v1
             if '.' in field:
                 for field_item in field.split('.'):
-                    field_dict[field_item] = u'{}__v1'.format(field_item)
+                    field_dict[field_item] = u'{}__{}__v1'.format(document_type, field_item)
             else:
-                field_dict[field] = u'{}__v1'.format(field)
+                field_dict[field] = u'{}__{}__v1'.format(document_type, field)"""
     return field_dict
 
 
@@ -374,16 +374,18 @@ class DocumentManager(object):
         return op, field_name
 
     @classmethod
-    def fields_to_es_format(cls, fields_dict, expand=False):
+    def fields_to_es_format(cls, document_type, fields_dict, expand=False):
         """
         Fields to ElasticSearch format. We receive
 
+        :param document_type : Document type
         :param fields_dict: dictionary with kwargs received in filter type of methods
         :return: List of fields like ['field1', 'field1.field2', ... ]
         """
         fields_generated = []
         for field in fields_dict:
             op, field_name = DocumentManager.get_op(field)
+            field_name = document_type + '__' + field_name
             if '__' not in field_name:
                 fields_generated.append(field_name)
             else:
@@ -505,8 +507,9 @@ class DocumentManager(object):
         # field_dict would have items like {'status': 'status__v1', 'value': 'value__v1'
         # print u'fields ES format: {}'.format(cls.fields_to_es_format(kwargs, expand=True))
         field_dict = to_physical_fields(document_type,
-                                        cls.fields_to_es_format(kwargs, expand=True))
+                                        cls.fields_to_es_format(document_type, kwargs, expand=True))
         # print u'field_dict: {}'.format(field_dict)
+        logger.debug(u'Document.filter :: field_dict: {}'.format(field_dict))
 
         filter_data = {}
         query_items = []
@@ -558,6 +561,7 @@ class DocumentManager(object):
                 }
             }
         }
+        logger.debug(u'Document.filter :: query_dsl:{}'.format(query_dsl))
 
         # print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
