@@ -641,3 +641,88 @@ class DocumentManager(object):
 class Document(object):
 
     objects = DocumentManager()
+
+
+def walk_mapping(mapping_piece):
+    """
+
+    :param mapping_piece:
+    :return:
+    """
+    data = []
+    for field in mapping_piece:
+        version = field.split('__')[-1]
+        if version == 'id':
+            version = None
+            field_name = field.split('__')[-1]
+        else:
+            field_name = field.split('__')[-2]
+        if isinstance(field, dict):
+            # nested type, we have field as dict
+            if isinstance(field, dict):
+                data.extend(walk_mapping(field))
+        else:
+            # object type
+            data.append(
+                {
+                    'field': field,
+                    'version': version,
+                    'field_name': field_name,
+                }
+            )
+    return data
+
+
+def get_fields_from_mapping(mapping):
+    """
+    Get field versions from mapping data
+
+    :param mapping:
+    :return:
+    """
+    # Have walk_mapping
+    # 1. Travel document type properties
+    # 2.1 When no type, assume object: get items
+    # 2.2 Parse when nested
+    document_type = mapping.keys()[0]
+    field_versions = []
+    root_fields_map = mapping[document_type]['properties']
+    for root_field in root_fields_map:
+        logger.debug(u'get_fields_from_mapping :: root_field: {}'.format(root_field))
+        root_field_data = root_fields_map[root_field]
+        field_type = root_field_data.get('type', 'object')
+        logger.debug(u'get_fields_from_mapping :: field_type: {}'.format(field_type))
+        version = root_field.split('__')[-1]
+        if version == 'id':
+            version = None
+            field_name = root_field.split('__')[-1]
+        else:
+            field_name = root_field.split('__')[-2]
+        if field_type in ['object', 'nested']:
+            field_versions.append(
+                {
+                    'field': root_field,
+                    'version': version,
+                    'field_name': field_name,
+                }
+            )
+            field_versions.extend(walk_mapping(root_field_data['properties']))
+        else:
+            field_versions.append(
+                {
+                    'field': root_field,
+                    'version': version,
+                    'field_name': field_name,
+                }
+            )
+    return field_versions
+
+
+def save_field_versions_from_mapping(mapping):
+    """
+    Save data into field versions for all fields in a mapping
+
+    :param mapping:
+    :return:
+    """
+    fields = get_fields_from_mapping(mapping)

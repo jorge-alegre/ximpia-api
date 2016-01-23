@@ -15,7 +15,7 @@ from django.conf import settings
 
 from base import SocialNetworkResolution, refresh_index
 from base.exceptions import XimpiaAPIException
-from document import to_logical_doc
+from document import to_logical_doc, get_fields_from_mapping, save_field_versions_from_mapping
 
 __author__ = 'jorgealegre'
 
@@ -135,6 +135,22 @@ class Command(BaseCommand):
                 index_name,
                 es_response
             ))
+        # field-version
+        # For each mapping: call common method to fetch field data: field, field_name and version
+        # Save all fields for document type
+        save_field_versions_from_mapping(account_dict)
+        save_field_versions_from_mapping(site_dict)
+        save_field_versions_from_mapping(urlconf_dict)
+        save_field_versions_from_mapping(app_dict)
+        save_field_versions_from_mapping(settings__dict)
+        save_field_versions_from_mapping(user_dict)
+        save_field_versions_from_mapping(group_dict)
+        save_field_versions_from_mapping(user_group_dict)
+        save_field_versions_from_mapping(permissions_dict)
+        save_field_versions_from_mapping(tag_dict)
+        save_field_versions_from_mapping(field_version_dict)
+        save_field_versions_from_mapping(invite_dict)
+        save_field_versions_from_mapping(document_definition_dict)
 
     @classmethod
     def _create_tag(cls, index_name, now_es, version=settings.DEFAULT_VERSION):

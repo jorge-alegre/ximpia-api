@@ -22,7 +22,7 @@
       },
       "account__organization__v1": {
         "properties": {
-          "name__v1": {
+          "account__organization__name__v1": {
             "type": "string"
           }
         }
