@@ -135,22 +135,6 @@ class Command(BaseCommand):
                 index_name,
                 es_response
             ))
-        # field-version
-        # For each mapping: call common method to fetch field data: field, field_name and version
-        # Save all fields for document type
-        save_field_versions_from_mapping(account_dict)
-        save_field_versions_from_mapping(site_dict)
-        save_field_versions_from_mapping(urlconf_dict)
-        save_field_versions_from_mapping(app_dict)
-        save_field_versions_from_mapping(settings__dict)
-        save_field_versions_from_mapping(user_dict)
-        save_field_versions_from_mapping(group_dict)
-        save_field_versions_from_mapping(user_group_dict)
-        save_field_versions_from_mapping(permissions_dict)
-        save_field_versions_from_mapping(tag_dict)
-        save_field_versions_from_mapping(field_version_dict)
-        save_field_versions_from_mapping(invite_dict)
-        save_field_versions_from_mapping(document_definition_dict)
 
     @classmethod
     def _create_tag(cls, index_name, now_es, version=settings.DEFAULT_VERSION):
@@ -181,7 +165,56 @@ class Command(BaseCommand):
             es_response.get('_id', '')
         ))
         tag_data['id'] = es_response.get('_id', '')
-        return to_logical_doc('tag', tag_data)
+        tag_logical = to_logical_doc('tag', tag_data)
+        # field-version
+        # For each mapping: call common method to fetch field data: field, field_name and version
+        # Save all fields for document type
+        mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
+        document_path = settings.BASE_DIR + 'apps/document/mappings'
+        with open('{}/site.json'.format(mappings_path)) as f:
+            site_dict = json.loads(f.read())
+        with open('{}/account.json'.format(mappings_path)) as f:
+            account_dict = json.loads(f.read())
+        with open('{}/urlconf.json'.format(mappings_path)) as f:
+            urlconf_dict = json.loads(f.read())
+        with open('{}/app.json'.format(mappings_path)) as f:
+            app_dict = json.loads(f.read())
+        with open('{}/settings.json'.format(mappings_path)) as f:
+            settings__dict = json.loads(f.read())
+        with open('{}/user.json'.format(user_path)) as f:
+            user_dict = json.loads(f.read())
+        with open('{}/group.json'.format(user_path)) as f:
+            group_dict = json.loads(f.read())
+        with open('{}/user-group.json'.format(user_path)) as f:
+            user_group_dict = json.loads(f.read())
+        with open('{}/permission.json'.format(user_path)) as f:
+            permissions_dict = json.loads(f.read())
+        with open('{}/invite.json'.format(user_path)) as f:
+            invite_dict = json.loads(f.read())
+        with open('{}/tag.json'.format(document_path)) as f:
+            tag_dict = json.loads(f.read())
+        with open('{}/field-version.json'.format(document_path)) as f:
+            field_version_dict = json.loads(f.read())
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
+            session_dict = json.loads(f.read())
+        with open('{}/document_definition.json'.format(document_path)) as f:
+            document_definition_dict = json.loads(f.read())
+        save_field_versions_from_mapping(account_dict, tag=tag_data)
+        save_field_versions_from_mapping(site_dict, tag=tag_data)
+        save_field_versions_from_mapping(urlconf_dict, tag=tag_data)
+        save_field_versions_from_mapping(app_dict, tag=tag_data)
+        save_field_versions_from_mapping(settings__dict, tag=tag_data)
+        save_field_versions_from_mapping(user_dict, tag=tag_data)
+        save_field_versions_from_mapping(group_dict, tag=tag_data)
+        save_field_versions_from_mapping(user_group_dict, tag=tag_data)
+        save_field_versions_from_mapping(permissions_dict, tag=tag_data)
+        save_field_versions_from_mapping(tag_dict, tag=tag_data)
+        save_field_versions_from_mapping(field_version_dict, tag=tag_data)
+        save_field_versions_from_mapping(invite_dict, tag=tag_data)
+        save_field_versions_from_mapping(session_dict, tag=tag_data)
+        save_field_versions_from_mapping(document_definition_dict, tag=tag_data)
+        return tag_logical
 
     @classmethod
     def _create_site_app(cls, index_name, site, app, now_es, languages, location, invite_only,

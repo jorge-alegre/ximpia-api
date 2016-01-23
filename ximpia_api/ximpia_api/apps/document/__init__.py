@@ -718,11 +718,41 @@ def get_fields_from_mapping(mapping):
     return field_versions
 
 
-def save_field_versions_from_mapping(mapping):
+def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=None,
+                                     tag=None, branch=None):
     """
     Save data into field versions for all fields in a mapping
 
     :param mapping:
     :return:
     """
+    from datetime import datetime
+    now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     fields = get_fields_from_mapping(mapping)
+    fields_version_str = ''
+    user_id = getattr(user, 'id', None)
+    user_name = getattr(user, 'username', None)
+    for field in fields:
+        bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
+        bulk_data = json.dumps(
+            {
+                'doc_type__v1': 'field-version',
+                'field__v1': field['field'],
+                'field_name__v1': field['field_name'],
+                'version__v1': field['version'],
+                'tag__v1': tag,
+                'branch__v1': branch,
+                'is_activate__v1': True,
+                'created_on__v1': now_es,
+                'created_by__v1': {
+                    'id__v1': user_id,
+                    'user_name__v1': user_name
+                }
+            }
+        ) + '\n'
+        if not fields_version_str:
+            fields_version_str = bulk_header
+            fields_version_str += bulk_data
+        else:
+            fields_version_str += bulk_header
+            fields_version_str += bulk_data
