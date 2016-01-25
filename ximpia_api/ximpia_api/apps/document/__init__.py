@@ -288,7 +288,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
         query['query']['bool']['must'].append(
             {
                 'term': {
-                    "tag__v1": tag
+                    "tag__v1.tag__slug__v1": tag
                 }
             }
         )
@@ -296,11 +296,11 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
             query['query']['bool']['should'] = [
                 {
                     'nested': {
-                        'path': 'tag__permissions__v1.tag__permissions__users__v1',
+                        'path': 'tag__v1.tag__permissions__v1.tag__permissions__users__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'tag__permissions__v1.tag__permissions__users__v1.id': user['id']
+                                    'tag__v1.tag__permissions__v1.tag__permissions__users__v1.id': user['id']
                                 }
                             }
                         }
@@ -308,11 +308,12 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 },
                 {
                     'nested': {
-                        'path': 'tag__permissions__v1.tag__permissions__groups__v1',
+                        'path': 'tag__v1.tag__permissions__v1.tag__permissions__groups__v1',
                         'filter': {
                             {
                                 'term': {
-                                    'tag__permissions__v1.tag__permisions__groups__v1.id': u' OR '.join(user['groups'])
+                                    'tag__v1.tag__permissions__v1.tag__permisions__groups__v1.id':
+                                        u' OR '.join(user['groups'])
                                 }
                             }
                         }
@@ -330,22 +331,13 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
     # here we have all physical fields for document
     field_dict = {}
     # print u'physical db field response: {}'.format(es_response)
-    for field_db in es_response['hits']['hits']:
+    for field_db_es in es_response['hits']['hits']:
+        field_db_data = field_db_es['_source']
+        logger.debug(u'to_physical_fields :: field_db_data: {}'.format(field_db_data))
         try:
-            if field_db.split('__')[0] in fields:
-                target_field = filter(lambda x: x == u'{}'.format(field_db.split('__')[0]),
-                                      fields)[0]
-                field_dict[target_field] = field_db
+            field_dict[field_db_data['field-version__field_name__v1']] = field_db_data['field-version__field__v1']
         except (IndexError, KeyError):
             pass
-    """if not es_response['hits']['hits']:
-        for field in fields:
-            # mine.cost -> mine__v1.cost__v1
-            if '.' in field:
-                for field_item in field.split('.'):
-                    field_dict[field_item] = u'{}__{}__v1'.format(document_type, field_item)
-            else:
-                field_dict[field] = u'{}__{}__v1'.format(document_type, field)"""
     return field_dict
 
 

@@ -62,6 +62,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                           slug__raw='base',
                                           site__slug__raw=slugify(settings.SITE),
                                           get_logical=True)[0]
+            logger.debug(u'authenticate :: app: {}'.format(app))
             app_id = app['id']
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
