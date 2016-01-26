@@ -272,7 +272,7 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                 'must': [
                     {
                         "term": {
-                            "field-version__doc_type__v1": document_type
+                            "field-version__doc_type__v1.raw__v1": document_type
                         }
                     },
                     {
@@ -282,7 +282,8 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                     }
                 ]
             }
-        }
+        },
+        "from": 0, "size": 500,
     }
     if tag:
         query['query']['bool']['must'].append(
@@ -325,16 +326,20 @@ def to_physical_fields(document_type, fields, tag=None, user=None):
                     }
                 }
             ]
+    # logger.debug(u'to_physical_fields :: query: {}'.format(json.dumps(query)))
     es_response = get_es_response(
         req_session.get(get_path_search('field-version'),
                         data=json.dumps(query)))
+    # logger.debug(u'to_physical_fields :: response: {}'.format(es_response))
     # here we have all physical fields for document
     field_dict = {}
     # print u'physical db field response: {}'.format(es_response)
+    # logger.debug(u'to_physical_fields :: count: {}'.format(len(es_response['hits']['hits'])))
     for field_db_es in es_response['hits']['hits']:
         field_db_data = field_db_es['_source']
-        logger.debug(u'to_physical_fields :: field_db_data: {}'.format(field_db_data))
+        # logger.debug(u'to_physical_fields :: field_db_data: {}'.format(field_db_data))
         try:
+            # logger.debug(u'to_physical_fields :: db field: {}'.format(field_db_data['field-version__field__v1']))
             field_dict[field_db_data['field-version__field_name__v1']] = field_db_data['field-version__field__v1']
         except (IndexError, KeyError):
             pass
@@ -501,7 +506,7 @@ class DocumentManager(object):
         field_dict = to_physical_fields(document_type,
                                         cls.fields_to_es_format(document_type, kwargs, expand=True))
         # print u'field_dict: {}'.format(field_dict)
-        logger.debug(u'Document.filter :: field_dict: {}'.format(field_dict))
+        # logger.debug(u'Document.filter :: field_dict: {}'.format(field_dict))
 
         filter_data = {}
         query_items = []
@@ -691,6 +696,7 @@ def get_fields_from_mapping(mapping):
         else:
             field_name = root_field.split('__')[-2]
         if field_type in ['object', 'nested']:
+            field_versions.extend(walk_mapping(root_field_data['properties']))
             field_versions.append(
                 {
                     'field': root_field,
@@ -698,7 +704,6 @@ def get_fields_from_mapping(mapping):
                     'field_name': field_name,
                 }
             )
-            field_versions.extend(walk_mapping(root_field_data['properties']))
         else:
             field_versions.append(
                 {
@@ -726,6 +731,7 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
     doc_type = mapping.keys()[0]
     user_id = getattr(user, 'id', None)
     user_name = getattr(user, 'username', None)
+    # logger.debug(u'save_field_versions_from_mapping :: [{}] fields: {}'.format(doc_type, len(fields)))
     for field in fields:
         bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
         bulk_data = json.dumps(
@@ -734,14 +740,14 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
                 'field-version__field__v1': field['field'],
                 'field-version__field_name__v1': field['field_name'],
                 'field-version__version__v1': field['version'],
+                'field-version__is_active__v1': True,
                 'tag__v1': tag,
                 'branch__v1': branch,
-                'field-version__is_active__v1': True,
-                'created_on__v1': now_es,
                 'field-version__created_by__v1': {
                     'field-version__created_by__id': user_id,
                     'field-version__created_by__user_name__v1': user_name
-                }
+                },
+                'created_on__v1': now_es,
             }
         ) + '\n'
         if not fields_version_str:
@@ -757,8 +763,10 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
     )
     # logger.debug(u'save_field_versions_from_mapping :: status: {}'.format(es_response_raw.status_code))
     es_response = es_response_raw.json()
+    # logger.debug(u'save_field_versions_from_mapping :: bulk response: {}'.format(es_response))
     # logger.debug(u'save_field_versions_from_mapping :: response: {}'.format(es_response))
-    logger.info(u'save_field_versions_from_mapping :: doc_type: {} is OK: {}'.format(
+    logger.info(u'save_field_versions_from_mapping :: doc_type: {} is OK: {} items: {}'.format(
         doc_type,
-        es_response_raw.status_code in [200, 201] and es_response['errors'] is False
+        es_response_raw.status_code in [200, 201] and es_response['errors'] is False,
+        len(es_response['items'])
     ))

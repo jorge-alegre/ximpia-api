@@ -9,7 +9,16 @@
     },
     "properties": {
       "field-version__doc_type__v1": {
-        "type": "string"
+        "type": "string",
+        "fields": {
+          "field-version__doc_type__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
       },
       "field-version__field__v1": {
         "type": "string",

@@ -214,6 +214,8 @@ class Command(BaseCommand):
         save_field_versions_from_mapping(invite_dict, tag=tag_data)
         save_field_versions_from_mapping(session_dict, tag=tag_data)
         save_field_versions_from_mapping(document_definition_dict, tag=tag_data)
+        # time.sleep(10)
+        refresh_index(index_name)
         return tag_logical
 
     @classmethod
@@ -239,7 +241,7 @@ class Command(BaseCommand):
         # generate api access key
         counter = 0
         api_access_key = get_random_string(32, VALID_KEY_CHARS)
-        while Document.objects.filter('site', api_access__api_key=api_access_key):
+        while Document.objects.filter('site', api_access__key=api_access_key):
             api_access_key = get_random_string(32, VALID_KEY_CHARS)
             if counter > 10:
                 raise XimpiaAPIException(_(
@@ -351,7 +353,7 @@ class Command(BaseCommand):
         # account
         account_data = {
             u'account__organization__v1': {
-                u'name__v1': organization_name
+                u'account__organization__name__v1': organization_name
             },
             u'account__name__v1': account,
             u'created_on__v1': now_es,
