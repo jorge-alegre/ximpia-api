@@ -115,7 +115,7 @@
           }
         }
       },
-      "created_on__v1": {
+      "permission__created_on__v1": {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

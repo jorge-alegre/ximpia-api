@@ -527,9 +527,11 @@ class DocumentManager(object):
             # field_name is like 'status', but on db we have like status__v1, status__v1.value__v1
             if '__' in field:
                 # field1__field2 or field1__field2__field3 to field1__v1.field2__v1 , ...
-                field_name = u'.'.join(map(lambda x: field_dict[x], field_name.split('__')))
+                field_name = u'.'.join(map(lambda x: field_dict[x] if x != 'raw' else 'raw__v1',
+                                           field_name.split('__')))
             else:
                 field_name = field_dict[field_name]
+            # logger.debug(u'Document.filter :: field_name: {}'.format(field_name))
 
             filter_data[field_name] = value
             if not is_array_type:
@@ -558,7 +560,7 @@ class DocumentManager(object):
                 }
             }
         }
-        logger.debug(u'Document.filter :: query_dsl:{}'.format(query_dsl))
+        logger.debug(u'Document.filter :: type: {} query_dsl:{}'.format(document_type, query_dsl))
 
         # print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,

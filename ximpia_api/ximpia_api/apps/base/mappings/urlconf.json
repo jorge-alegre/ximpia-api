@@ -60,7 +60,7 @@
                   }
                 }
               },
-              "created_on__v1": {
+              "account__created_on__v1": {
                 "type": "date",
                 "format": "dateOptionalTime"
               }
@@ -119,11 +119,11 @@
               "site__invites__active__v1": {
                 "type": "boolean"
               },
-              "created_on__v1": {
+              "site__invites__created_on__v1": {
                 "type": "date",
                 "format": "dateOptionalTime"
               },
-              "updated_on__v1": {
+              "site__invites__updated_on__v1": {
                 "type": "date",
                 "format": "dateOptionalTime"
               }
@@ -175,13 +175,13 @@
               "site__api_access__rate_month__v1": {
                 "type": "integer"
               },
-              "created_on__v1": {
+              "site__api_access__created_on__v1": {
                 "type": "date",
                 "format": "dateOptionalTime"
               }
             }
           },
-          "created_on__v1": {
+          "site__created_on__v1": {
             "type": "date",
             "format": "dateOptionalTime"
           }
@@ -327,7 +327,7 @@
           "tag__public__v1": {
             "type": "boolean"
           },
-          "created_on__v1": {
+          "tag__created_on__v1": {
             "type": "date",
             "format": "dateOptionalTime"
           }
@@ -477,7 +477,7 @@
           "branch__public__v1": {
             "type": "boolean"
           },
-          "created_on__v1" : {
+          "branch__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -503,7 +503,7 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "created_on__v1" : {
+      "urlconf__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

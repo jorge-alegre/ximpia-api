@@ -266,7 +266,7 @@
           "tag__public__v1": {
             "type": "boolean"
           },
-          "created_on__v1" : {
+          "tag__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -417,7 +417,7 @@
           "branch__public__v1": {
             "type": "boolean"
           },
-          "created_on__v1" : {
+          "branch__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -471,7 +471,7 @@
           }
         }
       },
-      "created_on__v1" : {
+      "settings__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

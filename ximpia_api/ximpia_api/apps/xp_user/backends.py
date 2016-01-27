@@ -58,6 +58,21 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # print u'authenticate :: app_id: {}'.format(app_id)
         if not app_id:
             # slugify(settings.SITE)
+
+            # In queries we need whole field paths, since field names could be shared
+            # filter uses field1__field2, but these fields
+            # ::::
+            # app__slug.raw__v1='base'
+
+            """app = Document.objects.filter(
+                'app',
+                **{
+                    'app__slug.raw__v1': 'base',
+                    'site__v1.slug__v1.raw__v1': slugify(settings.SITE),
+                    'get_logical': True
+                }
+            )"""
+
             app = Document.objects.filter('app',
                                           slug__raw='base',
                                           site__slug__raw=slugify(settings.SITE),

@@ -164,7 +164,7 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "created_on__v1" : {
+      "tag__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

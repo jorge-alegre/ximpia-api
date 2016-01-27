@@ -96,7 +96,7 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        with open('{}/document_definition.json'.format(document_path)) as f:
+        with open('{}/document-definition.json'.format(document_path)) as f:
             document_definition_dict = json.loads(f.read())
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),

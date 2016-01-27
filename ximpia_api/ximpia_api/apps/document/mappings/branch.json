@@ -147,7 +147,7 @@
           }
         }
       },
-      "created_on__v1" : {
+      "branch__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

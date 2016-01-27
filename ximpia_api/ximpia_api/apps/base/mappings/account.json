@@ -27,7 +27,7 @@
           }
         }
       },
-      "created_on__v1" : {
+      "account__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

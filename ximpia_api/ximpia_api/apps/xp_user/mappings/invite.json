@@ -46,7 +46,7 @@
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "created_on__v1" : {
+      "invite__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

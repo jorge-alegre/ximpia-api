@@ -8,10 +8,10 @@
       "enabled": false
     },
     "properties": {
-      "document_definition__doc_type__v1": {
+      "document-definition__doc_type__v1": {
         "type": "string",
         "fields": {
-          "document_definition__doc_type__v1": {
+          "document-definition__doc_type__v1": {
             "type": "string"
           },
           "raw__v1": {
@@ -178,7 +178,7 @@
             "term_vector" : "with_positions_offsets",
             "analyzer" : "snowball"
           },
-          "created_on__v1" : {
+          "tag__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -325,19 +325,19 @@
               }
             }
           },
-          "created_on__v1" : {
+          "branch__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
         }
       },
-      "document_definition__choices__v1": {
+      "document-definition__choices__v1": {
         "type": "nested",
         "properties": {
-          "document_definition__choices__name__v1": {
+          "document-definition__choices__name__v1": {
             "type": "string",
             "fields": {
-              "document_definition__choices__name__v1": {
+              "document-definition__choices__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -346,13 +346,13 @@
               }
             }
           },
-          "document_definition__choices__items__v1": {
+          "document-definition__choices__items__v1": {
             "type": "nested",
             "properties": {
-              "document_definition__choices__items__name__v1": {
+              "document-definition__choices__items__name__v1": {
                 "type": "string",
                 "fields": {
-                  "document_definition__choices__items__name__v1": {
+                  "document-definition__choices__items__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -361,10 +361,10 @@
                   }
                 }
               },
-              "document_definition__choices__items__value__v1": {
+              "document-definition__choices__items__value__v1": {
                 "type": "string",
                 "fields": {
-                  "document_definition__choices__items__name__v1": {
+                  "document-definition__choices__items__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -377,17 +377,17 @@
           }
         }
       },
-      "document_definition__editable_fields__v1": {
+      "document-definition__editable_fields__v1": {
         "type": "string",
         "index": "no"
       },
-      "document_definition__messages__v1": {
+      "document-definition__messages__v1": {
         "type": "nested",
         "properties": {
-          "document_definition__messages__name__v1": {
+          "document-definition__messages__name__v1": {
             "type": "string",
             "fields": {
-              "document_definition__messages__name__v1": {
+              "document-definition__messages__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -396,16 +396,16 @@
               }
             }
           },
-          "document_definition__messages__value__v1": {
+          "document-definition__messages__value__v1": {
             "type": "string",
             "index": "no"
           }
         }
       },
-      "document_definition__comment__v1": {
+      "document-definition__comment__v1": {
         "type": "string"
       },
-      "document_definition__permissions__v1": {
+      "document-definition__permissions__v1": {
         "type": "nested",
         "properties": {
           "id__v1": {
@@ -522,72 +522,72 @@
           }
         }
       },
-      "document_definition__validations__v1": {
+      "document-definition__validations__v1": {
         "type": "nested",
         "properties": {
-          "document_definition__validations__type__v1": {
+          "document-definition__validations__type__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document_definition__validations__path__v1": {
+          "document-definition__validations__path__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document_definition__validations__value__v1": {
+          "document-definition__validations__value__v1": {
             "type": "string",
             "index": "no"
           },
-          "document_definition__validations__modes__v1": {
+          "document-definition__validations__modes__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document_definition__validations__context__v1": {
+          "document-definition__validations__context__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "document_definition__fields__v1": {
+      "document-definition__fields__v1": {
         "type": "object",
         "properties": {
-          "document_definition__fields__string__v1": {
+          "document-definition__fields__string__v1": {
             "type": "nested",
             "properties": {
-              "document_definition__fields__string__active__v1": {
+              "document-definition__fields__string__active__v1": {
                 "type": "boolean"
               },
-              "document_definition__fields__string__validations__v1": {
+              "document-definition__fields__string__validations__v1": {
                 "type": "nested",
                 "properties": {
-                  "document_definition__fields__string__validations__type__v1": {
+                  "document-definition__fields__string__validations__type__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "document_definition__fields__string__validations__path__v1": {
+                  "document-definition__fields__string__validations__path__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "document_definition__fields__string__validations__value__v1": {
+                  "document-definition__fields__string__validations__value__v1": {
                     "type": "string",
                     "index": "no"
                   },
-                  "document_definition__fields__string__validations__modes__v1": {
+                  "document-definition__fields__string__validations__modes__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   },
-                  "document_definition__fields__string__validations__context__v1": {
+                  "document-definition__fields__string__validations__context__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                   }
                 }
               },
-              "document_definition__fields__string__choices__v1": {
+              "document-definition__fields__string__choices__v1": {
                 "type": "object",
                 "properties": {
-                  "document_definition__fields__string__choices__choice_name__v1": {
+                  "document-definition__fields__string__choices__choice_name__v1": {
                     "type": "string",
                     "fields": {
-                      "document_definition__fields__string__choices__choice_name__v1": {
+                      "document-definition__fields__string__choices__choice_name__v1": {
                         "type": "string"
                       },
                       "raw__v1": {
@@ -596,10 +596,10 @@
                       }
                     }
                   },
-                  "document_definition__fields__string__choices__default_value__v1": {
+                  "document-definition__fields__string__choices__default_value__v1": {
                     "type": "string",
                     "fields": {
-                      "document_definition__fields__string__choices__default_value__v1": {
+                      "document-definition__fields__string__choices__default_value__v1": {
                         "type": "string"
                       },
                       "raw__v1": {
@@ -610,10 +610,10 @@
                   }
                 }
               },
-              "document_definition__fields__string__default__v1": {
+              "document-definition__fields__string__default__v1": {
                 "type": "string",
                 "fields": {
-                  "document_definition__fields__string__default__v1": {
+                  "document-definition__fields__string__default__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -622,18 +622,18 @@
                   }
                 }
               },
-              "document_definition__fields__string__add_summary__v1": {
+              "document-definition__fields__string__add_summary__v1": {
                 "type": "boolean"
               },
-              "document_definition__fields__string__hint__v1": {
+              "document-definition__fields__string__hint__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "document_definition__fields__string__comment__v1": {
+              "document-definition__fields__string__comment__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "document_definition__fields__string__display_name__v1": {
+              "document-definition__fields__string__display_name__v1": {
                 "type": "string",
                 "fields": {
                   "display_name__v1": {
@@ -645,33 +645,33 @@
                   }
                 }
               },
-              "document_definition__fields__string__max_length__v1": {
+              "document-definition__fields__string__max_length__v1": {
                 "type": "integer"
               },
-              "document_definition__fields__string__min_length__v1": {
+              "document-definition__fields__string__min_length__v1": {
                 "type": "integer"
               },
-              "document_definition__fields__string__is_autocomplete__v1": {
+              "document-definition__fields__string__is_autocomplete__v1": {
                 "type": "boolean"
               }
             }
           }
         }
       },
-      "created_on__v1" : {
+      "document-definition__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "document_definition__created_by__v1": {
+      "document-definition__created_by__v1": {
         "properties": {
-          "document_definition__created_by__id": {
+          "document-definition__created_by__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document_definition__created_by__user_name__v1": {
+          "document-definition__created_by__user_name__v1": {
             "type": "string",
             "fields": {
-              "document_definition__created_by__user_name__v1": {
+              "document-definition__created_by__user_name__v1": {
                 "type": "string"
               }
             }
