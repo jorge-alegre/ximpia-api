@@ -243,7 +243,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         response = Document.objects.update_partial('app',
                                                    app['id'],
                                                    {
-                                                       'social__v1': to_physical_doc('app', app['social'])
+                                                       'app__social__v1': to_physical_doc('app', app['social'])
                                                    },
                                                    index='my-site__base'
                                                    )

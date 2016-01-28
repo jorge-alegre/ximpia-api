@@ -164,9 +164,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             data=json.dumps(
                 {
                     u'doc': {
-                        u'token__v1': {
-                            u'key__v1': get_random_string(100, VALID_KEY_CHARS),
-                            u'created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        u'user__token__v1': {
+                            u'user__token__key__v1': get_random_string(100, VALID_KEY_CHARS),
+                            u'user__token__created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                         },
                     }
                 }

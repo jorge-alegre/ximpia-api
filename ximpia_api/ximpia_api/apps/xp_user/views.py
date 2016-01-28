@@ -224,6 +224,7 @@ class UserSignup(generics.CreateAPIView):
         site_slug = get_site(request)
         # print u'UserSignup :: site: {}'.format(site_slug)
         app = get_base_app(site_slug)
+        logger.debug(u'UserSignup :: app: {}'.format(app))
         app_ximpia_base = get_base_app(slugify(settings.SITE))
         # print u'UserSignup :: app: {}'.format(app)
         app_id = app['id']
@@ -238,7 +239,7 @@ class UserSignup(generics.CreateAPIView):
             # check api key
             if 'api_key' in data:
                 # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
-                api_secret_db = app['site']['api_access']['api_secret']
+                api_secret_db = app['site']['api_access']['secret']
                 if api_secret_db != data.get('api_secret', ''):
                     # display error
                     raise exceptions.XimpiaAPIException(_(
@@ -279,48 +280,48 @@ class UserSignup(generics.CreateAPIView):
         # user
         # print u'groups_data: {}'.format(data['groups'])
         user_data = {
-            u'username__v1': " ",
-            u'alias__v1': "",
-            u'email__v1': social_data.get('email', None),
-            u'password__v1': None,
-            u'avatar__v1': social_data.get('profile_picture', None),
-            u'user_name__v1': social_data.get('name', None),
-            u'first_name__v1': social_data.get('first_name', ''),
-            u'last_name__v1': social_data.get('last_name', ''),
-            u'social_networks__v1': [
+            u'user__username__v1': " ",
+            u'user__alias__v1': "",
+            u'user__email__v1': social_data.get('email', None),
+            u'user__password__v1': None,
+            u'user__avatar__v1': social_data.get('profile_picture', None),
+            u'user__user_name__v1': social_data.get('name', None),
+            u'user__first_name__v1': social_data.get('first_name', ''),
+            u'user__last_name__v1': social_data.get('last_name', ''),
+            u'user__social_networks__v1': [
                 {
-                    u'network__v1': data.get('social_network', 'facebook'),
-                    u'user_id__v1': social_data.get('user_id', None),
-                    u'access_token__v1': social_data.get('access_token', None),
-                    u'state__v1': None,
-                    u'scopes__v1': social_data.get('scopes', None),
-                    u'has_auth__v1': True,
-                    u'link__v1': social_data.get('link', None),
-                    u'expires_at__v1': social_data.get('expires_at', None),
+                    u'user__social_networks__network__v1': data.get('social_network', 'facebook'),
+                    u'user__social_networks__user_id__v1': social_data.get('user_id', None),
+                    u'user__social_networks__access_token__v1': social_data.get('access_token', None),
+                    u'user__social_networks__state__v1': None,
+                    u'user__social_networks__scopes__v1': social_data.get('scopes', None),
+                    u'user__social_networks__has_auth__v1': True,
+                    u'user__social_networks__link__v1': social_data.get('link', None),
+                    u'user__social_networks__expires_at__v1': social_data.get('expires_at', None),
                 }
             ],
-            u'user_permissions__v1': None,
+            u'user__permissions__v1': None,
             u'groups__v1': map(lambda x: {
-                u'id__v1': x['id'],
-                u'name__v1': x['group_name']
+                u'group__id': x['id'],
+                u'group__name__v1': x['name']
             }, data['groups']),
-            u'is_active__v1': True,
-            u'token__v1': None,
-            u'expires_at__v1': time.strftime(
+            u'user__is_active__v1': True,
+            u'user__token__v1': None,
+            u'user__expires_at__v1': time.strftime(
                 '%Y-%m-%dT%H:%M:%S',
                 time.gmtime(float(social_data.get('expires_at', seconds_two_months)))),
-            u'session_id__v1': None,
+            u'user__session_id__v1': None,
             u'app__v1': {
-                u'id__v1': app['id'],
-                u'slug__v1': app['slug'],
-                u'name__v1': app['name'],
+                u'app__id': app['id'],
+                u'app__slug__v1': app['slug'],
+                u'app__name__v1': app['name'],
                 u'site__v1': {
-                    u'id__v1': app['site']['id'],
-                    u'slug__v1': app['site']['slug'],
-                    u'name__v1': app['site']['name'],
+                    u'site__id': app['site']['id'],
+                    u'site__slug__v1': app['site']['slug'],
+                    u'site__name__v1': app['site']['name'],
                 }
             },
-            u'created_on__v1': now_es,
+            u'user__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name_ximpia),
@@ -331,7 +332,7 @@ class UserSignup(generics.CreateAPIView):
                 social_data.get('user_id', None),
                 es_response_raw.content)))
         es_response = es_response_raw.json()
-        logger.info(u'SetupSite :: created user id: {}'.format(
+        logger.info(u'UserSignup :: created user id: {}'.format(
             es_response.get('_id', '')
         ))
         user_data_logical = to_logical_doc('user', user_data)
@@ -342,23 +343,23 @@ class UserSignup(generics.CreateAPIView):
                 '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps({
                     u'user__v1': {
-                        u'id__v1': user_data_logical[u'id'],
-                        u'username__v1': user_data_logical[u'username'],
-                        u'email__v1': user_data_logical[u'email'],
-                        u'avatar__v1': user_data_logical[u'avatar'],
-                        u'user_name__v1': user_data_logical[u'user_name'],
-                        u'social_networks__v1': user_data_logical[u'social_networks'],
-                        u'user_permissions__v1': user_data_logical[u'user_permissions'],
-                        u'created_on__v1': user_data_logical[u'created_on'],
+                        u'user__id': user_data_logical[u'id'],
+                        u'user__username__v1': user_data_logical[u'username'],
+                        u'user__email__v1': user_data_logical[u'email'],
+                        u'user__avatar__v1': user_data_logical[u'avatar'],
+                        u'user__user_name__v1': user_data_logical[u'user_name'],
+                        u'user__social_networks__v1': user_data_logical[u'social_networks'],
+                        u'user__permissions__v1': user_data_logical[u'permissions'],
+                        u'user__created_on__v1': user_data_logical[u'created_on'],
                     },
                     u'group__v1': {
-                        u'id__v1': group_data[u'id'],
-                        u'group_name__v1': group_data[u'group_name'],
-                        u'slug__v1': group_data[u'slug'],
-                        u'tags__v1': group_data[u'tags'],
-                        u'created_on__v1': group_data[u'created_on']
+                        u'group__id': group_data[u'id'],
+                        u'group__name__v1': group_data[u'name'],
+                        u'group__slug__v1': group_data[u'slug'],
+                        u'group__tags__v1': group_data[u'tags'],
+                        u'group__created_on__v1': group_data[u'created_on']
                     },
-                    u'created_on__v1': now_es,
+                    u'user-group__created_on__v1': now_es,
                 }))
             if es_response_raw.status_code not in [200, 201]:
                 raise exceptions.XimpiaAPIException(_(u'Could not write user group :: {}'.format(
@@ -366,7 +367,7 @@ class UserSignup(generics.CreateAPIView):
                 )))
             es_response = es_response_raw.json()
             es_response['id'] = es_response.get('_id', '')
-            logger.info(u'SetupSite :: created user group id: {}'.format(
+            logger.info(u'UserSignup :: created user group id: {}'.format(
                 es_response.get('_id', '')
             ))
         refresh_index(index_name)

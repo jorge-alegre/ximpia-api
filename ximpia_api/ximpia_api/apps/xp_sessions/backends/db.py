@@ -52,12 +52,12 @@ class SessionStore(SessionBase):
                         'must': [
                             {
                                 'term': {
-                                    'session_key__v1': self.session_key
+                                    'session__key__v1': self.session_key
                                 }
                             },
                             {
                                 'range': {
-                                    'expire_date__v1': {
+                                    'session__expire_date__v1': {
                                         "gt": timezone.now().strftime("%Y-%m-%dT%H:%M:%S")
                                     }
                                 }
@@ -100,7 +100,7 @@ class SessionStore(SessionBase):
             data=json.dumps({
                 'query': {
                     'term': {
-                        'session_key__v1': session_key
+                        'session__key__v1': session_key
                     }
                 }
             })
@@ -139,8 +139,8 @@ class SessionStore(SessionBase):
             return self.create()
         raw_session_data = self._get_session(no_load=must_create)
         session_data = {
-            'session_key': self._get_or_create_session_key(),
-            'session_data': self.encode(raw_session_data),
+            'key': self._get_or_create_session_key(),
+            'data': self.encode(raw_session_data),
             'expire_date': self.get_expiry_date().strftime("%Y-%m-%dT%H:%M:%S")
         }
         if must_create:
@@ -217,7 +217,7 @@ class SessionStore(SessionBase):
             data=json.dumps({
                 'query': {
                     'range': {
-                        'expire_date__v1': {
+                        'session__expire_date__v1': {
                             "lt": timezone.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
                     }
