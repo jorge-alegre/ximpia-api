@@ -214,7 +214,6 @@ class Command(BaseCommand):
         save_field_versions_from_mapping(invite_dict, tag=tag_data)
         save_field_versions_from_mapping(session_dict, tag=tag_data)
         save_field_versions_from_mapping(document_definition_dict, tag=tag_data)
-        # time.sleep(10)
         refresh_index(index_name)
         return tag_logical
 
