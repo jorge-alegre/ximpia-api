@@ -73,10 +73,6 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 }
             )[0]
 
-            """app = Document.objects.filter('app',
-                                          slug__raw='base',
-                                          site__slug__raw=slugify(settings.SITE),
-                                          get_logical=True)[0]"""
             logger.debug(u'authenticate :: app: {}'.format(app))
             app_id = app['id']
         try:

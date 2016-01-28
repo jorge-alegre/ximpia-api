@@ -512,25 +512,10 @@ class DocumentManager(object):
         query_items = []
         for field in kwargs:
             value = kwargs[field]
-            """values = []
-            op, field_name = cls.get_op(field)
-            is_array_type = False
-            if op == 'in':
-                # value = u' OR '.join(map(lambda x: u'{}'.format(x), value))
-                values = map(lambda x: u'{}'.format(x), value)
-                is_array_type = True
-            if op and op not in ['in']:
-                raise exceptions.XimpiaAPIException(u'Only IN operator is supported')"""
             if isinstance(value, (datetime.date, datetime.datetime)):
                 value = value.strftime('"%Y-%m-%dT%H:%M:%S"')
 
             # field_name is like 'status', but on db we have like status__v1, status__v1.value__v1
-            """if '__' in field:
-                # field1__field2 or field1__field2__field3 to field1__v1.field2__v1 , ...
-                field_name = u'.'.join(map(lambda x: field_dict[x] if x != 'raw' else 'raw__v1',
-                                           field_name.split('__')))
-            else:
-                field_name = field_dict[field_name]"""
             # logger.debug(u'Document.filter :: field_name: {}'.format(field_name))
 
             # filter_data[field_name] = value
@@ -539,18 +524,6 @@ class DocumentManager(object):
                     field: value
                 }
             })
-            """if not is_array_type:
-                query_items.append({
-                    'term': {
-                        field: value
-                    }
-                })
-            else:
-                query_items.append({
-                    'terms': {
-                        field: values
-                    }
-                })"""
 
         # print u'filter_data: {}'.format(filter_data)
         query_dsl = {
