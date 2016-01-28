@@ -151,7 +151,7 @@ class Command(BaseCommand):
             u'tag__is_active__v1': True,
             u'tag__permissions__v1': None,
             u'tag__public__v1': True,
-            u'created_on__v1': now_es,
+            u'tag__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -241,7 +241,10 @@ class Command(BaseCommand):
         # generate api access key
         counter = 0
         api_access_key = get_random_string(32, VALID_KEY_CHARS)
-        while Document.objects.filter('site', api_access__key=api_access_key):
+        while Document.objects.filter(
+                'site', **{''
+                           'site__api_access__v1.site__api_access__key__v1': api_access_key
+                           }):
             api_access_key = get_random_string(32, VALID_KEY_CHARS)
             if counter > 10:
                 raise XimpiaAPIException(_(
@@ -259,16 +262,16 @@ class Command(BaseCommand):
             u'site__api_access__v1': {
                 u'site__api_access__key__v1': api_access_key,
                 u'site__api_access__secret__v1': get_random_string(32, VALID_KEY_CHARS),
-                u'created_on__v1': now_es,
+                u'site__api_access__created_on__v1': now_es,
             },
-            u'created_on__v1': now_es
+            u'site__created_on__v1': now_es
         }
         if invite_only:
             site_data[u'site__invites__v1'] = {
                 u'site__invites__age_days__v1': 2,
                 u'site__invites__active__v1': True,
-                u'created_on__v1': now_es,
-                u'updated_on__v1': now_es,
+                u'site__invites__created_on__v1': now_es,
+                u'site__invites__updated_on__v1': now_es,
             }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -300,7 +303,7 @@ class Command(BaseCommand):
                     u"app__social__facebook__app_secret__v1": settings.XIMPIA_FACEBOOK_APP_SECRET
                 }
             },
-            u'created_on__v1': now_es
+            u'app__created_on__v1': now_es
         }
         es_response_raw = requests.post(
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -330,7 +333,7 @@ class Command(BaseCommand):
             u'app__v1': None,
             u'tag__v1': tag_data,
             u'settings__fields__v1': None,
-            u'created_on__v1': now_es
+            u'settings__created_on__v1': now_es
         }
         settings_output = []
         for setting_item in settings_input:
@@ -356,7 +359,7 @@ class Command(BaseCommand):
                 u'account__organization__name__v1': organization_name
             },
             u'account__name__v1': account,
-            u'created_on__v1': now_es,
+            u'account__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -397,7 +400,7 @@ class Command(BaseCommand):
                     }
                 ],
                 u'permission__data__v1': None,
-                u'created_on__v1': now_es
+                u'permission__created_on__v1': now_es
             }
             es_response_raw = requests.post(
                 '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -440,13 +443,13 @@ class Command(BaseCommand):
                 u'group__name__v1': group,
                 u'group__slug__v1': slugify(group),
                 u'group__tags__v1': None,
-                u'created_on__v1': now_es,
+                u'group__created_on__v1': now_es,
             }
             if group in permissions:
                 group_data[u'group__permissions__v1'] = [
                     {
                         u'group__permissions__name__v1': permissions[group],
-                        u'created_on__v1': now_es
+                        u'group__permissions__created_on__v1': now_es
                     }
                 ]
             es_response_raw = requests.post(
@@ -511,7 +514,7 @@ class Command(BaseCommand):
                     u'site__name__v1': app_data['site']['name'],
                 }
             },
-            u'created_on__v1': now_es,
+            u'user__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -541,16 +544,16 @@ class Command(BaseCommand):
                         u'user__user_name__v1': user_data_logical[u'user_name'],
                         u'user__social_networks__v1': user_data_logical[u'social_networks'],
                         u'user__permissions__v1': user_data_logical[u'permissions'],
-                        u'created_on__v1': user_data_logical[u'created_on'],
+                        u'user__created_on__v1': user_data_logical[u'created_on'],
                     },
                     u'group__v1': {
                         u'group__id': group_data[u'id'],
                         u'group__name__v1': group_data[u'name'],
                         u'group__slug__v1': group_data[u'slug'],
                         u'group__tags__v1': group_data[u'tags'],
-                        u'created_on__v1': group_data[u'created_on']
+                        u'group__created_on__v1': group_data[u'created_on']
                     },
-                    u'created_on__v1': now_es,
+                    u'user-group__created_on__v1': now_es,
                 }))
             if es_response_raw.status_code not in [200, 201]:
                 raise XimpiaAPIException(_(u'Could not write user group :: {}'.format(

@@ -117,7 +117,7 @@
               }
             }
           },
-          "user__social_networks__created_on__v1" : {
+          "user__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }

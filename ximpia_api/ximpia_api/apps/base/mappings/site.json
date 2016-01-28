@@ -88,7 +88,7 @@
           "site__invites__active__v1": {
             "type": "boolean"
           },
-          "created_on__v1": {
+          "site__invites__created_on__v1": {
             "type" : "date",
             "format" : "dateOptionalTime"
           },
@@ -144,7 +144,7 @@
           "site__api_access__rate_month__v1": {
             "type": "integer"
           },
-          "created_on__v1" : {
+          "site__api_access__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }

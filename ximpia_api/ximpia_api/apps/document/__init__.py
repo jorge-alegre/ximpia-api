@@ -508,11 +508,11 @@ class DocumentManager(object):
         # print u'field_dict: {}'.format(field_dict)
         # logger.debug(u'Document.filter :: field_dict: {}'.format(field_dict))
 
-        filter_data = {}
+        # filter_data = {}
         query_items = []
         for field in kwargs:
             value = kwargs[field]
-            values = []
+            """values = []
             op, field_name = cls.get_op(field)
             is_array_type = False
             if op == 'in':
@@ -520,32 +520,37 @@ class DocumentManager(object):
                 values = map(lambda x: u'{}'.format(x), value)
                 is_array_type = True
             if op and op not in ['in']:
-                raise exceptions.XimpiaAPIException(u'Only IN operator is supported')
+                raise exceptions.XimpiaAPIException(u'Only IN operator is supported')"""
             if isinstance(value, (datetime.date, datetime.datetime)):
                 value = value.strftime('"%Y-%m-%dT%H:%M:%S"')
 
             # field_name is like 'status', but on db we have like status__v1, status__v1.value__v1
-            if '__' in field:
+            """if '__' in field:
                 # field1__field2 or field1__field2__field3 to field1__v1.field2__v1 , ...
                 field_name = u'.'.join(map(lambda x: field_dict[x] if x != 'raw' else 'raw__v1',
                                            field_name.split('__')))
             else:
-                field_name = field_dict[field_name]
+                field_name = field_dict[field_name]"""
             # logger.debug(u'Document.filter :: field_name: {}'.format(field_name))
 
-            filter_data[field_name] = value
-            if not is_array_type:
+            # filter_data[field_name] = value
+            query_items.append({
+                'term': {
+                    field: value
+                }
+            })
+            """if not is_array_type:
                 query_items.append({
                     'term': {
-                        field_name: value
+                        field: value
                     }
                 })
             else:
                 query_items.append({
                     'terms': {
-                        field_name: values
+                        field: values
                     }
-                })
+                })"""
 
         # print u'filter_data: {}'.format(filter_data)
         query_dsl = {
@@ -560,7 +565,10 @@ class DocumentManager(object):
                 }
             }
         }
-        logger.debug(u'Document.filter :: type: {} query_dsl:{}'.format(document_type, query_dsl))
+        logger.debug(u'Document.filter :: type: {} query_dsl:{}'.format(
+            document_type,
+            query_dsl
+        ))
 
         # print u'query_dsl: {}'.format(query_dsl)
         es_response_raw = req_session.get(es_path,
@@ -735,6 +743,8 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
     user_name = getattr(user, 'username', None)
     # logger.debug(u'save_field_versions_from_mapping :: [{}] fields: {}'.format(doc_type, len(fields)))
     for field in fields:
+        if field in ['text', 'text__v1']:
+            continue
         bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
         bulk_data = json.dumps(
             {
