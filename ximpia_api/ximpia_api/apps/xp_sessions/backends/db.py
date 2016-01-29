@@ -77,7 +77,7 @@ class SessionStore(SessionBase):
             return {}
         try:
             session_data = self.decode(to_logical_doc('session',
-                                                      es_response['hits']['hits'][0]['_source'])['session_data'])
+                                                      es_response['hits']['hits'][0]['_source'])['data'])
             # print u'SessionStore.load :: session_data: {}'.format(session_data)
             # session_data['_id'] = es_response['hits']['hits'][0]['_id']
         except IndexError:

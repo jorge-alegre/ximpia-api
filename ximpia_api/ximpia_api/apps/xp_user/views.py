@@ -122,10 +122,10 @@ class Connect(generics.CreateAPIView):
             access_token = request.REQUEST.get('access_token', data.get('access_token', None))
             provider = request.REQUEST.get('provider', data.get('provider',
                                                                 constants.DEFAULT_PROVIDER))
-            print u'Connect :: access_token: {} provider: {}'.format(
+            logger.info(u'Connect :: access_token: {} provider: {}'.format(
                 access_token,
                 provider
-            )
+            ))
             site_slug = get_site(request)
             app = get_base_app(site_slug)
             # print u'Connect :: app: {}'.format(app)
@@ -137,8 +137,8 @@ class Connect(generics.CreateAPIView):
                 # check api key
                 if 'api_key' in data:
                     # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
-                    api_secret_db = app['site']['api_access']['api_secret']
-                    if api_secret_db != data.get('api_secret', ''):
+                    api_secret_db = app['site']['api_access']['secret']
+                    if api_secret_db != data.get('secret', ''):
                         # display error
                         raise exceptions.XimpiaAPIException(_(
                             u'Secret does not match API access'
@@ -184,8 +184,8 @@ class Connect(generics.CreateAPIView):
                         u'access_token': access_token,
                         u'social_network': provider,
                         u'groups': groups,
-                        u'api_key': app['site']['api_access']['api_key'],
-                        u'api_secret': app['site']['api_access']['api_secret'],
+                        u'api_key': app['site']['api_access']['key'],
+                        u'api_secret': app['site']['api_access']['secret'],
                         u'site': site_slug
                     }
                 )
