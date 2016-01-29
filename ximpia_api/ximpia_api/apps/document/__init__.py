@@ -41,6 +41,7 @@ def walk(node, **kwargs):
     is_logical = kwargs.get('is_logical', False)
     fields_version = kwargs.get('fields_version', [])
     fields_data = kwargs.get('fields_data', [])
+    doc_type = kwargs.get('doc_type', '')
     tag = kwargs.get('tag', None)
     if is_physical is False and is_logical is False:
         raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
@@ -79,24 +80,41 @@ def walk(node, **kwargs):
             else:
                 data[field] = item
     elif is_logical:
+        logger.debug(u'walk :: fields_data: {}'.format(fields_data))
         for key, item in node.items():
             # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
+            logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
             if fields_data:
                 if tag:
                     # like status__v7
                     field = map(lambda x: x,
                                 filter(lambda y: y['field-version__field__v1'] == key, fields_data))[0]
                 else:
-                    fields = map(lambda x: x['field-version__field__v1'], fields_data)
+                    fields = map(lambda x: x['_source']['field-version__field__v1'], fields_data)
+                    logger.debug(u'walk :: fields: {}'.format(fields))
                     # field: {version}
-                    versions_map = map(lambda x: (x['field-version__field__v1'].split('__')[0],
-                                                  {x['field-version__field__v1'].split('__')[1]}),
-                                       fields_data)
+                    versions_map = dict(map(lambda x: (x['_source']['field-version__field__v1'].split('__')[-2],
+                                                       {x['_source']['field-version__field__v1'].split('__')[-1]}),
+                                            fields_data))
+                    logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
                     # like status__v7
-                    field = map(lambda y: max(list(versions_map[y.split('__')[0]])),
-                                filter(lambda x: x.split('__')[0] == key, fields))
+                    logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
+                    fields_key = filter(lambda x: x.split('__')[-2] == key, fields)
+                    logger.debug(u'walk :: fields_key: {}'.format(fields_key))
+                    if len(fields_key) > 1:
+                        raise exceptions.XimpiaAPIException(u'More than one field for type: {} key: {} '
+                                                            u'fields: {}'.format(
+                                                                doc_type,
+                                                                key,
+                                                                fields
+                                                            ))
+                    field = fields_key[0]
             else:
-                field = u'{key}__v1'.format(key=key)
+                field = u'{doc_type}__{key}__v1'.format(
+                    doc_type=doc_type,
+                    key=key
+                )
+            logger.debug(u'walk :: field: {}'.format(field))
             if isinstance(item, dict):
                 data[field] = walk(item, **kwargs)
             elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):
@@ -139,7 +157,8 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
                         }
                     ]
                 }
-            }
+            },
+            "from": 0, "size": 500,
         }
         if user:
             query_dsl['query']['bool']['should'] = [
@@ -194,13 +213,16 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
     :param user:
     :return:
     """
+    logger.debug(u'to_physical_doc :: doc_type: {} tag: {} user: {}'.format(
+        doc_type, tag, user
+    ))
     query = {
         'query': {
             'bool': {
                 'must': [
                     {
                         "term": {
-                            "field-version__doc_type__v1": doc_type
+                            "field-version__doc_type__v1.raw__v1": doc_type
                         }
                     },
                     {
@@ -210,7 +232,8 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                     }
                 ]
             }
-        }
+        },
+        "from": 0, "size": 500,
     }
     if tag:
         query['query']['bool']['must'].append(
@@ -253,10 +276,12 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
                     }
                 }
             ]
+    # logger.debug(u'to_physical_doc :: query: {}'.format(query))
     es_response = get_es_response(
         req_session.get(get_path_search('field-version'),
                         data=json.dumps(query)))
-    return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag)
+    # logger.debug(u'to_physical_doc :: response: {}'.format(es_response))
+    return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag, doc_type=doc_type)
 
 
 def to_physical_fields(document_type, fields, tag=None, user=None):
@@ -634,18 +659,25 @@ def walk_mapping(mapping_piece):
     """
     data = []
     for field in mapping_piece:
+        root_field_data = mapping_piece[field]
         version = field.split('__')[-1]
         if version == 'id':
             version = None
             field_name = field.split('__')[-1]
         else:
             field_name = field.split('__')[-2]
-        if isinstance(field, dict):
-            # nested type, we have field as dict
-            if isinstance(field, dict):
-                data.extend(walk_mapping(field))
+        field_type = mapping_piece[field].get('type', 'object')
+        if field_type in ['object', 'nested']:
+            data.extend(walk_mapping(root_field_data['properties']))
+            data.append(
+                {
+                    'field': field,
+                    'version': version,
+                    'field_name': field_name,
+                }
+            )
         else:
-            # object type
+            # object type. Needs to do nested as well
             data.append(
                 {
                     'field': field,
@@ -735,7 +767,7 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
                     'field-version__created_by__id': user_id,
                     'field-version__created_by__user_name__v1': user_name
                 },
-                'created_on__v1': now_es,
+                'field-version__created_on__v1': now_es,
             }
         ) + '\n'
         if not fields_version_str:
