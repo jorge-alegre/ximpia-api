@@ -80,10 +80,10 @@ def walk(node, **kwargs):
             else:
                 data[field] = item
     elif is_logical:
-        logger.debug(u'walk :: fields_data: {}'.format(fields_data))
+        # logger.debug(u'walk :: fields_data: {}'.format(fields_data))
         for key, item in node.items():
             # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
-            logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
+            # logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
             if fields_data:
                 if tag:
                     # like status__v7
@@ -91,16 +91,13 @@ def walk(node, **kwargs):
                                 filter(lambda y: y['field-version__field__v1'] == key, fields_data))[0]
                 else:
                     fields = map(lambda x: x['_source']['field-version__field__v1'], fields_data)
-                    logger.debug(u'walk :: fields: {}'.format(fields))
+                    # logger.debug(u'walk :: fields: {}'.format(fields))
                     # field: {version}
-                    versions_map = dict(map(lambda x: (x['_source']['field-version__field__v1'].split('__')[-2],
-                                                       {x['_source']['field-version__field__v1'].split('__')[-1]}),
-                                            fields_data))
-                    logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
+                    # logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
                     # like status__v7
-                    logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
+                    # logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
                     fields_key = filter(lambda x: x.split('__')[-2] == key, fields)
-                    logger.debug(u'walk :: fields_key: {}'.format(fields_key))
+                    # logger.debug(u'walk :: fields_key: {}'.format(fields_key))
                     if len(fields_key) > 1:
                         raise exceptions.XimpiaAPIException(u'More than one field for type: {} key: {} '
                                                             u'fields: {}'.format(
@@ -114,7 +111,7 @@ def walk(node, **kwargs):
                     doc_type=doc_type,
                     key=key
                 )
-            logger.debug(u'walk :: field: {}'.format(field))
+            # logger.debug(u'walk :: field: {}'.format(field))
             if isinstance(item, dict):
                 data[field] = walk(item, **kwargs)
             elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):

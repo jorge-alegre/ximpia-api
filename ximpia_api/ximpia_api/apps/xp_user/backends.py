@@ -73,7 +73,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                 }
             )[0]
 
-            logger.debug(u'authenticate :: app: {}'.format(app))
+            # logger.debug(u'authenticate :: app: {}'.format(app))
             app_id = app['id']
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
