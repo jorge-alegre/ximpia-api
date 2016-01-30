@@ -34,9 +34,9 @@ urlpatterns = [
     url(r'^user-signup$', UserSignup.as_view(), name='signup'),
     url(r'^create-site$', SetupSite.as_view(), name='create_site'),
     url(r'^connect$', Connect.as_view(), name='connect'),
-    url(r'^document-definition$', DocumentDefinition.as_view(
+    url(r'^document-definition/(?P<doc_type>[-\w]+)$', DocumentDefinition.as_view(
         {
             'post': 'create'
         }
-    ), name='document_definition'),
+    ), name='document-definition'),
 ]

@@ -127,8 +127,12 @@ class Connect(generics.CreateAPIView):
                 provider
             ))
             site_slug = get_site(request)
+            if isinstance(site_slug, dict):
+                site_slug = site_slug['slug']
+            logger.info(u'Connect :: site: {}'.format(site_slug))
             app = get_base_app(site_slug)
             # print u'Connect :: app: {}'.format(app)
+            logger.info(u'Connect :: app: {}'.format(app))
             if not access_token:
                 raise exceptions.XimpiaAPIException(u'access_token required')
             # Check access

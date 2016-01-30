@@ -4,7 +4,8 @@ import logging
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 
-from base.tests import XimpiaClient as Client, XimpiaTestCase
+from base.tests import XimpiaClient as Client, XimpiaTestCase, get_fb_test_user_local
+from document import Document
 
 __author__ = 'jorgealegre'
 
@@ -21,11 +22,17 @@ class StringFieldTest(XimpiaTestCase):
         pass
 
     def test_string(self):
-        with open('data/doc_string.json') as f:
+        print
+        print
+        print
+        # user_signup_data = self.connect_user(user='admin')
+        self.connect_user()
+        with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
         doc_string = json.loads(doc_string_str)
         response = self.c.post(
-            reverse('document_definition'),
+            reverse('document-definition',
+                    kwargs={'doc_type': 'test-string-field'}),
             json.dumps(doc_string),
             content_type="application/json"
         )

@@ -401,6 +401,44 @@ class XimpiaTestCase(SimpleTestCase):
         self.c = Client()
         self.req_factory = RequestFactory()
 
+    def connect_user(self, site='my-site', user='registration_my_site', provider='facebook'):
+        """
+        Connect user, either signup or login
+
+        :param site:
+        :param user:
+        :param provider:
+        :return:
+        """
+        from document import Document
+        site = Document.objects.filter('site',
+                                       **{
+                                           'site__slug__v1.raw__v1': site,
+                                           'get_logical': True
+                                       })[0]
+        response = self.c.post(
+            reverse('connect'),
+            json.dumps({
+                u'access_token': get_fb_test_user_local(user)['access_token'],
+                u'provider': provider,
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
+                u'site': site,
+            }),
+            content_type="application/json"
+        )
+        response_data = json.loads(response.content)
+        # logger.debug(u'StringFieldTest.test_string :: response: {}'.format(response_data))
+        is_login = self.c.login(**{
+            'access_token': get_fb_test_user_local('admin')['access_token'],
+            'provider': 'facebook',
+        })
+        if not is_login:
+            raise exceptions.XimpiaAPIException(u'Connected user and login is not verified')
+        self.assertTrue(response_data['status'].lower() == 'ok')
+        self.assertTrue(u'_auth_user_id' in self.c.session.keys())
+        return response_data
+
 
 class CreateSite(XimpiaTestCase):
 

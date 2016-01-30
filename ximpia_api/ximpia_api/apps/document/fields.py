@@ -104,6 +104,7 @@ class StringField(object):
     min_length = None
     validations = None
     is_autocomplete = None
+    doc_type = None
 
     def __init__(self, **kwargs):
         """
@@ -150,11 +151,13 @@ class StringField(object):
             ): {
                 u'type': u'string',
                 u'fields': {
-                    u'{}__{}'.format(
-                        self.name, version): {
+                    u'{doc_type}__{field_name}__{version}'.format(
+                        doc_type=self.doc_type,
+                        field_name=self.name,
+                        version=version): {
                             u'type': u'string'
                     },
-                    u'raw__{}'.format(version): {
+                    u'raw__{version}'.format(version=version): {
                         u'type': u'string',
                         u'index': u'not_analyzed'
                     }
@@ -167,7 +170,10 @@ class StringField(object):
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
             mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
-                u"type": u"completion",
+                u"type": u"{doc_tyoe}__{field_name}_completion".format(
+                    doc_type=self.doc_type,
+                    field_name=self.name
+                ),
                 u"analyzer": u"simple_whitespace",
                 u"payloads": True,
                 u"preserve_separators": True,
@@ -175,6 +181,26 @@ class StringField(object):
                 u"max_input_length": 50
             }
         return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name
+            ),
+            'field_name': self.name,
+        }
 
     @classmethod
     def validate(cls, value, field_config, doc_config):
