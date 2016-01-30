@@ -138,7 +138,8 @@ class Connect(generics.CreateAPIView):
                 if 'api_key' in data:
                     # api_access = Document.objects.get('api_access', id=data['api_key'], get_logical=True)
                     api_secret_db = app['site']['api_access']['secret']
-                    if api_secret_db != data.get('secret', ''):
+                    logger.debug(u'Connect :: api_secret_db: {}'.format(api_secret_db))
+                    if api_secret_db != data.get('api_secret', ''):
                         # display error
                         raise exceptions.XimpiaAPIException(_(
                             u'Secret does not match API access'
@@ -163,7 +164,7 @@ class Connect(generics.CreateAPIView):
             }
             user = authenticate(**auth_data)
             if user:
-                # print u'Connect :: logging in...'
+                logger.info(u'Connect :: logging in...')
                 login(request, user)
                 return Response({
                     'status': 'ok',
@@ -171,11 +172,13 @@ class Connect(generics.CreateAPIView):
                     'token': user.document['token']['key']
                 })
             else:
-                # print u'Connect :: doing signup...'
+                logger.info(u'Connect :: doing signup...')
                 # signup
                 groups = Document.objects.filter('group',
-                                                 slug__raw__in=settings.DEFAULT_GROUPS_NORMAL_USER,
-                                                 get_logical=True)
+                                                 **{
+                                                     'group__slug__v1.raw__v1': settings.DEFAULT_GROUPS_NORMAL_USER,
+                                                     'get_logical': True
+                                                 })
                 user_raw = get_resource(
                     request,
                     reverse('signup'),
@@ -189,13 +192,17 @@ class Connect(generics.CreateAPIView):
                         u'site': site_slug
                     }
                 )
-                user = json.loads(user_raw.content)
-                # print u'Connect :: user: {}'.format(user)
-                return Response({
-                    'status': 'ok',
-                    'action': 'signup',
-                    'token': user['token']['key']
-                })
+                try:
+                    user = json.loads(user_raw.content)
+                    logger.info(u'Connect :: user: {}'.format(user))
+                    return Response({
+                        'status': 'ok',
+                        'action': 'signup',
+                        'token': user['token']['key']
+                    })
+                except ValueError as e:
+                    raise exceptions.XimpiaAPIException(e.message)
+
         except (exceptions.XimpiaAPIException, exceptions.DocumentNotFound) as e:
             import traceback
             # print traceback.print_exc()
@@ -371,6 +378,7 @@ class UserSignup(generics.CreateAPIView):
                 es_response.get('_id', '')
             ))
         refresh_index(index_name)
+        refresh_index(index_name_ximpia)
         # authenticate and login user
         auth_data = {
             u'access_token': data['access_token'],

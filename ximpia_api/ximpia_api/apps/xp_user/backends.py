@@ -81,63 +81,68 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                                                         access_token=access_token,
                                                                         social_app_id=social_app_id,
                                                                         social_app_secret=social_app_secret)
+            logger.info(u'authenticate :: social_data: {}'.format(social_data))
         except exceptions.XimpiaAPIException:
             raise
 
         # 2. Check user_id exists for provider
+        query = {
+            'query': {
+                'filtered': {
+                    'query': {
+                        'bool': {
+                            'must': [
+                                {
+                                    "nested": {
+                                        "path": "user__social_networks__v1",
+                                        "filter": {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "user__social_networks__v1."
+                                                            "user__social_networks__user_id__v1":
+                                                                social_data.get('user_id', '')
+                                                        }
+                                                    },
+                                                    {
+                                                        "term": {
+                                                            "user__social_networks__v1."
+                                                            "user__social_networks__network__v1": provider
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "filter": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "term": {
+                                        "app__v1.app__id": app_id
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        logger.info(u'query: {}'.format(query))
         es_response = get_es_response(
             req_session.get(
                 '{host}/{index}/user/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
                     index=settings.SITE_BASE_INDEX),
-                data=json.dumps({
-                    'query': {
-                        'filtered': {
-                            'query': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            "nested": {
-                                                "path": "user__social_networks__v1",
-                                                "filter": {
-                                                    "bool": {
-                                                        "must": [
-                                                            {
-                                                                "term": {
-                                                                    "user__social_networks__v1.user__social_networks__user_id__v1":
-                                                                        social_data.get('user_id', '')
-                                                                }
-                                                            },
-                                                            {
-                                                                "term": {
-                                                                    "user__social_networks__v1.user__social_networks__network__v1": provider
-                                                                }
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            },
-                            "filter": {
-                                "bool": {
-                                    "must": [
-                                        {
-                                            "term": {
-                                                "app__v1.app__id": app_id
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                })
+                data=json.dumps(query)
             )
         )
-        # print u'authenticate :: users: {}'.format(es_response)
+        logger.info(u'authenticate :: users: {}'.format(es_response))
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]

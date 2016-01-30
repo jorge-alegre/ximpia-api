@@ -73,9 +73,10 @@ def walk(node, **kwargs):
                                             fields_version)[0].split('__')[-1][1:])
             # print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
+            # logger.debug(u'walk :: field: {} target_version: {} item: {}'.format(field, target_version, item))
             if isinstance(item, dict):
                 data[field] = walk(item, **kwargs)
-            elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):
+            elif item and isinstance(item, (list, tuple)) and isinstance(item[0], dict):
                 data[field] = map(lambda x: walk(x, **kwargs), item)
             else:
                 data[field] = item
@@ -544,11 +545,18 @@ class DocumentManager(object):
             # logger.debug(u'Document.filter :: field_name: {}'.format(field_name))
 
             # filter_data[field_name] = value
-            query_items.append({
-                'term': {
-                    field: value
-                }
-            })
+            if isinstance(value, (list, tuple)):
+                query_items.append({
+                    'terms': {
+                        field: value
+                    }
+                })
+            else:
+                query_items.append({
+                    'term': {
+                        field: value
+                    }
+                })
 
         # print u'filter_data: {}'.format(filter_data)
         query_dsl = {
