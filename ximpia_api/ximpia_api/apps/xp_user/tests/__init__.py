@@ -130,28 +130,12 @@ class Signup(XimpiaTestCase):
                                            'site__slug__v1.raw__v1': 'ximpia-api',
                                            'get_logical': True
                                        })[0]
-        logger.debug(u'signup_ximpia_user :: site: {}'.format(site))
         # get groups
         groups = Document.objects.filter('group',
                                          **{
                                              'site__slug__v1.raw__v1': settings.DEFAULT_GROUPS,
                                              'get_logical': True
                                          })
-        logger.debug(u'signup_ximpia_user :: groups: {}'.format(groups))
-
-        """user_raw = get_resource(
-                    request,
-                    reverse('signup'),
-                    'post',
-                    data={
-                        u'access_token': access_token,
-                        u'social_network': provider,
-                        u'groups': groups,
-                        u'api_key': app['site']['api_access']['key'],
-                        u'api_secret': app['site']['api_access']['secret'],
-                        u'site': site_slug
-                    }
-                )"""
 
         response = self.c.post(
             reverse('signup'),
