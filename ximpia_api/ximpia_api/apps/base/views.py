@@ -474,7 +474,7 @@ class SetupSite(generics.CreateAPIView):
         import os
         from django.conf import settings
         data = json.loads(request.body)
-        print
+        # print
         # print u'SetupSite :: request META: {}'.format(request.META)
         site = request.META.get('HTTP_HOST', data.get('site', None))
         # print u'SetupSite :: site: {}'.format(site)

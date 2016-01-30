@@ -130,7 +130,7 @@ class Command(BaseCommand):
             es_response
         ))
 
-        if 'verbosity' in options and options['verbosity'] != '0':
+        if 'verbosity' in options and options['verbosity'] == 2:
             self.stdout.write(u'created index {} response: {}'.format(
                 index_name,
                 es_response
