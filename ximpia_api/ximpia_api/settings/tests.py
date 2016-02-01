@@ -64,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'base.middleware.XimpiaUrlsMiddleware',
+    'base.middleware.XimpiaRequestMiddleware',
 )
 
 REST_FRAMEWORK = {

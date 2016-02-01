@@ -219,7 +219,7 @@ class XimpiaDiscoverRunner(DiscoverRunner):
             content_type="application/json"
         )
         if response.status_code != 200:
-            raise exceptions.XimpiaAPIException(u'Error creating My Site')
+            raise exceptions.XimpiaAPIException(u'Error creating My Site :: {}'.format(response.content))
         # Update facebook app ids to My Site
         response_data = json.loads(response.content)
         # print u'response_data app: {}'.format(response_data['app'])
