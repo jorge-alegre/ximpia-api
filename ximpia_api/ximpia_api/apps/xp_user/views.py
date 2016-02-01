@@ -173,7 +173,8 @@ class Connect(generics.CreateAPIView):
                 return Response({
                     'status': 'ok',
                     'action': 'login',
-                    'token': user.document['token']['key']
+                    'token': user.document['token']['key'],
+                    'id': user.id,
                 })
             else:
                 logger.info(u'Connect :: doing signup...')
@@ -202,7 +203,8 @@ class Connect(generics.CreateAPIView):
                     return Response({
                         'status': 'ok',
                         'action': 'signup',
-                        'token': user['token']['key']
+                        'token': user['token']['key'],
+                        'id': user['id'],
                     })
                 except ValueError as e:
                     raise exceptions.XimpiaAPIException(e.message)

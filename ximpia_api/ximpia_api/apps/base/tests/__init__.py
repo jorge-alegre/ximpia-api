@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import time
+import logging
 
 from requests.adapters import HTTPAdapter
 
@@ -18,6 +19,8 @@ __author__ = 'jorgealegre'
 
 req_session = requests.Session()
 req_session.mount('https://graph.facebook.com', HTTPAdapter(max_retries=3))
+
+logger = logging.getLogger(__name__)
 
 
 def create_fb_test_user(app_access_token=None, facebook_app_id=None):
@@ -298,6 +301,9 @@ class XimpiaDiscoverRunner(DiscoverRunner):
         call_command('create_fb_test_users', feature='registration_my_site', size=5,
                      app_access_token='991722957558076|si3sICvrZPEYsSnQawdYwsD1JRE',
                      facebook_app_id='991722957558076')
+        call_command('create_fb_test_users', feature='my_site_admin', size=1,
+                     app_access_token='991722957558076|si3sICvrZPEYsSnQawdYwsD1JRE',
+                     facebook_app_id='991722957558076')
 
     def setup_test_environment(self, **kwargs):
         """
@@ -401,7 +407,8 @@ class XimpiaTestCase(SimpleTestCase):
         self.c = Client()
         self.req_factory = RequestFactory()
 
-    def connect_user(self, site='my-site', user='registration_my_site', provider='facebook'):
+    def connect_user(self, site='my-site', user='registration_my_site', provider='facebook',
+                     is_admin=False):
         """
         Connect user, either signup or login
 
@@ -410,7 +417,9 @@ class XimpiaTestCase(SimpleTestCase):
         :param provider:
         :return:
         """
-        from document import Document
+        from document import Document, to_logical_doc
+        from datetime import datetime
+        index_name = '{}__base'.format(site)
         site = Document.objects.filter('site',
                                        **{
                                            'site__slug__v1.raw__v1': site,
@@ -428,13 +437,63 @@ class XimpiaTestCase(SimpleTestCase):
             content_type="application/json"
         )
         response_data = json.loads(response.content)
-        # logger.debug(u'StringFieldTest.test_string :: response: {}'.format(response_data))
+        logger.debug(u'connect_user :: response: {}'.format(response_data))
         is_login = self.c.login(**{
             'access_token': get_fb_test_user_local('admin')['access_token'],
             'provider': 'facebook',
         })
         if not is_login:
             raise exceptions.XimpiaAPIException(u'Connected user and login is not verified')
+        if is_admin:
+            group = 'admin'
+            user = Document.objects.get('user', id=response_data['id'])
+            logger.debug(u'connect_user :: user: {}'.format(user))
+            group_data = Document.objects.filter('group', **{
+                'group__name__v1': group,
+                'get_logical': True
+            })[0]
+            logger.debug(u'connect_user :: group_data: {}'.format(group_data))
+            if not filter(lambda x: x['group__name__v1'] == 'admin', user[u'groups__v1']):
+                logger.info(u'connect_user :: admin not attached to user, link user to admin group')
+                user[u'groups__v1'].append(
+                    {
+                        u'group__id': group_data['id'],
+                        u'group__name__v1': group_data['name']
+                    }
+                )
+                es_response_raw = requests.put(
+                    '{}/{}/user/{}'.format(settings.ELASTIC_SEARCH_HOST, 'ximpia-api__base', response_data['id']),
+                    data=json.dumps(user))
+                es_response = es_response_raw.json()
+                logger.debug(u'connect_user :: response user update: {}'.format(es_response))
+                user_data_logical = to_logical_doc('user', user)
+                user_data_logical['id'] = response_data['id']
+                logger.debug(u'connect_user :: user_data_logical: {}'.format(user_data_logical))
+                now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                es_response_raw = requests.post(
+                    '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                    data=json.dumps({
+                        u'user__v1': {
+                            u'user__id': user_data_logical[u'id'],
+                            u'user__username__v1': user_data_logical[u'username'],
+                            u'user__email__v1': user_data_logical[u'email'],
+                            u'user__avatar__v1': user_data_logical[u'avatar'],
+                            u'user__user_name__v1': user_data_logical[u'user_name'],
+                            u'user__social_networks__v1': user_data_logical[u'social_networks'],
+                            u'user__permissions__v1': user_data_logical[u'permissions'],
+                            u'user__created_on__v1': user_data_logical[u'created_on'],
+                        },
+                        u'group__v1': {
+                            u'group__id': group_data[u'id'],
+                            u'group__name__v1': group_data[u'name'],
+                            u'group__slug__v1': group_data[u'slug'],
+                            u'group__tags__v1': group_data[u'tags'],
+                            u'group__created_on__v1': group_data[u'created_on']
+                        },
+                        u'user-group__created_on__v1': now_es,
+                    }))
+                es_response = es_response_raw.json()
+                refresh_index(index_name)
         self.assertTrue(response_data['status'].lower() == 'ok')
         self.assertTrue(u'_auth_user_id' in self.c.session.keys())
         return response_data

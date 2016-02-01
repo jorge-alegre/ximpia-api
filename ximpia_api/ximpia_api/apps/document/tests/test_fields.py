@@ -25,8 +25,7 @@ class StringFieldTest(XimpiaTestCase):
         print
         print
         print
-        # user_signup_data = self.connect_user(user='admin')
-        user = self.connect_user()
+        user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
         doc_string = json.loads(doc_string_str)
@@ -35,9 +34,6 @@ class StringFieldTest(XimpiaTestCase):
                     kwargs={'doc_type': 'test-string-field'}) + '?access_token={}'.format(user['token']),
             json.dumps(doc_string),
             content_type="application/json",
-            headers={
-                'Authorization: ': user['token']
-            }
         )
         response_data = json.loads(response.content)
         logger.debug(u'test_string:: create document: {}'.format(response_data))

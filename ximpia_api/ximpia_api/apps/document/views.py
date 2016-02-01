@@ -579,7 +579,9 @@ class DocumentDefinition(viewsets.ModelViewSet):
         if not request.user or (request.user and not request.user.id):
             raise exceptions.XimpiaAPIException(_(u'User needs to be authenticated'))
         user = request.user
+        logger.debug(u'DocumentDefinition.create :: request.user: {}'.format(user))
         groups = user.document['groups']
+        logger.debug(u'DocumentDefinition.create :: groups: {}'.format(groups))
         admin_groups = filter(lambda x: x['name'] == 'admin', groups)
         if not admin_groups:
             raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
