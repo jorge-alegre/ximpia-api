@@ -454,11 +454,11 @@ class DocumentDefinition(viewsets.ModelViewSet):
                 for choice_name in input_document_request['_meta']['choices']:
                     request_list = input_document_request['_meta']['choices'][choice_name]
                     choice_list = []
-                    for choice_item in request_list:
+                    for choice_items in request_list:
                         choice_list.append(
                             {
-                                'name': input_document_request['_meta']['choices'][choice_item][0],
-                                'value': input_document_request['_meta']['choices'][choice_item][1]
+                                'name': choice_items[0],
+                                'value': choice_items[1]
                             }
                         )
                     input_document['_meta']['choices'].append(
@@ -466,7 +466,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             'choice_name': choice_list
                         }
                     )
-            if doc_field == 'messages':
+            elif doc_field == 'messages':
                 input_document['_meta']['messages'] = []
                 for message_name in input_document_request['_meta']['messages']:
                     input_document['_meta']['messages'].append(
@@ -475,7 +475,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             'value': input_document_request['_meta']['messages'][message_name]
                         }
                     )
-            if doc_field == 'validations':
+            elif doc_field == 'validations':
                 # We need to generate from pattern class
                 # So far, exists, not-exists have same structure
                 input_document['_meta']['validations'] = []
@@ -505,6 +505,9 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
                 input_document[field] = field_data
+        import pprint
+        logger.info(u'_generate_input_document :: document definition mapping: {}'.format(
+            pprint.PrettyPrinter(indent=4).pprint(input_document)))
         return input_document
 
     def create(self, request, *args, **kwargs):

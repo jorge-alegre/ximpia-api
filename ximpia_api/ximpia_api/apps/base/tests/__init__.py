@@ -494,6 +494,7 @@ class XimpiaTestCase(SimpleTestCase):
                     }))
                 es_response = es_response_raw.json()
                 refresh_index(index_name)
+                refresh_index('ximpia-api__base')
         self.assertTrue(response_data['status'].lower() == 'ok')
         self.assertTrue(u'_auth_user_id' in self.c.session.keys())
         return response_data
