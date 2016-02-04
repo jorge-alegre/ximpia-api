@@ -3,6 +3,7 @@ from requests.adapters import HTTPAdapter
 import json
 import logging
 from datetime import datetime
+import pprint
 
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
@@ -475,6 +476,22 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             'value': input_document_request['_meta']['messages'][message_name]
                         }
                     )
+            elif doc_field == 'tag':
+                tag_name = input_document_request['_meta']['tag']
+                tag = Document.objects.filter('tag',
+                                              **{
+                                                  'tag__slug__v1.raw__v1': tag_name
+                                              })[0]
+                input_document['_meta']['tag'] = tag['_source']
+                input_document['_meta']['tag']['tag__id'] = tag['_id']
+            elif doc_field == 'branch':
+                branch_name = input_document_request['_meta']['branch']
+                branch = Document.objects.filter('branch',
+                                                 **{
+                                                     'branch__slug__v1.raw__v1': branch_name
+                                                 })[0]
+                input_document['_meta']['branch'] = branch['_source']
+                input_document['_meta']['branch']['branch__id'] = branch['_id']
             elif doc_field == 'validations':
                 # We need to generate from pattern class
                 # So far, exists, not-exists have same structure
@@ -505,9 +522,6 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
                 input_document[field] = field_data
-        import pprint
-        logger.info(u'_generate_input_document :: document definition mapping: {}'.format(
-            pprint.PrettyPrinter(indent=4).pprint(input_document)))
         return input_document
 
     def create(self, request, *args, **kwargs):
@@ -568,13 +582,16 @@ class DocumentDefinition(viewsets.ModelViewSet):
         print
         print
         logger.debug(u'DocumentDefinition.create ...')
+        logger.debug(u'DocumentDefinition.create :: REQUEST: {}'.format(request.REQUEST))
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         if len(kwargs) == 0:
             raise exceptions.XimpiaAPIException(_(u'No document type sent'))
         doc_type = kwargs['doc_type']
+        logger.debug(u'DocumentDefinition.create :: doc_type: {}'.format(doc_type))
         # resolve index based on request host for site
         site_slug = get_site(request)
         index = '{}__base'.format(site_slug)
+        logger.debug(u'DocumentDefinition.create :: index: {}'.format(index))
         ###############
         # validations
         ###############
@@ -592,6 +609,8 @@ class DocumentDefinition(viewsets.ModelViewSet):
         document_definition_input = self._generate_input_document(
             json.loads(request.body), doc_type
         )
+        logger.info(u'DocumentDefinition.create :: document_definition_input: {}'.format(
+            pprint.PrettyPrinter(indent=4).pformat(document_definition_input)))
         if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
             tag = settings.DEFAULT_VERSION
         else:
@@ -627,10 +646,14 @@ class DocumentDefinition(viewsets.ModelViewSet):
                 doc_type=doc_type
             )
         )
-        if es_response_raw.status_code in [200, 201]:
-            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        existing_mapping = es_response_raw.json()
+        if existing_mapping:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists :: {}'.format(
+                existing_mapping
+            )))
         # Check no fields for doc type
-        logger.debug(u'DocumentDefinition.create :: mapping created: {}'.format(es_response_raw.content))
+        logger.debug(u'DocumentDefinition.create :: mapping in ES: {}'.format(es_response_raw.content))
+
         bulk_queries.append(
             (json.dumps(
                 {
@@ -672,10 +695,12 @@ class DocumentDefinition(viewsets.ModelViewSet):
             )
             )
         )
+        print ''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
         es_response_raw = requests.get(
-            '{host}/_msearch',
-            data=json.dumps(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]),
-                                bulk_queries))
+            '{host}/_msearch'.format(
+                host=settings.ELASTIC_SEARCH_HOST
+            ),
+            data=''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition.create :: response validations: {}'.format(
@@ -686,7 +711,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
         if responses[1]['hits']['total'] > 0:
             raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
-        if responses[1]['hits']['total'] == 0:
+        if responses[2]['hits']['total'] == 0:
             raise exceptions.XimpiaAPIException(_(u'Tag does not exist'))
         ##################
         # End validations
@@ -713,9 +738,6 @@ class DocumentDefinition(viewsets.ModelViewSet):
                 '_timestamp': {
                     "enabled": True
                 },
-                '_all': {
-                    "enabled": False
-                },
                 "properties": {
                 }
             }
@@ -724,33 +746,37 @@ class DocumentDefinition(viewsets.ModelViewSet):
         for field_name in document_definition_input.keys():
             if field_name == '_meta':
                 continue
+
             instance_data = document_definition_input[field_name]
-            # Instantiate field class based on type
-            instance = __import__('document.fields')
+            module = 'document.fields'
+            instance = __import__(module)
+            for comp in module.split('.')[1:]:
+                instance = getattr(instance, comp)
+            logger.debug(u'DocumentDefinition.create :: instance: {} {}'.format(instance,
+                                                                                dir(instance)))
             field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+            logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
             instance_data['name'] = field_name
             instance_data['doc_type'] = doc_type
             field_instance = field_class(**instance_data)
             field_items = field_instance.get_field_items()
-            field_mapping = field_instance.make_mapping(doc_type)
+            field_mapping = field_instance.make_mapping()
             doc_mapping[doc_type]['properties'].update(field_mapping)
-            bulk_header = '{ "create": { "_index": "' + index + '", "_type": "' + doc_type + '"} }\n'
+            bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
             # Note: field__v1 would need to be generated by fields, since changes for links, string fields, etc...
             bulk_data = json.dumps(
                 {
-                    {
-                        'field-version__doc_type__v1': doc_type,
-                        'field-version__field__v1': field_items['field'],
-                        'field-version__field_name__v1': field_items['field_name'],
-                        'field-version__version__v1': 'v1',
-                        'tag__v1': db_document_definition['tag'],
-                        'branch__v1': db_document_definition['branch'],
-                        'field-version__is_active__v1': True,
-                        'field-version__created_on__v1': now_es,
-                        'field-version__created_by__v1': {
-                            'field-version__created_by__id': user.id,
-                            'field-version__created_by__user_name__v1': user.username
-                        }
+                    'field-version__doc_type__v1': doc_type,
+                    'field-version__field__v1': field_items['field'],
+                    'field-version__field_name__v1': field_items['field_name'],
+                    'field-version__version__v1': 'v1',
+                    'tag__v1': db_document_definition['tag'],
+                    'branch__v1': db_document_definition.get('branch', None),
+                    'field-version__is_active__v1': True,
+                    'field-version__created_on__v1': now_es,
+                    'field-version__created_by__v1': {
+                        'field-version__created_by__id': user.id,
+                        'field-version__created_by__user_name__v1': user.username
                     }
                 }
             ) + '\n'
@@ -777,9 +803,12 @@ class DocumentDefinition(viewsets.ModelViewSet):
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(
             es_response
         ))
+        if 'errors' in es_response and es_response['errors']:
+            raise exceptions.XimpiaAPIException(u'Error creating document definition')
         # Bulk insert for all fields
+        print fields_version_str
         es_response_raw = requests.post(
-            '{host}/_bulk',
+            '{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
             data=fields_version_str,
             headers={'Content-Type': 'application/octet-stream'},
         )
@@ -787,7 +816,12 @@ class DocumentDefinition(viewsets.ModelViewSet):
         logger.info(u'DocumentDefinition.create :: response create field versions: {}'.format(
             es_response
         ))
+        if 'errors' in es_response and es_response['errors']:
+            raise exceptions.XimpiaAPIException(u'Error creating fields')
         # Create mapping
+        logger.debug(u'DocumentDefinition.create :: mappings: {}'.format(
+            pprint.PrettyPrinter(indent=4).pformat(doc_mapping)
+        ))
         es_response_raw = requests.put(
             '{host}/{index}/_mapping/{doc_type}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
@@ -798,7 +832,9 @@ class DocumentDefinition(viewsets.ModelViewSet):
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition.create :: response put mapping: {}'.format(es_response))
-        return document_definition_input
+        if 'error' in es_response and es_response['error']:
+            raise exceptions.XimpiaAPIException(u'Error in saving mappings')
+        return Response(document_definition_input)
 
     def update(self, request, *args, **kwargs):
         pass

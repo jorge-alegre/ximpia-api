@@ -393,6 +393,8 @@ def get_site(request):
     host = request.META.get('HTTP_HOST', None)
     if 'site' in data:
         return data['site']
+    elif 'site' in request.REQUEST:
+        return request.REQUEST['site']
     elif host:
         site_slug = host.split('.' + settings.XIMPIA_DOMAIN)[0]
         return site_slug

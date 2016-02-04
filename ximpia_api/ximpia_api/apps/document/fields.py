@@ -1,3 +1,4 @@
+import logging
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -7,6 +8,8 @@ from base import exceptions
 from document import Document
 
 __author__ = 'jorgealegre'
+
+logger = logging.getLogger(__name__)
 
 
 u"""
@@ -91,6 +94,10 @@ class StringField(object):
         u'display_name',
         u'max_length',
         u'min_length',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'validations',
     }
 
     name = None
@@ -105,6 +112,7 @@ class StringField(object):
     validations = None
     is_autocomplete = None
     doc_type = None
+    type = None
 
     def __init__(self, **kwargs):
         """
@@ -127,13 +135,19 @@ class StringField(object):
         * Have in mind we will not use directly in code, like Django model
         * We would create/update document_definition document with configuration, validations, etc...
 
+        {u'type': u'string', u'display_name': u'Status', u'hint': u'Customer status',
+        u'comment': u'This is the customer status before purchasing', u'max_length': 30,
+        u'choices': {u'name': u'customer_status', u'default': u'created'}, 'name': u'status',
+        'doc_type': u'test-string-field'}
+
         :param args:
         :param kwargs:
         :return:
         """
-        not_validated_field = filter(lambda x: x not in self.allowed_attributes, kwargs)
-        if not_validated_field:
-            raise exceptions.XimpiaAPIException(_(u''))
+        logger.debug(u'StringField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
         for attr_name in kwargs:
             setattr(self, attr_name, kwargs[attr_name])
 
@@ -146,8 +160,8 @@ class StringField(object):
         # We could set analyzer. Default analyzer??? International chars???
         # How we set version fields??? We get field versions for name
         mappings = {
-            u'{}__{}'.format(
-                self.name, version
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, version
             ): {
                 u'type': u'string',
                 u'fields': {
@@ -164,8 +178,6 @@ class StringField(object):
                 }
             }
         }
-        if self.default:
-            mappings[u'null_value'] = self.default
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:

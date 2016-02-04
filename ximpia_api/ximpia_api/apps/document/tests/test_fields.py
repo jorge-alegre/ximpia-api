@@ -29,9 +29,13 @@ class StringFieldTest(XimpiaTestCase):
         with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
         doc_string = json.loads(doc_string_str)
+        request_attributes = '?access_token={access_token}&site={site}'.format(
+            access_token=user['token'],
+            site='my-site'
+        )
         response = self.c.post(
             reverse('document-definition',
-                    kwargs={'doc_type': 'test-string-field'}) + '?access_token={}'.format(user['token']),
+                    kwargs={'doc_type': 'test-string-field'}) + request_attributes,
             json.dumps(doc_string),
             content_type="application/json",
         )
