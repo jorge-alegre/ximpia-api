@@ -25,9 +25,6 @@ class StringFieldTest(XimpiaTestCase):
         pass
 
     def test_string(self):
-        print
-        print
-        print
         user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
