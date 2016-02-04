@@ -517,7 +517,7 @@ class DocumentManager(object):
             del kwargs['get_logical']
         index = None
         if 'index' in kwargs:
-            index = kwargs.pop('es_path')
+            index = kwargs.pop('index')
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:

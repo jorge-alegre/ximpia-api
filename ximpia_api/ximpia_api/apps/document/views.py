@@ -800,6 +800,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
             )
         )
         es_response = es_response_raw.json()
+        document_created = es_response
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(
             es_response
         ))
@@ -834,7 +835,11 @@ class DocumentDefinition(viewsets.ModelViewSet):
         logger.info(u'DocumentDefinition.create :: response put mapping: {}'.format(es_response))
         if 'error' in es_response and es_response['error']:
             raise exceptions.XimpiaAPIException(u'Error in saving mappings')
-        return Response(document_definition_input)
+        # output document
+        output_document = json.loads(request.body)
+        output_document['_id'] = document_created['_id']
+        output_document['_version'] = document_created['_version']
+        return Response(output_document)
 
     def update(self, request, *args, **kwargs):
         pass
