@@ -578,9 +578,6 @@ class DocumentDefinition(viewsets.ModelViewSet):
         :param kwargs:
         :return:
         """
-        print
-        print
-        print
         logger.debug(u'DocumentDefinition.create ...')
         logger.debug(u'DocumentDefinition.create :: REQUEST: {}'.format(request.REQUEST))
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
@@ -695,7 +692,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
             )
             )
         )
-        print ''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
+        # print ''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
         es_response_raw = requests.get(
             '{host}/_msearch'.format(
                 host=settings.ELASTIC_SEARCH_HOST
@@ -807,7 +804,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
         if 'errors' in es_response and es_response['errors']:
             raise exceptions.XimpiaAPIException(u'Error creating document definition')
         # Bulk insert for all fields
-        print fields_version_str
+        # print fields_version_str
         es_response_raw = requests.post(
             '{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
             data=fields_version_str,
