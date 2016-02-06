@@ -8,15 +8,15 @@
       "enabled": false
     },
     "properties": {
-      "session_key__v1": {
+      "session__key__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "session_data__v1": {
+      "session__data__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "expire_date__v1": {
+      "session__expire_date__v1": {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

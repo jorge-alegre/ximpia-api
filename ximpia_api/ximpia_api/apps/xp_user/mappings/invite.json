@@ -8,16 +8,16 @@
       "enabled": false
     },
     "properties": {
-      "user__v1": {
+      "invite__user__v1": {
         "properties": {
-          "id__v1": {
+          "invite__user__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "name__v1": {
+          "invite__user__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "invite__user__name__v1": {
                 "type": "string",
                 "term_vector" : "with_positions_offsets",
                 "analyzer" : "snowball",
@@ -27,26 +27,26 @@
           }
         }
       },
-      "group__v1": {
+      "invite__group__v1": {
         "properties": {
-          "id__v1": {
+          "invite__group__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "name__v1": {
+          "invite__group__name__v1": {
             "type": "string"
           }
         }
       },
-      "status": {
+      "invite__status__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "consumed_on__v1": {
+      "invite__consumed_on__v1": {
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "created_on__v1" : {
+      "invite__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

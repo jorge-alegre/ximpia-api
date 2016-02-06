@@ -10,14 +10,14 @@
     "properties": {
       "user__v1": {
         "properties": {
-          "id__v1": {
+          "user__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "username__v1": {
+          "user__username__v1": {
             "type": "string",
             "fields": {
-              "completion__v1": {
+              "user__username_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": false,
@@ -25,26 +25,26 @@
                 "preserve_position_increments": true,
                 "max_input_length": 50
               },
-              "username__v1": {
+              "user__username__v1": {
                 "type": "string",
                 "index": "not_analyzed",
                 "copy_to": "text__v1"
               }
             }
           },
-          "email__v1": {
+          "user__email__v1": {
             "type": "string",
             "analyzer": "email_analyzer",
             "copy_to": "text__v1"
           },
-          "avatar__v1": {
+          "user__avatar__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "user_name__v1": {
+          "user__user_name__v1": {
             "type": "string",
             "fields": {
-              "completion__v1": {
+              "user__user_name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": false,
@@ -52,7 +52,7 @@
                 "preserve_position_increments": true,
                 "max_input_length": 50
               },
-              "user_name__v1": {
+              "user__user_name__v1": {
                 "type": "string",
                 "term_vector" : "with_positions_offsets",
                 "analyzer" : "snowball",
@@ -60,46 +60,45 @@
               }
             }
           },
-          "social_networks__v1": {
+          "user__social_networks__v1": {
             "type": "nested",
               "include_in_parent": true,
               "dynamic": "false",
               "properties": {
-                 "network__v1": {
+                 "user__social_networks__network__v1": {
                     "type": "string",
                     "index": "not_analyzed"
                  },
-                "user_id__v1": {
+                "user__social_networks__user_id__v1": {
                   "type": "string",
                   "index": "not_analyzed"
                 },
-                "access_token__v1": {
+                "user__social_networks__access_token__v1": {
                   "type": "string",
                   "index": "not_analyzed"
                 },
-                "state__v1": {
+                "user__social_networks__state__v1": {
                   "type": "string",
                   "index": "not_analyzed"
                 },
-                "has_auth__v1": {
-                  "type": "boolean",
-                  "null_value": false
+                "user__social_networks__has_auth__v1": {
+                  "type": "boolean"
                 },
-                "link__v1": {
+                "user__social_networks__link__v1": {
                   "type": "string",
                   "index": "not_analyzed"
                 }
               }
           },
-          "permissions__v1": {
+          "user__social_networks__permissions__v1": {
             "type": "nested",
             "include_in_parent": true,
             "dynamic": "false",
             "properties": {
-              "name__v1": {
+              "user__social_networks__permissions__name__v1": {
                 "type": "string",
                 "fields": {
-                  "name__v1": {
+                  "user__social_networks__permissions__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -108,17 +107,17 @@
                   }
                 }
               },
-              "status__v1": {
+              "user__social_networks__permissions__status__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "created_on__v1": {
+              "user__social_networks__permissions__created_on__v1": {
                 "type" : "date",
                 "format" : "dateOptionalTime"
               }
             }
           },
-          "created_on__v1" : {
+          "user__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -126,17 +125,17 @@
       },
       "group__v1": {
         "properties": {
-          "id__v1": {
+          "group__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "group_name__v1": {
+          "group__name__v1": {
             "type": "string"
           },
-          "slug__v1": {
+          "group__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "group__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -145,23 +144,22 @@
               }
             }
           },
-          "tags__v1": {
+          "group__tags__v1": {
             "type": "nested",
             "include_in_parent": true,
             "properties": {
-              "name__v1": {
+              "group__tags__name__v1": {
                 "type": "string"
               },
-              "slug__v1": {
+              "group__tags__slug__v1": {
                 "type": "string"
               },
-              "is_hash__v1": {
-                "type": "boolean",
-                "null_value": false
+              "group__tags__is_hash__v1": {
+                "type": "boolean"
               }
             }
           },
-          "created_on__v1" : {
+          "group__created_on__v1" : {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -172,7 +170,7 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "created_on__v1" : {
+      "user-group__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

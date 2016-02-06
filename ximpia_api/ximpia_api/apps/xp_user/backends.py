@@ -58,10 +58,22 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         # print u'authenticate :: app_id: {}'.format(app_id)
         if not app_id:
             # slugify(settings.SITE)
-            app = Document.objects.filter('app',
-                                          slug__raw='base',
-                                          site__slug__raw=slugify(settings.SITE),
-                                          get_logical=True)[0]
+
+            # In queries we need whole field paths, since field names could be shared
+            # filter uses field1__field2, but these fields
+            # ::::
+            # app__slug.raw__v1='base'
+
+            app = Document.objects.filter(
+                'app',
+                **{
+                    'app__slug__v1.raw__v1': 'base',
+                    'site__v1.site__slug__v1.raw__v1': slugify(settings.SITE),
+                    'get_logical': True
+                }
+            )[0]
+
+            # logger.debug(u'authenticate :: app: {}'.format(app))
             app_id = app['id']
         try:
             social_data = SocialNetworkResolution.get_network_user_data(provider,
@@ -69,63 +81,68 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
                                                                         access_token=access_token,
                                                                         social_app_id=social_app_id,
                                                                         social_app_secret=social_app_secret)
+            logger.info(u'authenticate :: social_data: {}'.format(social_data))
         except exceptions.XimpiaAPIException:
             raise
 
         # 2. Check user_id exists for provider
+        query = {
+            'query': {
+                'filtered': {
+                    'query': {
+                        'bool': {
+                            'must': [
+                                {
+                                    "nested": {
+                                        "path": "user__social_networks__v1",
+                                        "filter": {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "user__social_networks__v1."
+                                                            "user__social_networks__user_id__v1":
+                                                                social_data.get('user_id', '')
+                                                        }
+                                                    },
+                                                    {
+                                                        "term": {
+                                                            "user__social_networks__v1."
+                                                            "user__social_networks__network__v1": provider
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "filter": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "term": {
+                                        "app__v1.app__id": app_id
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        logger.info(u'query: {}'.format(query))
         es_response = get_es_response(
             req_session.get(
                 '{host}/{index}/user/_search'.format(
                     host=settings.ELASTIC_SEARCH_HOST,
                     index=settings.SITE_BASE_INDEX),
-                data=json.dumps({
-                    'query': {
-                        'filtered': {
-                            'query': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            "nested": {
-                                                "path": "social_networks__v1",
-                                                "filter": {
-                                                    "bool": {
-                                                        "must": [
-                                                            {
-                                                                "term": {
-                                                                    "social_networks__v1.user_id__v1":
-                                                                        social_data.get('user_id', '')
-                                                                }
-                                                            },
-                                                            {
-                                                                "term": {
-                                                                    "social_networks__v1.network__v1": provider
-                                                                }
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            },
-                            "filter": {
-                                "bool": {
-                                    "must": [
-                                        {
-                                            "term": {
-                                                "app__v1.id__v1": app_id
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                })
+                data=json.dumps(query)
             )
         )
-        # print u'authenticate :: users: {}'.format(es_response)
+        logger.info(u'authenticate :: users: {}'.format(es_response))
         if es_response.get('hits', {'total': 0})['total'] == 0:
             return None
         db_data = es_response['hits']['hits'][0]
@@ -152,9 +169,9 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
             data=json.dumps(
                 {
                     u'doc': {
-                        u'token__v1': {
-                            u'key__v1': get_random_string(100, VALID_KEY_CHARS),
-                            u'created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        u'user__token__v1': {
+                            u'user__token__key__v1': get_random_string(100, VALID_KEY_CHARS),
+                            u'user__token__created_on__v1': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                         },
                     }
                 }

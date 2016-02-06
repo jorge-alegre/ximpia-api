@@ -8,10 +8,10 @@
        "enabled": false
     },
     "properties": {
-      "username__v1": {
+      "user__username__v1": {
         "type": "string",
         "fields": {
-          "completion__v1": {
+          "user__username_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": false,
@@ -19,46 +19,46 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "username__v1": {
+          "user__username__v1": {
             "type": "string",
             "index": "not_analyzed",
             "copy_to": "text__v1"
           }
         }
       },
-      "alias__v1": {
+      "user__alias__v1": {
         "type": "string",
         "fields": {
-          "alias__v1": {
+          "user__alias__v1": {
             "type": "string"
           },
-          "raw": {
+          "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "email__v1": {
+      "user__email__v1": {
         "type": "string",
         "analyzer": "email_analyzer",
         "copy_to": "text__v1"
       },
-      "password__v1": {
+      "user__password__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "avatar__v1": {
+      "user__avatar__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "invite_id__v1": {
+      "user__invite_id__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
-      "user_name__v1": {
+      "user__user_name__v1": {
         "type": "string",
         "fields": {
-          "completion__v1": {
+          "user__user_name_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": false,
@@ -66,7 +66,7 @@
             "preserve_position_increments": true,
             "max_input_length": 50
           },
-          "user_name__v1": {
+          "user__user_name__v1": {
             "type": "string",
             "term_vector" : "with_positions_offsets",
             "analyzer" : "snowball",
@@ -74,10 +74,22 @@
           }
         }
       },
-      "first_name__v1": {
+      "user__first_name__v1": {
         "type": "string",
         "fields": {
-          "first_name__v1": {
+          "user__first_name__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "user__last_name__v1": {
+        "type": "string",
+        "fields": {
+          "user__last_name__v1": {
             "type": "string"
           },
           "raw": {
@@ -86,58 +98,45 @@
           }
         }
       },
-      "last_name__v1": {
-        "type": "string",
-        "fields": {
-          "last_name__v1": {
-            "type": "string"
-          },
-          "raw": {
-            "type": "string",
-            "index": "not_analyzed"
-          }
-        }
-      },
-      "social_networks__v1": {
+      "user__social_networks__v1": {
         "type": "nested",
           "include_in_parent": true,
           "dynamic": "false",
           "properties": {
-             "network__v1": {
+             "user__social_networks__network__v1": {
                 "type": "string",
                 "index": "not_analyzed"
              },
-            "user_id__v1": {
+            "user__social_networks__user_id__v1": {
               "type": "string",
               "index": "not_analyzed"
             },
-            "access_token__v1": {
+            "user__social_networks__access_token__v1": {
               "type": "string",
               "index": "not_analyzed"
             },
-            "state__v1": {
+            "user__social_networks__state__v1": {
               "type": "string",
               "index": "not_analyzed"
             },
-            "has_auth__v1": {
-              "type": "boolean",
-              "null_value": false
+            "user__social_networks__has_auth__v1": {
+              "type": "boolean"
             },
-            "link__v1": {
+            "user__social_networks__link__v1": {
               "type": "string",
               "index": "not_analyzed"
             }
           }
       },
-      "user_permissions__v1": {
+      "user__permissions__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name__v1": {
+          "user__permissions__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "user__permissions__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -146,11 +145,11 @@
               }
             }
           },
-          "status__v1": {
+          "user__permissions__status__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "created_on__v1": {
+          "user__permissions__created_on__v1": {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
@@ -161,11 +160,11 @@
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "id__v1": {
+          "group__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "name__v1": {
+          "group__name__v1": {
             "type": "string",
             "copy_to": "text__v1"
           }
@@ -176,41 +175,41 @@
         "term_vector" : "with_positions_offsets",
         "analyzer" : "snowball"
       },
-      "is_active__v1": {
+      "user__is_active__v1": {
         "type": "boolean"
       },
-      "token__v1": {
+      "user__token__v1": {
         "type": "object",
         "properties": {
-          "key__v1": {
+          "user__token__key__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "created_on__v1": {
+          "user__token__created_on__v1": {
             "type" : "date",
             "format" : "dateOptionalTime"
           }
         }
       },
-      "expires_at__v1": {
+      "user__expires_at__v1": {
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "session_id__v1": {
+      "user__session_id__v1": {
         "type": "string",
         "index": "not_analyzed"
       },
       "app__v1": {
         "type": "object",
         "properties": {
-          "id__v1": {
+          "app__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "slug__v1": {
+          "app__slug__v1": {
             "type": "string",
             "fields": {
-              "slug__v1": {
+              "app__slug__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -219,13 +218,13 @@
               }
             }
           },
-          "name__v1": {
+          "app__name__v1": {
             "type": "string",
             "fields": {
-              "name__v1": {
+              "app__name__v1": {
                 "type": "string"
               },
-              "completion__v1": {
+              "app__name_completion__v1": {
                 "type": "completion",
                 "analyzer": "simple_whitespace",
                 "payloads": true,
@@ -236,15 +235,16 @@
             }
           },
           "site__v1": {
+            "type": "object",
             "properties": {
-              "id__v1": {
+              "site__id": {
                 "type": "string",
                 "index": "not_analyzed"
               },
-              "slug__v1": {
+              "site__slug__v1": {
                 "type": "string",
                 "fields": {
-                  "slug__v1": {
+                  "site__slug__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -253,13 +253,13 @@
                   }
                 }
               },
-              "name__v1": {
+              "site__name__v1": {
                 "type": "string",
                 "fields": {
-                  "name__v1": {
+                  "site__name__v1": {
                     "type": "string"
                   },
-                  "completion__v1": {
+                  "site__name_completion__v1": {
                     "type": "completion",
                     "analyzer": "simple_whitespace",
                     "payloads": true,
@@ -273,7 +273,7 @@
           }
         }
       },
-      "created_on__v1" : {
+      "user__created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

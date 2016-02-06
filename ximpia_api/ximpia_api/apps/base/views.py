@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse
 from . import SocialNetworkResolution
 import exceptions
 
-from document import to_physical_doc, to_logical_doc, Document
+from document import to_physical_doc, to_logical_doc, Document, save_field_versions_from_mapping
 from base import refresh_index, get_resource
 
 __author__ = 'jorgealegre'
@@ -90,11 +90,14 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/tag.json'.format(document_path)) as f:
             tag_dict = json.loads(f.read())
 
-        with open('{}/field_version.json'.format(document_path)) as f:
+        with open('{}/field-version.json'.format(document_path)) as f:
             field_version_dict = json.loads(f.read())
 
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
+
+        with open('{}/document-definition.json'.format(document_path)) as f:
+            document_definition_dict = json.loads(f.read())
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
@@ -108,9 +111,10 @@ class SetupSite(generics.CreateAPIView):
                                                 'user-group': user_group_dict,
                                                 'permission': permissions_dict,
                                                 'tag': tag_dict,
-                                                'field_version': field_version_dict,
+                                                'field-version': field_version_dict,
                                                 'invite': invite_dict,
                                                 'session': session_dict,
+                                                'document-definition': document_definition_dict,
                                             },
                                             'aliases': {
                                                 alias: {}
@@ -148,7 +152,10 @@ class SetupSite(generics.CreateAPIView):
         # generate api access key
         counter = 0
         api_access_key = get_random_string(32, VALID_KEY_CHARS)
-        while Document.objects.filter('site', api_access__api_key=api_access_key):
+        while Document.objects.filter(
+                'site', **{''
+                           'site__api_access__v1.site__api_access__key__v1': api_access_key
+                           }):
             api_access_key = get_random_string(32, VALID_KEY_CHARS)
             if counter > 10:
                 raise exceptions.XimpiaAPIException(_(
@@ -156,25 +163,25 @@ class SetupSite(generics.CreateAPIView):
                 ))
             counter += 1
         site_data = {
-            u'name__v1': site,
-            u'slug__v1': slugify(site),
-            u'url__v1': u'http://{site_slug}.ximpia.io/'.format(site_slug=slugify(site)),
-            u'is_active__v1': True,
-            u'domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
-            u'public__v1': public,
-            u'api_access__v1': {
-                u'api_key__v1': api_access_key,
-                u'api_secret__v1': get_random_string(32, VALID_KEY_CHARS),
-                u'created_on__v1': now_es,
+            u'site__name__v1': site,
+            u'site__slug__v1': slugify(site),
+            u'site__url__v1': u'http://{site_slug}.ximpia.io/'.format(site_slug=slugify(site)),
+            u'site__is_active__v1': True,
+            u'site__domains__v1': map(lambda x: {'domain_name__v1': x}, domains),
+            u'site__public__v1': public,
+            u'site__api_access__v1': {
+                u'site__api_access__key__v1': api_access_key,
+                u'site__api_access__secret__v1': get_random_string(32, VALID_KEY_CHARS),
+                u'site__api_access__created_on__v1': now_es,
             },
-            u'created_on__v1': now_es
+            u'site__created_on__v1': now_es
         }
         if invite_only:
-            site_data[u'invites'] = {
-                u'age_days__v1': 2,
-                u'active__v1': True,
-                u'created_on__v1': now_es,
-                u'updated_on__v1': now_es,
+            site_data[u'site__invites__v1'] = {
+                u'site__invites__age_days__v1': 2,
+                u'site__invites__active__v1': True,
+                u'site__invites__created_on__v1': now_es,
+                u'site__invites__updated_on__v1': now_es,
             }
         es_response_raw = requests.post(
             '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
@@ -196,7 +203,7 @@ class SetupSite(generics.CreateAPIView):
         ))
         site_data_logical = to_logical_doc('site', site_data)
         site_data_logical['id'] = site_id
-        site_data['id__v1'] = site_id
+        site_data['site__id'] = site_id
         # site_data['id'] = site_id
         # app
         # social app data would be inserted once admin user adds facebook id and secret
@@ -204,17 +211,17 @@ class SetupSite(generics.CreateAPIView):
         # to generate the app access token
         app_data = {
             u'site__v1': site_data,
-            u'name__v1': app,
-            u'slug__v1': slugify(app),
-            u'is_active__v1': True,
-            u'social__v1': {
-                u'facebook__v1': {
-                    u'access_token__v1': None,
-                    u"app_id__v1": None,
-                    u"app_secret__v1": None
+            u'app__name__v1': app,
+            u'app__slug__v1': slugify(app),
+            u'app__is_active__v1': True,
+            u'app__social__v1': {
+                u'app__social__facebook__v1': {
+                    u'app__social__facebook__access_token__v1': None,
+                    u"app__social__facebook__app_id__v1": None,
+                    u"app__social__facebook__app_secret__v1": None
                 }
             },
-            u'created_on__v1': now_es
+            u'app__created_on__v1': now_es
         }
         es_response_raw = requests.post(
             '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -241,20 +248,20 @@ class SetupSite(generics.CreateAPIView):
             (u'location', location)]
         settings_data = {
             u'site__v1': {
-                u'id__v1': site_id,
-                u'name__v1': site,
-                u'slug__v1': slugify(site)
+                u'site__id__v1': site_id,
+                u'site__name__v1': site,
+                u'site__slug__v1': slugify(site)
             },
             u'app__v1': None,
             u'tag__v1': tag_data,
-            u'fields__v1': None,
-            u'created_on__v1': now_es
+            u'settings__fields__v1': None,
+            u'settings__created_on__v1': now_es
         }
         settings_output = []
         for setting_item in settings_input:
             settings_data.update({
-                u'setting_name__v1': setting_item[0],
-                u'setting_value__v1': setting_item[1]
+                u'settings__setting_name__v1': setting_item[0],
+                u'settings__setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
                 '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -271,11 +278,11 @@ class SetupSite(generics.CreateAPIView):
 
         # account
         account_data = {
-            u'organization__v1': {
-                u'name__v1': organization_name
+            u'account__organization__v1': {
+                u'account__organization__name__v1': organization_name
             },
-            u'account_name__v1': account,
-            u'created_on__v1': now_es,
+            u'account__name__v1': account,
+            u'account__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
@@ -302,12 +309,12 @@ class SetupSite(generics.CreateAPIView):
         :return:
         """
         tag_data = {
-            u'name__v1': version,
-            u'slug__v1': version,
-            u'is_active__v1': True,
-            u'permissions__v1': None,
-            u'public__v1': True,
-            u'created_on__v1': now_es,
+            u'tag__name__v1': version,
+            u'tag__slug__v1': version,
+            u'tag__is_active__v1': True,
+            u'tag__permissions__v1': None,
+            u'tag__public__v1': True,
+            u'tag__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
             '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -320,8 +327,49 @@ class SetupSite(generics.CreateAPIView):
         logger.info(u'SetupSite :: created tag "v1" id: {}'.format(
             es_response.get('_id', '')
         ))
-        tag_data['id'] = es_response.get('_id', '')
-        return to_logical_doc('tag', tag_data)
+        tag_data['tag__id'] = es_response.get('_id', '')
+        tag_logical = to_logical_doc('tag', tag_data)
+        mappings_path = settings.BASE_DIR + 'apps/base/mappings'
+        user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
+        document_path = settings.BASE_DIR + 'apps/document/mappings'
+        with open('{}/urlconf.json'.format(mappings_path)) as f:
+            urlconf_dict = json.loads(f.read())
+        with open('{}/app.json'.format(mappings_path)) as f:
+            app_dict = json.loads(f.read())
+        with open('{}/settings.json'.format(mappings_path)) as f:
+            settings__dict = json.loads(f.read())
+        with open('{}/user.json'.format(user_path)) as f:
+            user_dict = json.loads(f.read())
+        with open('{}/group.json'.format(user_path)) as f:
+            group_dict = json.loads(f.read())
+        with open('{}/user-group.json'.format(user_path)) as f:
+            user_group_dict = json.loads(f.read())
+        with open('{}/permission.json'.format(user_path)) as f:
+            permissions_dict = json.loads(f.read())
+        with open('{}/invite.json'.format(user_path)) as f:
+            invite_dict = json.loads(f.read())
+        with open('{}/tag.json'.format(document_path)) as f:
+            tag_dict = json.loads(f.read())
+        with open('{}/field-version.json'.format(document_path)) as f:
+            field_version_dict = json.loads(f.read())
+        with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
+            session_dict = json.loads(f.read())
+        with open('{}/document-definition.json'.format(document_path)) as f:
+            document_definition_dict = json.loads(f.read())
+        save_field_versions_from_mapping(urlconf_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(app_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(settings__dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(user_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(group_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(user_group_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(permissions_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(tag_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(field_version_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(invite_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(session_dict, tag=tag_data, index=index_name)
+        save_field_versions_from_mapping(document_definition_dict, tag=tag_data, index=index_name)
+        refresh_index(index_name)
+        return tag_logical
 
     @classmethod
     def _create_permissions(cls, site, app, index_name, now_es):
@@ -339,15 +387,15 @@ class SetupSite(generics.CreateAPIView):
         output_permissions = []
         for permission in permissions:
             db_permission = {
-                u'name__v1': permission,
-                u'apps__v1': [
+                u'permission__name__v1': permission,
+                u'permission__apps__v1': [
                     {
-                        u'site_slug__v1': slugify(site),
-                        u'app_slug__v1': slugify(app)
+                        u'permission__apps__site_slug__v1': slugify(site),
+                        u'permission__apps__app_slug__v1': slugify(app)
                     }
                 ],
-                u'data__v1': None,
-                u'created_on__v1': now_es
+                u'permission__data__v1': None,
+                u'permission__created_on__v1': now_es
             }
             es_response_raw = requests.post(
                 '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
@@ -381,16 +429,16 @@ class SetupSite(generics.CreateAPIView):
         groups_data_logical = {}
         for group in groups:
             group_data = {
-                u'group_name__v1': group,
-                u'slug__v1': slugify(group),
-                u'tags__v1': None,
-                u'created_on__v1': now_es,
+                u'group__name__v1': group,
+                u'group__slug__v1': slugify(group),
+                u'group__tags__v1': None,
+                u'group__created_on__v1': now_es,
             }
             if group in group_permissions:
-                group_data[u'group_permissions__v1'] = [
+                group_data[u'group__permissions__v1'] = [
                     {
-                        u'name__v1': group_permissions[group],
-                        u'created_on__v1': now_es
+                        u'group__permissions__name__v1': group_permissions[group],
+                        u'group__permissions__created_on__v1': now_es
                     }
                 ]
             es_response_raw = requests.post(
@@ -426,7 +474,7 @@ class SetupSite(generics.CreateAPIView):
         import os
         from django.conf import settings
         data = json.loads(request.body)
-        print
+        # print
         # print u'SetupSite :: request META: {}'.format(request.META)
         site = request.META.get('HTTP_HOST', data.get('site', None))
         # print u'SetupSite :: site: {}'.format(site)
@@ -487,8 +535,11 @@ class SetupSite(generics.CreateAPIView):
         # After facebook id and secret are linked, user would be able to register in their
         # site as admin
         site_ximpia = Document.objects.filter('site',
-                                              slug__raw=slugify(settings.SITE),
-                                              get_logical=True)[0]
+                                              **{
+                                                  'site__slug__v1.raw__v1': slugify(settings.SITE),
+                                                  'get_logical': True
+                                              })[0]
+        logger.debug(u'SetupSite :: site_ximpia: {}'.format(site_ximpia))
         user_raw = get_resource(
             request,
             reverse('signup'),
@@ -497,8 +548,8 @@ class SetupSite(generics.CreateAPIView):
                 u'access_token': social_access_token,
                 u'social_network': social_network,
                 u'groups': filter(lambda x: x['slug'] in ['users', 'users-test'], groups),
-                u'api_key': site_ximpia['api_access']['api_key'],
-                u'api_secret': site_ximpia['api_access']['api_secret'],
+                u'api_key': site_ximpia['api_access']['key'],
+                u'api_secret': site_ximpia['api_access']['secret'],
                 u'site': site_ximpia['slug']
             }
         )

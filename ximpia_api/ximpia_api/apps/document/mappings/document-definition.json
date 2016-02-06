@@ -1,0 +1,683 @@
+{
+  "document-definition": {
+    "dynamic": "strict",
+    "_timestamp": {
+      "enabled": true
+    },
+    "_all": {
+      "enabled": false
+    },
+    "properties": {
+      "document-definition__doc_type__v1": {
+        "type": "string",
+        "fields": {
+          "document-definition__doc_type__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "tag__v1": {
+        "properties": {
+          "tag__name__v1": {
+            "type": "string",
+            "fields": {
+              "tag__name__v1": {
+                "type": "string"
+              },
+              "tag__name_completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
+          },
+          "tag__slug__v1": {
+            "type": "string",
+            "fields": {
+              "tag__slug__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "tag__is_active__v1": {
+            "type": "boolean"
+          },
+          "tag__permissions__v1": {
+            "type": "nested",
+            "properties": {
+              "tag__permissions__id": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "tag__permissions__name__v1": {
+                "type": "string",
+                "fields": {
+                  "tag__permissions__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "tag__permissions__name_completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "tag__permissions__user__v1": {
+                "type": "object",
+                "properties": {
+                  "tag__permissions__user__id": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "tag__permissions__user__user_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__user__user_name__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "tag__permissions__group__v1": {
+                "type": "object",
+                "properties": {
+                  "tag__permissions__group__id": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "tag__permissions__group__name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "tag__permissions__type__v1": {
+                "type": "string",
+                "fields": {
+                  "tag__permissions__type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "tag__permissions__locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "tag__permissions__locations__type__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__locations__type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "tag__permissions__locations__name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__locations__name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "tag__permissions__locations__value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "tag__permissions__locations__value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "tag__permissions__modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "tag__public__v1": {
+            "type": "boolean"
+          },
+          "text__v1": {
+            "type": "string",
+            "term_vector" : "with_positions_offsets",
+            "analyzer" : "snowball"
+          },
+          "tag__created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "branch__v1": {
+        "properties": {
+          "branch__name__v1": {
+            "type": "string",
+            "fields": {
+              "branch__name__v1": {
+                "type": "string"
+              },
+              "branch__name_completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
+          },
+          "branch__is_active__v1": {
+            "type": "boolean"
+          },
+          "branch__public__v1": {
+            "type": "boolean"
+          },
+          "branch__permissions__v1": {
+            "type": "nested",
+            "properties": {
+              "branch__permissions__id": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "branch__permissions__name__v1": {
+                "type": "string",
+                "fields": {
+                  "branch__permissions__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "branch__permissions__name_completion__v1": {
+                    "type": "completion",
+                    "analyzer": "simple_whitespace",
+                    "payloads": true,
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50
+                  }
+                }
+              },
+              "branch__permissions__user__v1": {
+                "type": "object",
+                "properties": {
+                  "branch__permissions__user__id": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "branch__permissions__user__user_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__user__user_name__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "branch__permissions__group__v1": {
+                "type": "object",
+                "properties": {
+                  "branch__permissions__group__id": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "branch__permissions__group__name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "branch__permissions__type__v1": {
+                "type": "string",
+                "fields": {
+                  "branch__permissions__type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "branch__permissions__locations__v1": {
+                "type": "nested",
+                "properties": {
+                  "branch__permissions__locations__type__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__locations__type__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "branch__permissions__locations__name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__locations__name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "branch__permissions__locations__value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "branch__permissions__locations__value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "branch__permissions__modes__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "branch__created_on__v1" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      },
+      "document-definition__choices__v1": {
+        "type": "nested",
+        "properties": {
+          "document-definition__choices__name__v1": {
+            "type": "string",
+            "fields": {
+              "document-definition__choices__name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "document-definition__choices__items__v1": {
+            "type": "nested",
+            "properties": {
+              "document-definition__choices__items__name__v1": {
+                "type": "string",
+                "fields": {
+                  "document-definition__choices__items__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "document-definition__choices__items__value__v1": {
+                "type": "string",
+                "fields": {
+                  "document-definition__choices__items__name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "document-definition__editable_fields__v1": {
+        "type": "string",
+        "index": "no"
+      },
+      "document-definition__messages__v1": {
+        "type": "nested",
+        "properties": {
+          "document-definition__messages__name__v1": {
+            "type": "string",
+            "fields": {
+              "document-definition__messages__name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "document-definition__messages__value__v1": {
+            "type": "string",
+            "index": "no"
+          }
+        }
+      },
+      "document-definition__comment__v1": {
+        "type": "string"
+      },
+      "document-definition__permissions__v1": {
+        "type": "nested",
+        "properties": {
+          "id__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name__v1": {
+            "type": "string",
+            "fields": {
+              "name__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "name_completion__v1": {
+                "type": "completion",
+                "analyzer": "simple_whitespace",
+                "payloads": true,
+                "preserve_separators": true,
+                "preserve_position_increments": true,
+                "max_input_length": 50
+              }
+            }
+          },
+          "user__v1": {
+            "type": "object",
+            "properties": {
+              "id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "user_name__v1": {
+                "type": "string",
+                "fields": {
+                  "user_name__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          },
+          "group__v1": {
+            "type": "object",
+            "properties": {
+              "id__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "group_name__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "type__v1": {
+            "type": "string",
+            "fields": {
+              "type__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "locations__v1": {
+            "type": "nested",
+            "properties": {
+              "type__v1": {
+                "type": "string",
+                "fields": {
+                  "type__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "name__v1": {
+                "type": "string",
+                "fields": {
+                  "name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "value__v1": {
+                "type": "string",
+                "fields": {
+                  "value__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              }
+            }
+          },
+          "modes__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "document-definition__validations__v1": {
+        "type": "nested",
+        "properties": {
+          "document-definition__validations__type__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "document-definition__validations__path__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "document-definition__validations__value__v1": {
+            "type": "string",
+            "index": "no"
+          },
+          "document-definition__validations__modes__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "document-definition__validations__context__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "document-definition__fields__v1": {
+        "type": "object",
+        "properties": {
+          "document-definition__fields__string__v1": {
+            "type": "nested",
+            "properties": {
+              "document-definition__fields__string__active__v1": {
+                "type": "boolean"
+              },
+              "document-definition__fields__string__validations__v1": {
+                "type": "nested",
+                "properties": {
+                  "document-definition__fields__string__validations__type__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "document-definition__fields__string__validations__path__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "document-definition__fields__string__validations__value__v1": {
+                    "type": "string",
+                    "index": "no"
+                  },
+                  "document-definition__fields__string__validations__modes__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  },
+                  "document-definition__fields__string__validations__context__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "document-definition__fields__string__choices__v1": {
+                "type": "object",
+                "properties": {
+                  "document-definition__fields__string__choices__choice_name__v1": {
+                    "type": "string",
+                    "fields": {
+                      "document-definition__fields__string__choices__choice_name__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  },
+                  "document-definition__fields__string__choices__default_value__v1": {
+                    "type": "string",
+                    "fields": {
+                      "document-definition__fields__string__choices__default_value__v1": {
+                        "type": "string"
+                      },
+                      "raw__v1": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                      }
+                    }
+                  }
+                }
+              },
+              "document-definition__fields__string__default__v1": {
+                "type": "string",
+                "fields": {
+                  "document-definition__fields__string__default__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "document-definition__fields__string__add_summary__v1": {
+                "type": "boolean"
+              },
+              "document-definition__fields__string__hint__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "document-definition__fields__string__comment__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "document-definition__fields__string__display_name__v1": {
+                "type": "string",
+                "fields": {
+                  "display_name__v1": {
+                    "type": "string"
+                  },
+                  "raw__v1": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+              },
+              "document-definition__fields__string__max_length__v1": {
+                "type": "integer"
+              },
+              "document-definition__fields__string__min_length__v1": {
+                "type": "integer"
+              },
+              "document-definition__fields__string__is_autocomplete__v1": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "document-definition__created_on__v1" : {
+        "type" : "date",
+        "format" : "dateOptionalTime"
+      },
+      "document-definition__created_by__v1": {
+        "properties": {
+          "document-definition__created_by__id": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "document-definition__created_by__user_name__v1": {
+            "type": "string",
+            "fields": {
+              "document-definition__created_by__user_name__v1": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

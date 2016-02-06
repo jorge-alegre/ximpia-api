@@ -1,6 +1,7 @@
 import json
 import requests
 from requests.adapters import HTTPAdapter
+import logging
 
 from django.test import RequestFactory
 from django.conf import settings
@@ -16,6 +17,8 @@ __author__ = 'jorgealegre'
 req_session = requests.Session()
 req_session.mount('https://{}'.format(settings.ELASTIC_SEARCH_HOST),
                   HTTPAdapter(max_retries=3))
+
+logger = logging.getLogger(__name__)
 
 
 class Authenticate(XimpiaTestCase):
@@ -42,15 +45,18 @@ class Authenticate(XimpiaTestCase):
 
     def connect_signup(self):
         site = Document.objects.filter('site',
-                                       slug__raw='my-site', get_logical=True)[0]
+                                       **{
+                                           'site__slug__v1.raw__v1': 'my-site',
+                                           'get_logical': True
+                                       })[0]
         # no user, would be signup
         response = self.c.post(
             reverse('connect'),
             json.dumps({
                 u'access_token': get_fb_test_user_local('registration_my_site')['access_token'],
                 u'provider': 'facebook',
-                u'api_key': site['api_access']['api_key'],
-                u'api_secret': site['api_access']['api_secret'],
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
                 u'site': 'my-site',
             }),
             content_type="application/json"
@@ -61,11 +67,16 @@ class Authenticate(XimpiaTestCase):
 
     def connect_login(self):
         site = Document.objects.filter('site',
-                                       slug__raw='my-site', get_logical=True)[0]
+                                       **{
+                                           'site__slug__v1.raw__v1': 'my-site',
+                                           'get_logical': True
+                                       })[0]
         # do signup first
         groups = Document.objects.filter('group',
-                                         slug__raw__in=settings.DEFAULT_GROUPS,
-                                         get_logical=True)
+                                         **{
+                                             'group__slug__v1.raw__v1': settings.DEFAULT_GROUPS,
+                                             'get_logical': True
+                                         })
         access_token = get_fb_test_user_local('registration_my_site')['access_token']
         response = self.c.post(
             reverse('connect'),
@@ -73,8 +84,8 @@ class Authenticate(XimpiaTestCase):
                 u'access_token': access_token,
                 u'provider': 'facebook',
                 u'groups': groups,
-                u'api_key': site['api_access']['api_key'],
-                u'api_secret': site['api_access']['api_secret'],
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
                 u'site': 'my-site'
             }),
             content_type="application/json"
@@ -90,8 +101,8 @@ class Authenticate(XimpiaTestCase):
             json.dumps({
                 u'access_token': access_token,
                 u'provider': 'facebook',
-                u'api_key': site['api_access']['api_key'],
-                u'api_secret': site['api_access']['api_secret'],
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
                 u'site': 'my-site',
             }),
             content_type="application/json"
@@ -115,19 +126,26 @@ class Signup(XimpiaTestCase):
         # get access token
         # get site
         site = Document.objects.filter('site',
-                                       slug__raw='ximpia-api', get_logical=True)[0]
+                                       **{
+                                           'site__slug__v1.raw__v1': 'ximpia-api',
+                                           'get_logical': True
+                                       })[0]
         # get groups
         groups = Document.objects.filter('group',
-                                         slug__raw__in=settings.DEFAULT_GROUPS,
-                                         get_logical=True)
+                                         **{
+                                             'site__slug__v1.raw__v1': settings.DEFAULT_GROUPS,
+                                             'get_logical': True
+                                         })
+
         response = self.c.post(
             reverse('signup'),
             json.dumps({
                 u'access_token': get_fb_test_user_local('registration')['access_token'],
                 u'social_network': 'facebook',
                 u'groups': groups,
-                u'api_key': site['api_access']['api_key'],
-                u'api_secret': site['api_access']['api_secret'],
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
+                u'site': site['slug']
             }),
             content_type="application/json"
         )

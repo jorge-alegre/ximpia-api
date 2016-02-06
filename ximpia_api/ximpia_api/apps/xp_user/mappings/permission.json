@@ -8,17 +8,17 @@
       "enabled": false
     },
     "properties": {
-      "name__v1": {
+      "permission__name__v1": {
         "type": "string",
         "fields": {
-          "name__v1": {
+          "permission__name__v1": {
             "type": "string"
           },
           "raw__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "completion__v1": {
+          "permission__name_completion__v1": {
             "type": "completion",
             "analyzer": "simple_whitespace",
             "payloads": true,
@@ -28,19 +28,52 @@
           }
         }
       },
-      "apps__v1": {
+      "permission__type__v1": {
+        "type": "string",
+        "fields": {
+          "permission__type__v1": {
+            "type": "string"
+          },
+          "raw__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "permission__locations__v1": {
         "type": "nested",
-        "include_in_parent": true,
-        "dynamic": "false",
         "properties": {
-          "app__v1": {
-            "type": "object",
-            "properties": {
-              "site_slug__v1": {
+          "permission__locations__type__v1": {
+            "type": "string",
+            "fields": {
+              "permission__locations__type__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
+              }
+            }
+          },
+          "permission__locations__name__v1": {
+            "type": "string",
+            "fields": {
+              "permission__locations__name__v1": {
+                "type": "string"
               },
-              "app_slug__v1": {
+              "raw__v1": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          },
+          "permission__locations__value__v1": {
+            "type": "string",
+            "fields": {
+              "permission__locations__value__v1": {
+                "type": "string"
+              },
+              "raw__v1": {
                 "type": "string",
                 "index": "not_analyzed"
               }
@@ -48,22 +81,41 @@
           }
         }
       },
-      "data__v1": {
+      "permission__apps__v1": {
         "type": "nested",
         "include_in_parent": true,
         "dynamic": "false",
         "properties": {
-          "name__v1": {
+          "permission__apps__site_slug__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "value__v1": {
+          "permission__apps__app_slug__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "created_on__v1": {
+      "permission__modes__v1": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "permission__data__v1": {
+        "type": "nested",
+        "include_in_parent": true,
+        "dynamic": "false",
+        "properties": {
+          "permission__data__name__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "permission__data__value__v1": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "permission__created_on__v1": {
         "type" : "date",
         "format" : "dateOptionalTime"
       }

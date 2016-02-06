@@ -321,12 +321,12 @@ def get_base_app(site_slug):
                         'must': [
                             {
                                 'term': {
-                                    'site__v1.slug__v1.raw__v1': site_slug
+                                    'site__v1.site__slug__v1.raw__v1': site_slug
                                 }
                             },
                             {
                                 'term': {
-                                    'slug__v1.raw__v1': 'base'
+                                    'app__slug__v1.raw__v1': 'base'
                                 }
                             }
                         ]
@@ -362,6 +362,7 @@ def get_base_app(site_slug):
         )))
     try:
         app = es_response['hits']['hits'][0]['_source']
+        # logger.debug(u'get_base_app :: app: {}'.format(app))
         app_document = to_logical_doc('app', app)
         app_document['id'] = es_response['hits']['hits'][0]['_id']
         return app_document
@@ -392,6 +393,8 @@ def get_site(request):
     host = request.META.get('HTTP_HOST', None)
     if 'site' in data:
         return data['site']
+    elif 'site' in request.REQUEST:
+        return request.REQUEST['site']
     elif host:
         site_slug = host.split('.' + settings.XIMPIA_DOMAIN)[0]
         return site_slug

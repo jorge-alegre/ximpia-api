@@ -64,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'base.middleware.XimpiaUrlsMiddleware',
+    'base.middleware.XimpiaRequestMiddleware',
 )
 
 REST_FRAMEWORK = {
@@ -152,3 +153,77 @@ DEFAULT_GROUPS = [
 DEFAULT_GROUPS_NORMAL_USER = [
     u'users',
 ]
+
+DEFAULT_VERSION = 'v1'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%d/%b/%Y %H:%M:%S"
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'logfile': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': '/home/ximpia/log/django-test.log',
+            'maxBytes': 1024*1024*25,
+            'backupCount': 5,
+            'formatter': 'standard'
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'xp_user': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'base': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'document': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'patterns': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'query_build': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'xp_sessions': {
+            'handlers': ['logfile', 'console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        }
+    }
+}
