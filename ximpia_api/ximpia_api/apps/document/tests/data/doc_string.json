@@ -50,6 +50,8 @@
   "name": {
     "type": "string",
     "display_name": "Name",
+    "max_length": 10,
+    "min_length": 5,
     "hint": "Customer name",
     "validations": [
       {

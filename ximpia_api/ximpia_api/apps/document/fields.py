@@ -215,7 +215,7 @@ class StringField(object):
         }
 
     @classmethod
-    def validate(cls, value, field_config, doc_config):
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
         """
         Run all validations for the field
 
@@ -234,16 +234,18 @@ class StringField(object):
         check = True
         # min_length and max_length for string
         min_length = field_config.get('min_length', None)
-        max_length = field_config.get('min_length', None)
+        max_length = field_config.get('max_length', None)
         field_choices = field_config.get('choices', None)
-        tag = field_config.get('tag', None)
+        tag = doc_config.get('tag', None)
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
                 check = False
+                # logger.debug(u'StringField.validate :: min length error!')
         if max_length:
             if len(value) > max_length:
                 check = False
+                # logger.debug(u'StringField.validate :: max length error!')
         if field_choices and value != '':
             # If we have some value in field, validate with choices
             choice_name = field_choices['choice_name']
@@ -252,12 +254,25 @@ class StringField(object):
             if choice_value:
                 if choice_value[0]['choice_item_name'] != value:
                     check = False
+                    # logger.debug(u'StringField.validate :: choice {} error!'.format(choice_name))
             else:
                 check = False
         if not tag:
             check = False
+            # logger.debug(u'StringField.validate :: tag error!')
         # field validations
         if validations:
-            for validation in validations:
-                pass
+            for validation_data in validations:
+                validation_name = validation_data.get('name',
+                                                      '{field_name}.{type}'.format(
+                                                          field_name=field_config['name'],
+                                                          type=validation_data['type']
+                                                      ))
+                value = patterns_data[validation_name]
+                """logger.debug(u'StringField.validate :: validation_data: {} name: {}'.format(
+                    validation_data, validation_name
+                ))"""
+                if not value:
+                    check = False
+                    break
         return check

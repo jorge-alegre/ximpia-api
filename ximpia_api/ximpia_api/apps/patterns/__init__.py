@@ -1,3 +1,7 @@
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 __author__ = 'jorgealegre'
 
@@ -63,7 +67,7 @@ class NotExists(object):
                 'filtered': {
                     'filter': {
                         'term': {
-                            path_fields[1:]: value
+                            '.'.join(path_fields[1:]): value
                         }
                     }
                 }
@@ -71,13 +75,13 @@ class NotExists(object):
         }
         if index:
             return '{header}\n{body}\n'.format(
-                header={'index': index, 'type': document},
-                body=query
+                header=json.dumps({'index': index, 'type': document}),
+                body=json.dumps(query)
             )
         else:
             return '{header}\n{body}\n'.format(
-                header={},
-                body=query
+                header=json.dumps({}),
+                body=json.dumps(query)
             )
 
     @classmethod
@@ -127,7 +131,7 @@ class Exists(object):
                 'filtered': {
                     'filter': {
                         'term': {
-                            path_fields[1:]: value
+                            '.'.join(path_fields[1:]): value
                         }
                     }
                 }
@@ -135,13 +139,13 @@ class Exists(object):
         }
         if index:
             return '{header}\n{body}\n'.format(
-                header={'index': index, 'type': document},
-                body=query
+                header=json.dumps({'index': index, 'type': document}),
+                body=json.dumps(query)
             )
         else:
             return '{header}\n{body}\n'.format(
-                header={},
-                body=query
+                header=json.dumps({}),
+                body=json.dumps(query)
             )
 
     @classmethod
