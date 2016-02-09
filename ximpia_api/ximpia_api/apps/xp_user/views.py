@@ -1,12 +1,13 @@
+# Python
 import string
 import requests
 import json
 from requests.adapters import HTTPAdapter
 import logging
 from datetime import datetime, timedelta
-
 import time
 
+# Django
 # from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.utils.crypto import get_random_string
@@ -15,14 +16,17 @@ from django.utils.text import slugify
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
+# REST
 from rest_framework import viewsets, generics, response
 from rest_framework.response import Response
 
+# Ximpia
 from document.views import DocumentViewSet
 from base import exceptions, get_path_by_id, SocialNetworkResolution, get_path_site, refresh_index, \
     get_site, constants, get_resource
 from document import to_logical_doc, to_physical_doc, Document
 from xp_user import login, logout
+from base import get_base_app, get_version
 
 __author__ = 'jorgealegre'
 
@@ -231,7 +235,6 @@ class UserSignup(generics.CreateAPIView):
         :return:
         """
         # print u'UserSignup...'
-        from base import get_base_app
         # print request.body
         data = json.loads(request.body)
         site_slug = get_site(request)
@@ -404,23 +407,124 @@ class UserSignup(generics.CreateAPIView):
 
 class User(DocumentViewSet):
 
-    document_type = '_user'
+    document_type = 'user'
     app = 'base'
+    lookup_field = 'id'
+
+    def create(self, request, *args, **kwargs):
+        # We create users through Connect API and UserSignup
+        raise NotImplementedError(u'Not implemented')
+
+    def update(self, request, *args, **kwargs):
+        """
+
+        my-site.ximpia.io/{version}/users/{id}
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'User.update :: args: {} kwargs: {}'.format(args, kwargs))
+        logger.debug(u'User.update :: version: {}'.format(request.version))
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        user_id = kwargs['id']
+        user_data = json.loads(request.body)
+        site = get_site(request)
+        index = '{}__base'.format(site['slug'] if isinstance(site, dict) else site)
+        # update user
+        es_response_raw = requests.put(
+            '{}/{}/user/{id}'.format(settings.ELASTIC_SEARCH_HOST, 'ximpia-api__base', id=user_id),
+            data=json.dumps(to_physical_doc('user', user_data)))
+        if es_response_raw.status_code not in [200, 201]:
+            raise exceptions.XimpiaAPIException(_(u'Could not update user :: {}'.format(
+                es_response_raw.content
+            )))
+        es_response = es_response_raw.json()
+        logger.info(u'User.update :: user update response: {}'.format(es_response))
+        user_data_logical = to_logical_doc('user', es_response)
+        user_data_logical['id'] = user_id
+
+        # update user-group
+        # Get groups in db for user
+        user_groups = Document.objects.filter(
+            'user-group',
+            **{
+                'user__v1.user__id': user_id,
+                'get_logical': True
+            }
+        )
+        user_group_delete_ids = filter(lambda x: x['id'] not in
+                                       map(lambda y: y['id'], user_data['groups']), user_groups)
+        logger.debug(u'User.update :: user_group_delete_ids: {}'.format(user_group_delete_ids))
+        user_group_index_ids = filter(lambda x: x['id'] in
+                                      map(lambda y: y['id'], user_data['groups']), user_groups)
+        logger.debug(u'User.update :: user_group_index_ids: {}'.format(user_group_index_ids))
+        # We need to update user in all user-group
+
+        # We use bulk updates to index all user groups
+        bulk_data_str = ''
+        for user_group_data in filter(lambda x: x['id'] in user_group_index_ids, user_groups):
+            group_data = user_group_data['group']
+            bulk_header = '{ "index": { "_index": "' + index + '", "_type": "user-group"} }\n'
+            bulk_data = json.dumps({
+                u'id': user_group_data['id'],
+                u'user__v1': {
+                    u'user__id': user_data_logical[u'id'],
+                    u'user__username__v1': user_data_logical[u'username'],
+                    u'user__email__v1': user_data_logical[u'email'],
+                    u'user__avatar__v1': user_data_logical[u'avatar'],
+                    u'user__user_name__v1': user_data_logical[u'user_name'],
+                    u'user__social_networks__v1': user_data_logical[u'social_networks'],
+                    u'user__permissions__v1': user_data_logical[u'permissions'],
+                    u'user__created_on__v1': user_data_logical[u'created_on'],
+                },
+                u'group__v1': {
+                    u'group__id': group_data[u'id'],
+                    u'group__name__v1': group_data[u'name'],
+                    u'group__slug__v1': group_data[u'slug'],
+                    u'group__tags__v1': group_data[u'tags'],
+                    u'group__created_on__v1': group_data[u'created_on']
+                },
+                u'user-group__created_on__v1': now_es,
+            }) + '\n'
+            if not bulk_data_str:
+                bulk_data_str = bulk_header
+                bulk_data_str += bulk_data
+            else:
+                bulk_data_str += bulk_header
+                bulk_data_str += bulk_data
+
+        for user_group_data in filter(lambda x: x['id'] in user_group_delete_ids, user_groups):
+            bulk_header = '{ "index": { "_index": "' + index + '", "_type": "user-group", "_id": "' + \
+                          user_group_data['id'] + '"} }\n'
+            bulk_data_str += bulk_header
+
+        # Make request for bulk index and delete operations
+        es_response_raw = requests.post(
+            '{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
+            data=bulk_data_str,
+            headers={'Content-Type': 'application/octet-stream'},
+        )
+        es_response = es_response_raw.json()
+        logger.debug(u'User.update :: bulk response: {}'.format(es_response))
+
+        return Response(user_data_logical)
 
 
 class Group(DocumentViewSet):
 
-    document_type = '_group'
+    document_type = 'group'
     app = 'base'
 
 
 class Permission(DocumentViewSet):
 
-    document_type = '_permission'
+    document_type = 'permission'
     app = 'base'
 
 
 class Invite(DocumentViewSet):
 
-    document_type = '_invite'
+    document_type = 'invite'
     app = 'base'

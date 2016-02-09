@@ -151,3 +151,24 @@ class Signup(XimpiaTestCase):
         )
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
+
+
+class UserUpdateTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_update_user(self):
+        from rest_framework.reverse import reverse
+        response = self.c.put(
+            reverse('user-detail', kwargs={'id': '21'}),
+            json.dumps({
+            }),
+            content_type="application/json"
+        )
+        logger.debug(u'UserUpdateTest :: response status: {}'.format(response.status_code))
+        logger.debug(u'UserUpdateTest :: response content: {}'.format(response.content))
