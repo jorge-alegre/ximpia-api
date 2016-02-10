@@ -29,7 +29,7 @@ router.register(r'document-definition/(?P<doc_type>[-\w]+)', DocumentDefinition,
 
 urlpatterns = [
     # url(r'^admin/', include(admin.site.urls)),
-    url(r'^', include(router.urls, namespace='v1')),
+    url(r'^', include(router.urls)),
     # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
     url(r'^v1/user-signup$', UserSignup.as_view(), name='signup'),
     url(r'^v1/create-site$', SetupSite.as_view(), name='create_site'),

@@ -425,6 +425,7 @@ class User(DocumentViewSet):
         :param kwargs:
         :return:
         """
+        raise NotImplementedError(u'Not implemented until we finish fields to build physical doc')
         logger.debug(u'User.update :: args: {} kwargs: {}'.format(args, kwargs))
         logger.debug(u'User.update :: version: {}'.format(request.version))
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
@@ -433,6 +434,8 @@ class User(DocumentViewSet):
         site = get_site(request)
         index = '{}__base'.format(site['slug'] if isinstance(site, dict) else site)
         # update user
+        logger.debug(u'User.update :: index: {}'.format(index))
+        logger.debug(u'User.update :: user_data: {}'.format(user_data))
         es_response_raw = requests.put(
             '{}/{}/user/{id}'.format(settings.ELASTIC_SEARCH_HOST, 'ximpia-api__base', id=user_id),
             data=json.dumps(to_physical_doc('user', user_data)))
@@ -500,6 +503,8 @@ class User(DocumentViewSet):
                           user_group_data['id'] + '"} }\n'
             bulk_data_str += bulk_header
 
+        logger.debug(u'User.update :: bulk_data_str: ')
+        print bulk_data_str
         # Make request for bulk index and delete operations
         es_response_raw = requests.post(
             '{host}/_bulk'.format(host=settings.ELASTIC_SEARCH_HOST),
