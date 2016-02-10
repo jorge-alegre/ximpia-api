@@ -125,6 +125,13 @@
             "user__social_networks__link__v1": {
               "type": "string",
               "index": "not_analyzed"
+            },
+            "user__social_networks__social_expires_at__v1": {
+              "type": "integer"
+            },
+            "user__social_networks__scopes__v1": {
+              "type": "string",
+              "index": "not_analyzed"
             }
           }
       },

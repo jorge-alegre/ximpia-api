@@ -466,3 +466,7 @@ def get_resource(request, path, method_type, data=None):
                 data=json.dumps(data)
             )
             return response_raw
+
+
+def get_version(request):
+    return getattr(request, 'version', settings.DEFAULT_VERSION)

@@ -5,7 +5,7 @@ import logging
 
 from django.test import RequestFactory
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from rest_framework.reverse import reverse
 
 from base.tests import XimpiaTestCase, get_fb_test_user_local
 from document import Document
@@ -151,3 +151,66 @@ class Signup(XimpiaTestCase):
         )
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
+
+
+class UserUpdateTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_update_user(self):
+        print
+        print
+        print
+        # Signup
+        site = Document.objects.filter('site',
+                                       **{
+                                           'site__slug__v1.raw__v1': 'ximpia-api',
+                                           'get_logical': True
+                                       })[0]
+        # get groups
+        groups = Document.objects.filter('group',
+                                         **{
+                                             'site__slug__v1.raw__v1': settings.DEFAULT_GROUPS,
+                                             'get_logical': True
+                                         })
+
+        response = self.c.post(
+            reverse('signup'),
+            json.dumps({
+                u'access_token': get_fb_test_user_local('registration')['access_token'],
+                u'social_network': 'facebook',
+                u'groups': groups,
+                u'api_key': site['api_access']['key'],
+                u'api_secret': site['api_access']['secret'],
+                u'site': site['slug']
+            }),
+            content_type="application/json"
+        )
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(json.loads(response.content) and 'email' in json.loads(response.content))
+        user_data = json.loads(response.content)
+        user_data['user_name'] = 'Jorge The Great'
+        import pprint
+        logger.debug(u'UserUpdateTest :: user_data: {}'.format(
+            pprint.PrettyPrinter(indent=4).pprint(user_data)
+        ))
+        # Simple update
+        url = reverse('user-detail', kwargs={'id': user_data['id']})
+        logger.debug(u'UserUpdateTest.test_update_user :: url: {}'.format(url))
+        response = json.loads(self.c.put(
+            url + '?site=ximpia-api',
+            json.dumps(user_data),
+            content_type="application/json"
+        ).content)
+        logger.debug(u'UserUpdateTest :: user_data: {}'.format(
+            pprint.PrettyPrinter(indent=4).pprint(response)
+        ))
+        # logger.debug(u'UserUpdateTest :: response status: {}'.format(response.status_code))
+        # logger.debug(u'UserUpdateTest :: response content: {}'.format(response['']))
+        # Add group
+        # Delete group

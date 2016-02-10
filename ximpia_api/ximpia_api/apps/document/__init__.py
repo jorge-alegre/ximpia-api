@@ -35,6 +35,7 @@ def walk(node, **kwargs):
     :param version:
     :return:
     """
+    from copy import copy
     data = {}
     versions_map = {}
     is_physical = kwargs.get('is_physical', False)
@@ -42,7 +43,10 @@ def walk(node, **kwargs):
     fields_version = kwargs.get('fields_version', [])
     fields_data = kwargs.get('fields_data', [])
     doc_type = kwargs.get('doc_type', '')
+    paths = kwargs.get('paths', [])
     tag = kwargs.get('tag', None)
+    logger.debug(u'walk :: paths: {}'.format(paths))
+    logger.debug(u'walk :: node: {}'.format(node))
     if is_physical is False and is_logical is False:
         raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
     if is_physical:
@@ -62,7 +66,7 @@ def walk(node, **kwargs):
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})
             versions_map[field][version_int] = item
-    # print versions_map
+    print versions_map
     if is_physical:
         for field in versions_map:
             # print field
@@ -71,7 +75,7 @@ def walk(node, **kwargs):
             else:
                 target_version = int(filter(lambda x: x.split('__')[-2] == field,
                                             fields_version)[0].split('__')[-1][1:])
-            # print 'target_version: {}'.format(target_version)
+            print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
             # logger.debug(u'walk :: field: {} target_version: {} item: {}'.format(field, target_version, item))
             if isinstance(item, dict):
@@ -84,7 +88,7 @@ def walk(node, **kwargs):
         # logger.debug(u'walk :: fields_data: {}'.format(fields_data))
         for key, item in node.items():
             # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
-            # logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
+            logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
             if fields_data:
                 if tag:
                     # like status__v7
@@ -92,13 +96,13 @@ def walk(node, **kwargs):
                                 filter(lambda y: y['field-version__field__v1'] == key, fields_data))[0]
                 else:
                     fields = map(lambda x: x['_source']['field-version__field__v1'], fields_data)
-                    # logger.debug(u'walk :: fields: {}'.format(fields))
+                    logger.debug(u'walk :: fields: {}'.format(fields))
                     # field: {version}
-                    # logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
+                    logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
                     # like status__v7
-                    # logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
+                    logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
                     fields_key = filter(lambda x: x.split('__')[-2] == key, fields)
-                    # logger.debug(u'walk :: fields_key: {}'.format(fields_key))
+                    logger.debug(u'walk :: fields_key: {}'.format(fields_key))
                     if len(fields_key) > 1:
                         raise exceptions.XimpiaAPIException(u'More than one field for type: {} key: {} '
                                                             u'fields: {}'.format(
@@ -106,7 +110,32 @@ def walk(node, **kwargs):
                                                                 key,
                                                                 fields
                                                             ))
-                    field = fields_key[0]
+                    # if key not in paths:
+                    # paths.append(key)
+                    # We need unit test for this, starting with basic documents
+                    # Simple fields: user_name -> user__user_name__v1
+                    # Links: app.slug -> app_v1.app__slug__v1
+                    # Objects: my_obj.key -> doc_type__my_obj__v1.
+                    # Idea, fields build physical data. What we do meanwhile???
+                    """logger.debug(u'walk :: paths: {}'.format(paths))
+                    paths_final = copy(paths)
+                    paths_final.append(key)
+                    for field_final_target in fields_key:
+                        field_final_target_base = u'__'.join(field_final_target.split('__')[:-1])
+                        logger.debug(u'walk :: field_final_target: {} field_final_target_base: {} '
+                                     u'checked_to: {}'.format(
+                                         field_final_target,
+                                         field_final_target_base,
+                                         u'__'.join(paths)
+                                     ))
+                        if u'__'.join(paths) in field_final_target_base:
+                            field = field_final_target
+                            break"""
+                    if fields_key:
+                        field = fields_key[0]
+                    else:
+                        if key == 'id':
+                            field = 'id'
             else:
                 field = u'{doc_type}__{key}__v1'.format(
                     doc_type=doc_type,
@@ -114,15 +143,23 @@ def walk(node, **kwargs):
                 )
             # logger.debug(u'walk :: field: {}'.format(field))
             if isinstance(item, dict):
+                logger.debug(u'walk :: I detect dict! paths: {}'.format(paths))
+                paths_new = copy(paths)
+                paths_new.append(key)
+                kwargs['paths'] = paths_new
+                logger.debug(u'walk :: I detect dict! sent paths: {}'.format(paths_new))
                 data[field] = walk(item, **kwargs)
-            elif isinstance(item, (list, tuple)) and isinstance(item[0], dict):
+            elif isinstance(item, (list, tuple)) and item and isinstance(item[0], dict):
+                paths_new = copy(paths)
+                paths_new.append(key)
+                kwargs['paths'] = paths_new
                 data[field] = map(lambda x: walk(x, **kwargs), item)
             else:
                 data[field] = item
     return data
 
 
-def to_logical_doc(doc_type, document, tag=None, user=None):
+def to_logical_doc(doc_type, document, tag=None, user=None, **kwargs):
     """
     Physical documents will have versioned fields
 
@@ -193,7 +230,7 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
             ]
         es_response = get_es_response(
             req_session.get(
-                get_path_search('field-version'),
+                get_path_search('field-version', **kwargs),
                 data=json.dumps(query_dsl)
             )
         )
@@ -201,7 +238,7 @@ def to_logical_doc(doc_type, document, tag=None, user=None):
     return walk(document, is_physical=True, fields_version=fields_version)
 
 
-def to_physical_doc(doc_type, document, tag=None, user=None):
+def to_physical_doc(doc_type, document, tag=None, user=None, **kwargs):
     """
     Logical document will have fields without version
 
@@ -211,8 +248,8 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
     :param user:
     :return:
     """
-    logger.debug(u'to_physical_doc :: doc_type: {} tag: {} user: {}'.format(
-        doc_type, tag, user
+    logger.debug(u'to_physical_doc :: doc_type: {} tag: {} user: {} document: {}'.format(
+        doc_type, tag, user, document
     ))
     query = {
         'query': {
@@ -276,10 +313,11 @@ def to_physical_doc(doc_type, document, tag=None, user=None):
             ]
     # logger.debug(u'to_physical_doc :: query: {}'.format(query))
     es_response = get_es_response(
-        req_session.get(get_path_search('field-version'),
+        req_session.get(get_path_search('field-version', **kwargs),
                         data=json.dumps(query)))
     # logger.debug(u'to_physical_doc :: response: {}'.format(es_response))
-    return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag, doc_type=doc_type)
+    return walk(document, is_logical=True, fields_data=es_response['hits']['hits'], tag=tag, doc_type=doc_type,
+                paths=[doc_type])
 
 
 def to_physical_fields(document_type, fields, tag=None, user=None):
