@@ -28,6 +28,7 @@ class StringFieldTest(XimpiaTestCase):
         pass
 
     def test_string(self):
+        from document.fields import StringField
         user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
@@ -39,8 +40,10 @@ class StringFieldTest(XimpiaTestCase):
         doc_type = 'test-string-field'
         index = 'my-site__base'
         response = self.c.post(
-            reverse('document-definition',
-                    kwargs={'doc_type': 'test-string-field'}) + request_attributes,
+            reverse('document-definition-list',
+                    kwargs={
+                        'doc_type': doc_type
+                    }) + request_attributes,
             json.dumps(doc_string),
             content_type="application/json",
         )
@@ -88,7 +91,7 @@ class StringFieldTest(XimpiaTestCase):
         # VALIDATE
         # ========
         self.assertTrue(pattern_validate_field(
-            index, 'name', 'amazing', doc_string,
+            index, 'name', 'amazing', doc_string, StringField,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -96,7 +99,7 @@ class StringFieldTest(XimpiaTestCase):
                 }
             )))
         self.assertTrue(not pattern_validate_field(
-            index, 'name', 'coc', doc_string,
+            index, 'name', 'coc', doc_string, StringField,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -104,7 +107,7 @@ class StringFieldTest(XimpiaTestCase):
                 }
             )))
         self.assertTrue(not pattern_validate_field(
-            index, 'name', '1234567890111', doc_string,
+            index, 'name', '1234567890111', doc_string, StringField,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -124,9 +127,6 @@ class NumberFieldTest(XimpiaTestCase):
 
     def test_number(self):
         from document.fields import NumberField
-        print
-        print
-        print
         user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_number.json') as f:
             doc_number_str = f.read()
