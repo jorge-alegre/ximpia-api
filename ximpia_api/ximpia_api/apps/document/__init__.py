@@ -66,7 +66,7 @@ def walk(node, **kwargs):
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})
             versions_map[field][version_int] = item
-    print versions_map
+    # print versions_map
     if is_physical:
         for field in versions_map:
             # print field
