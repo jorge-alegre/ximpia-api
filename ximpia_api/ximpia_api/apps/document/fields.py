@@ -12,77 +12,6 @@ __author__ = 'jorgealegre'
 logger = logging.getLogger(__name__)
 
 
-u"""
-Info on how document definition will work
-
-Create Document Definition
-==========================
-
-This is simple example of just status with choices definition
-
-String Field
-------------
-
-Here we see need to reference other values, which is made in python code by using method, variable, etc...
-Would be good to have something generic. Need for choices, default values, etc...
-
-Here ref: is reserved symbol to make reference anywhere in system. Definition is on the target item. After ref:
-we have a path.
-
-hint, display_name and other fields that are international chars would go somewhere where guys can translate easily.
-Translation not defined in the document definition. We have a list of internationalized attribute names.
-
-{
-    'status': {
-        'type': 'string',
-        'choices': 'ref:choices.status',
-        'default': 'ref:choices.draft',
-        'hint': 'Content status for documents',
-        'display_name': 'Status',
-        'max_length': 100,
-        'min_length': 25
-    }
-}
-
-You can also define defaults relative to settings
-
-{
-    'place': {
-        'type': 'string',
-        'default': 'ref:settings.places.coffee_shop',
-    }
-}
-
-JSON structure bellow 'status' would be document field definition.
-
-field = StringField(**status_definition)
-
-This way we build document definition with all fields, and we can generate ES mappings for all fields
-in a document, check validations, etc...
-
-Validations:
-We would have a list of validation rules, that would be parsed by pattern definitions internally. First release
-would have limited set of validations, like exists, not-exists. Keep in mind that validation rules would be
-free type, parsed by the pattern classes. Idea is that we can build patterns on demand to apply new logic,
-business logic into create operations, etc...
-
-This would create in case document customer-code is unique.
-{
-    'customer-code': {
-        'type': 'string',
-        'validations': [
-            {
-                'type': 'not-exists',
-            }
-        ]
-    }
-}
-
-Above definition would generate a query to check that document has customer_code for field value.
-
-"""
-
-
 class StringField(object):
 
     allowed_attributes = {
@@ -128,17 +57,6 @@ class StringField(object):
         * hint
         * comment
         * display_name
-
-        *Notes*
-
-        * Django like field instance in Document??? Dictionary type?
-        * Have in mind we will not use directly in code, like Django model
-        * We would create/update document_definition document with configuration, validations, etc...
-
-        {u'type': u'string', u'display_name': u'Status', u'hint': u'Customer status',
-        u'comment': u'This is the customer status before purchasing', u'max_length': 30,
-        u'choices': {u'name': u'customer_status', u'default': u'created'}, 'name': u'status',
-        'doc_type': u'test-string-field'}
 
         :param args:
         :param kwargs:
@@ -272,6 +190,166 @@ class StringField(object):
                 """logger.debug(u'StringField.validate :: validation_data: {} name: {}'.format(
                     validation_data, validation_name
                 ))"""
+                if not value:
+                    check = False
+                    break
+        return check
+
+
+class NumberField(object):
+
+    allowed_attributes = {
+        u'add_summary',
+        u'default',
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'min_value',
+        u'max_value',
+        u'only_positive',
+        u'only_negative',
+        u'doc_type',
+        u'mode',
+        u'validations',
+    }
+
+    allowed_modes = {'long', 'integer', 'short', 'byte', 'double', 'float'}
+
+    type = None
+    name = None
+    default = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    validations = None
+    is_autocomplete = None
+    doc_type = None
+    min_value = None
+    max_value = None
+    only_positive = None
+    only_negative = None
+    mode = None
+
+    def __init__(self, **kwargs):
+        """
+        Document contains a list of fields, each with configuration for validation, db checks,
+        and additional logic.
+
+        *Attributes*
+
+        * name
+        * add_summary
+        * choices
+        * default
+        * hint
+        * comment
+        * mode: long|integer|short|byte|double|float. Default: long
+        * display_name
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'NumberField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if not self.mode:
+            self.mode = 'long'
+        if self.mode not in self.allowed_modes:
+            raise exceptions.XimpiaAPIException(u'Number mode not allowed')
+
+    def make_mapping(self, version='v1'):
+        """
+        Make Number mapping
+
+        :param version:
+        :return:
+        """
+        mappings = {
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, version
+            ): {
+                u'type': self.mode,
+            }
+        }
+        if self.add_to_summary:
+            mappings[u'copy_to'] = u'text__v1'
+        if self.is_autocomplete:
+            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
+                u"type": u"{doc_tyoe}__{field_name}_completion".format(
+                    doc_type=self.doc_type,
+                    field_name=self.name
+                ),
+                u"analyzer": u"simple_whitespace",
+                u"payloads": True,
+                u"preserve_separators": True,
+                u"preserve_position_increments": True,
+                u"max_input_length": 50
+            }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name
+            ),
+            'field_name': self.name,
+        }
+
+    @classmethod
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
+        """
+        Validate field
+
+        :param value:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = True
+        tag = doc_config.get('tag', None)
+        min_value = field_config.get('min_value', None)
+        max_value = field_config.get('max_value', None)
+        only_positive = field_config.get('only_positive', None)
+        only_negative = field_config.get('only_negative', None)
+        validations = field_config.get('validations', None)
+        if not tag:
+            check = False
+        if value > max_value:
+            check = False
+        if value < min_value:
+            check = False
+        if only_positive and value < 0:
+            check = False
+        if only_negative and value > 0:
+            check = False
+        if validations:
+            for validation_data in validations:
+                validation_name = validation_data.get('name',
+                                                      '{field_name}.{type}'.format(
+                                                          field_name=field_config['name'],
+                                                          type=validation_data['type']
+                                                      ))
+                value = patterns_data[validation_name]
                 if not value:
                     check = False
                     break
