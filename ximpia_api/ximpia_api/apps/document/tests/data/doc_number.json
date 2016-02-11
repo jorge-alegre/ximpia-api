@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "messages": {
+      "name_not_valid": "This name is not valid",
+      "thank-you": "Thanks for submitting info"
+    }
+  },
+  "like_count": {
+    "type": "number",
+    "display_name": "Likes",
+    "hint": "Number of Likes",
+    "comment": "Number of likes for a content",
+    "only_positive": true
+  },
+  "number_tries": {
+    "type": "number",
+    "display_name": "Tries",
+    "hint": "Number of Tries",
+    "comment": "Number of tries for request",
+    "only_positive": true,
+    "max_value": 10
+  },
+  "amount": {
+    "type": "number",
+    "mode": "double",
+    "display_name": "Amount",
+    "hint": "Amount",
+    "comment": "Amount",
+    "min_value": 100
+  }
+}

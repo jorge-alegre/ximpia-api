@@ -45,8 +45,8 @@ def walk(node, **kwargs):
     doc_type = kwargs.get('doc_type', '')
     paths = kwargs.get('paths', [])
     tag = kwargs.get('tag', None)
-    logger.debug(u'walk :: paths: {}'.format(paths))
-    logger.debug(u'walk :: node: {}'.format(node))
+    # logger.debug(u'walk :: paths: {}'.format(paths))
+    # logger.debug(u'walk :: node: {}'.format(node))
     if is_physical is False and is_logical is False:
         raise exceptions.XimpiaAPIException(u'Need physical or logical filter')
     if is_physical:
@@ -66,7 +66,7 @@ def walk(node, **kwargs):
             version_int = int(version_str[1:])
             versions_map.setdefault(field, {})
             versions_map[field][version_int] = item
-    print versions_map
+    # print versions_map
     if is_physical:
         for field in versions_map:
             # print field
@@ -75,7 +75,7 @@ def walk(node, **kwargs):
             else:
                 target_version = int(filter(lambda x: x.split('__')[-2] == field,
                                             fields_version)[0].split('__')[-1][1:])
-            print 'target_version: {}'.format(target_version)
+            # print 'target_version: {}'.format(target_version)
             item = versions_map[field][target_version]
             # logger.debug(u'walk :: field: {} target_version: {} item: {}'.format(field, target_version, item))
             if isinstance(item, dict):
@@ -88,7 +88,7 @@ def walk(node, **kwargs):
         # logger.debug(u'walk :: fields_data: {}'.format(fields_data))
         for key, item in node.items():
             # key like 'status', item like 'ok', ['ok', 'right'], 67 or { field: value }, etc...
-            logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
+            # logger.debug(u'walk :: type: {} key: {} item: {}'.format(doc_type, key, item))
             if fields_data:
                 if tag:
                     # like status__v7
@@ -96,13 +96,13 @@ def walk(node, **kwargs):
                                 filter(lambda y: y['field-version__field__v1'] == key, fields_data))[0]
                 else:
                     fields = map(lambda x: x['_source']['field-version__field__v1'], fields_data)
-                    logger.debug(u'walk :: fields: {}'.format(fields))
+                    # logger.debug(u'walk :: fields: {}'.format(fields))
                     # field: {version}
-                    logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
+                    # logger.debug(u'walk :: versions_map: {} fields: {}'.format(versions_map, fields))
                     # like status__v7
-                    logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
+                    # logger.debug(u'walk :: list1: {}'.format(filter(lambda x: x.split('__')[-2] == key, fields)))
                     fields_key = filter(lambda x: x.split('__')[-2] == key, fields)
-                    logger.debug(u'walk :: fields_key: {}'.format(fields_key))
+                    # logger.debug(u'walk :: fields_key: {}'.format(fields_key))
                     if len(fields_key) > 1:
                         raise exceptions.XimpiaAPIException(u'More than one field for type: {} key: {} '
                                                             u'fields: {}'.format(
@@ -143,11 +143,11 @@ def walk(node, **kwargs):
                 )
             # logger.debug(u'walk :: field: {}'.format(field))
             if isinstance(item, dict):
-                logger.debug(u'walk :: I detect dict! paths: {}'.format(paths))
+                # logger.debug(u'walk :: I detect dict! paths: {}'.format(paths))
                 paths_new = copy(paths)
                 paths_new.append(key)
                 kwargs['paths'] = paths_new
-                logger.debug(u'walk :: I detect dict! sent paths: {}'.format(paths_new))
+                # logger.debug(u'walk :: I detect dict! sent paths: {}'.format(paths_new))
                 data[field] = walk(item, **kwargs)
             elif isinstance(item, (list, tuple)) and item and isinstance(item[0], dict):
                 paths_new = copy(paths)
