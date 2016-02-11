@@ -6,9 +6,11 @@ from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from base.tests import XimpiaClient as Client, XimpiaTestCase, get_fb_test_user_local
+from base.tests import XimpiaClient as Client, XimpiaTestCase
 from document import Document
 from base import refresh_index
+from patterns import NotExists
+from . import pattern_validate_field
 
 __author__ = 'jorgealegre'
 
@@ -23,38 +25,6 @@ class StringFieldTest(XimpiaTestCase):
 
     def tearDown(self):
         pass
-
-    def _validate_field(self, index, doc_type, field_value, doc_string):
-        from patterns import NotExists
-        from document.fields import StringField
-        bulk_queries = []
-        pattern = NotExists(
-            {
-                'path': '{doc_type}.name'.format(doc_type=doc_type),
-                'value': field_value
-            }
-        )
-        bulk_queries.append(pattern.build_query(index=index))
-        # Get results
-        es_response_raw = requests.get(
-            '{host}/_msearch'.format(
-                host=settings.ELASTIC_SEARCH_HOST
-            ),
-            data=''.join(bulk_queries)
-        )
-
-        es_response = es_response_raw.json()
-        # Validate pattern
-        validate = pattern.validate(es_response['responses'][0])
-        # Validate Field
-        patterns_data = {
-            'name.is-unique': validate
-        }
-        field_config = doc_string['name']
-        field_config['name'] = 'name'
-        doc_config = doc_string['_meta']
-        field_validate = StringField.validate(field_value, field_config, doc_config, patterns_data=patterns_data)
-        return field_validate
 
     def test_string(self):
         user = self.connect_user(user='my_site_admin', is_admin=True)
@@ -116,6 +86,27 @@ class StringFieldTest(XimpiaTestCase):
         # ========
         # VALIDATE
         # ========
-        self.assertTrue(self._validate_field(index, doc_type, 'amazing', doc_string))
-        self.assertTrue(not self._validate_field(index, doc_type, 'coc', doc_string))
-        self.assertTrue(not self._validate_field(index, doc_type, '1234567890111', doc_string))
+        self.assertTrue(pattern_validate_field(
+            index, doc_type, 'amazing', doc_string,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.name'.format(doc_type=doc_type),
+                    'value': 'amazing'
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, doc_type, 'coc', doc_string,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.name'.format(doc_type=doc_type),
+                    'value': 'coc'
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, doc_type, '1234567890111', doc_string,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.name'.format(doc_type=doc_type),
+                    'value': '1234567890111'
+                }
+            )))
