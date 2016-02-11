@@ -36,28 +36,19 @@ class FieldsFromMappingTest(XimpiaTestCase):
         self.assertTrue(len(filter(lambda x: x['field'] == u'app__name__v1', fields)) == 1)
 
 
-def pattern_validate_field(index, doc_type, field_value, doc_string, pattern=None):
+def pattern_validate_field(index, field_name, field_value, doc, field_class, pattern=None, tag='v1'):
     """
 
     :param index:
-    :param doc_type:
+    :param field_name:
     :param field_value:
-    :param doc_string:
+    :param doc:
     :param pattern:
     :return:
     """
-    from patterns import NotExists
-    from document.fields import StringField
     if not pattern:
         raise exceptions.XimpiaAPIException(u'I need a pattern to check validations')
-    bulk_queries = []
-    pattern = NotExists(
-        {
-            'path': '{doc_type}.name'.format(doc_type=doc_type),
-            'value': field_value
-        }
-    )
-    bulk_queries.append(pattern.build_query(index=index))
+    bulk_queries = [pattern.build_query(index=index)]
     # Get results
     es_response_raw = requests.get(
         '{host}/_msearch'.format(
@@ -69,12 +60,19 @@ def pattern_validate_field(index, doc_type, field_value, doc_string, pattern=Non
     es_response = es_response_raw.json()
     # Validate pattern
     validate = pattern.validate(es_response['responses'][0])
+    logger.debug(u'pattern_validate_field :: validate pattern: {}'.format(validate))
     # Validate Field
     patterns_data = {
-        'name.is-unique': validate
+        '{}.is-unique'.format(field_name): validate
     }
-    field_config = doc_string['name']
-    field_config['name'] = 'name'
-    doc_config = doc_string['_meta']
-    field_validate = StringField.validate(field_value, field_config, doc_config, patterns_data=patterns_data)
+    field_config = doc[field_name]
+    field_config['name'] = field_name
+    doc_config = doc['_meta']
+    field_validate = field_class.validate(
+        field_value,
+        field_config,
+        doc_config,
+        patterns_data=patterns_data,
+        tag=tag,
+    )
     return field_validate

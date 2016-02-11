@@ -315,7 +315,7 @@ class NumberField(object):
         }
 
     @classmethod
-    def validate(cls, value, field_config, doc_config, patterns_data=None):
+    def validate(cls, value, field_config, doc_config, patterns_data=None, tag='v1'):
         """
         Validate field
 
@@ -326,7 +326,6 @@ class NumberField(object):
         :return:
         """
         check = True
-        tag = doc_config.get('tag', None)
         min_value = field_config.get('min_value', None)
         max_value = field_config.get('max_value', None)
         only_positive = field_config.get('only_positive', None)
@@ -334,9 +333,9 @@ class NumberField(object):
         validations = field_config.get('validations', None)
         if not tag:
             check = False
-        if value > max_value:
+        if max_value and value > max_value:
             check = False
-        if value < min_value:
+        if min_value and value < min_value:
             check = False
         if only_positive and value < 0:
             check = False

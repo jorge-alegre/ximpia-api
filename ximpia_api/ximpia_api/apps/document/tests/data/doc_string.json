@@ -17,7 +17,6 @@
         "value": "created"
       }
     ],
-    "tag": "v1",
     "permissions": [
       {
         "name": "can-create",

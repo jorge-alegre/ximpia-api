@@ -88,7 +88,7 @@ class StringFieldTest(XimpiaTestCase):
         # VALIDATE
         # ========
         self.assertTrue(pattern_validate_field(
-            index, doc_type, 'amazing', doc_string,
+            index, 'name', 'amazing', doc_string,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -96,7 +96,7 @@ class StringFieldTest(XimpiaTestCase):
                 }
             )))
         self.assertTrue(not pattern_validate_field(
-            index, doc_type, 'coc', doc_string,
+            index, 'name', 'coc', doc_string,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -104,7 +104,7 @@ class StringFieldTest(XimpiaTestCase):
                 }
             )))
         self.assertTrue(not pattern_validate_field(
-            index, doc_type, '1234567890111', doc_string,
+            index, 'name', '1234567890111', doc_string,
             pattern=NotExists(
                 {
                     'path': '{doc_type}.name'.format(doc_type=doc_type),
@@ -123,6 +123,7 @@ class NumberFieldTest(XimpiaTestCase):
         pass
 
     def test_number(self):
+        from document.fields import NumberField
         print
         print
         print
@@ -161,3 +162,83 @@ class NumberFieldTest(XimpiaTestCase):
         logger.debug(u'NumberFieldTest :: get response: {}'.format(es_response))
         self.assertTrue(es_response_raw.status_code == 200)
         self.assertTrue(es_response['found'])
+        # Check mappings created
+        es_response_raw = requests.get(
+            '{host}/{index}/_mapping/{doc_type}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=index,
+                doc_type=doc_type
+            )
+        )
+        es_response = es_response_raw.json()
+        self.assertTrue(es_response_raw.status_code == 200)
+        self.assertTrue('test-number-field' in es_response[es_response.keys()[0]]['mappings'])
+        # Check fields created
+        response = Document.objects.filter(
+            'field-version',
+            **{
+                'field-version__doc_type__v1.raw__v1': doc_type,
+                'index': index
+            }
+        )
+        self.assertTrue(response is not None)
+        self.assertTrue(len(response) > 0)
+        # ========
+        # VALIDATE
+        # ========
+        self.assertTrue(pattern_validate_field(
+            index, 'like_count', 54, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.like_count'.format(doc_type=doc_type),
+                    'value': 54
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, 'like_count', -10, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.like_count'.format(doc_type=doc_type),
+                    'value': 54
+                }
+            )))
+        self.assertTrue(pattern_validate_field(
+            index, 'number_tries', 5, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.number_tries'.format(doc_type=doc_type),
+                    'value': 5
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, 'number_tries', 50, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.number_tries'.format(doc_type=doc_type),
+                    'value': 50
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, 'number_tries', -5, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.number_tries'.format(doc_type=doc_type),
+                    'value': -5
+                }
+            )))
+        self.assertTrue(pattern_validate_field(
+            index, 'amount', 250, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.number_tries'.format(doc_type=doc_type),
+                    'value': 250
+                }
+            )))
+        self.assertTrue(not pattern_validate_field(
+            index, 'amount', 50, doc_number, NumberField,
+            pattern=NotExists(
+                {
+                    'path': '{doc_type}.number_tries'.format(doc_type=doc_type),
+                    'value': 50
+                }
+            )))
