@@ -110,3 +110,48 @@ class StringFieldTest(XimpiaTestCase):
                     'value': '1234567890111'
                 }
             )))
+
+
+class NumberFieldTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_number(self):
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_number.json') as f:
+            doc_number_str = f.read()
+        doc_number = json.loads(doc_number_str)
+        request_attributes = '?access_token={access_token}&site={site}'.format(
+            access_token=user['token'],
+            site='my-site'
+        )
+        doc_type = 'test-number-field'
+        index = 'my-site__base'
+        response = self.c.post(
+            reverse('document-definition',
+                    kwargs={'doc_type': 'test-string-field'}) + request_attributes,
+            json.dumps(doc_number),
+            content_type="application/json",
+        )
+        response_data = json.loads(response.content)
+        logger.debug(u'NumberFieldTest :: write response: {}'.format(response_data))
+        refresh_index('ximpia-api__base')
+        refresh_index('my-site__base')
+        # Check document definition created
+        es_response_raw = requests.get(
+            '{host}/{index}/{doc_type}/{id}'.format(
+                host=settings.ELASTIC_SEARCH_HOST,
+                index=index,
+                doc_type=doc_type,
+                id=response_data['_id']
+            )
+        )
+        es_response = es_response_raw.json()
+        logger.debug(u'NumberFieldTest :: get response: {}'.format(es_response))
+        self.assertTrue(es_response_raw.status_code == 200)
+        self.assertTrue(es_response['found'])
