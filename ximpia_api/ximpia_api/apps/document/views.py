@@ -776,8 +776,8 @@ class DocumentDefinition(viewsets.ModelViewSet):
                     'field-version__field__v1': field_items['field'],
                     'field-version__field_name__v1': field_items['field_name'],
                     'field-version__version__v1': 'v1',
-                    'tag__v1': tag,
-                    'branch__v1': branch,
+                    'tag__v1': db_document_definition.get('tag', None),
+                    'branch__v1': db_document_definition.get('branch', None),
                     'field-version__is_active__v1': True,
                     'field-version__created_on__v1': now_es,
                     'field-version__created_by__v1': {
