@@ -438,8 +438,10 @@ class Completion(generics.RetrieveAPIView):
 
 class DocumentDefinition(viewsets.ModelViewSet):
 
+    lookup_field = 'id'
+
     @classmethod
-    def _generate_input_document(cls, input_document_request, doc_type):
+    def _generate_input_document(cls, input_document_request, doc_type, tag_name, branch_name):
         """
         Generate internal definition document for ES, same structure as mappings
 
@@ -476,22 +478,6 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             'value': input_document_request['_meta']['messages'][message_name]
                         }
                     )
-            elif doc_field == 'tag':
-                tag_name = input_document_request['_meta']['tag']
-                tag = Document.objects.filter('tag',
-                                              **{
-                                                  'tag__slug__v1.raw__v1': tag_name
-                                              })[0]
-                input_document['_meta']['tag'] = tag['_source']
-                input_document['_meta']['tag']['tag__id'] = tag['_id']
-            elif doc_field == 'branch':
-                branch_name = input_document_request['_meta']['branch']
-                branch = Document.objects.filter('branch',
-                                                 **{
-                                                     'branch__slug__v1.raw__v1': branch_name
-                                                 })[0]
-                input_document['_meta']['branch'] = branch['_source']
-                input_document['_meta']['branch']['branch__id'] = branch['_id']
             elif doc_field == 'validations':
                 # We need to generate from pattern class
                 # So far, exists, not-exists have same structure
@@ -522,6 +508,22 @@ class DocumentDefinition(viewsets.ModelViewSet):
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
                 input_document[field] = field_data
+        if tag_name:
+            # tag_name = input_document_request['_meta']['tag']
+            tag = Document.objects.filter('tag',
+                                          **{
+                                              'tag__slug__v1.raw__v1': tag_name
+                                          })[0]
+            input_document['_meta']['tag'] = tag['_source']
+            input_document['_meta']['tag']['tag__id'] = tag['_id']
+        if branch_name:
+            # branch_name = input_document_request['_meta']['branch']
+            branch = Document.objects.filter('branch',
+                                             **{
+                                                 'branch__slug__v1.raw__v1': branch_name
+                                             })[0]
+            input_document['_meta']['branch'] = branch['_source']
+            input_document['_meta']['branch']['branch__id'] = branch['_id']
         return input_document
 
     def create(self, request, *args, **kwargs):
@@ -580,6 +582,13 @@ class DocumentDefinition(viewsets.ModelViewSet):
         """
         logger.debug(u'DocumentDefinition.create ...')
         logger.debug(u'DocumentDefinition.create :: REQUEST: {}'.format(request.REQUEST))
+        version = request.version
+        if '@' in version:
+            branch_name, tag_name = version.split('@')
+        else:
+            tag_name = version
+            branch_name = None
+        logger.debug(u'DocumentDefinition.create :: tag: {}'.format(tag_name))
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         if len(kwargs) == 0:
             raise exceptions.XimpiaAPIException(_(u'No document type sent'))
@@ -604,14 +613,14 @@ class DocumentDefinition(viewsets.ModelViewSet):
             raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
         # generate mappings
         document_definition_input = self._generate_input_document(
-            json.loads(request.body), doc_type
+            json.loads(request.body), doc_type, tag_name, branch_name
         )
         logger.info(u'DocumentDefinition.create :: document_definition_input: {}'.format(
             pprint.PrettyPrinter(indent=4).pformat(document_definition_input)))
-        if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
+        """if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
             tag = settings.DEFAULT_VERSION
         else:
-            tag = document_definition_input['_meta']['tag']
+            tag = document_definition_input['_meta']['tag']"""
         bulk_queries = list()
         # Check db validations: tag exists, document definition not exists, no fields
         bulk_queries.append(
@@ -685,7 +694,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
                     },
                     'filter': {
                         'term': {
-                            'tag__slug__v1.raw__v1': slugify(tag)
+                            'tag__slug__v1.raw__v1': slugify(tag_name)
                         }
                     }
                 }
@@ -767,8 +776,8 @@ class DocumentDefinition(viewsets.ModelViewSet):
                     'field-version__field__v1': field_items['field'],
                     'field-version__field_name__v1': field_items['field_name'],
                     'field-version__version__v1': 'v1',
-                    'tag__v1': db_document_definition['tag'],
-                    'branch__v1': db_document_definition.get('branch', None),
+                    'tag__v1': tag,
+                    'branch__v1': branch,
                     'field-version__is_active__v1': True,
                     'field-version__created_on__v1': now_es,
                     'field-version__created_by__v1': {

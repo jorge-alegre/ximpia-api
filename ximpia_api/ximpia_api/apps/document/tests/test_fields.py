@@ -3,7 +3,8 @@ import logging
 import requests
 
 from django.test import RequestFactory
-from django.core.urlresolvers import reverse
+# from django.core.urlresolvers import reverse
+from rest_framework.reverse import reverse
 from django.conf import settings
 
 from base.tests import XimpiaClient as Client, XimpiaTestCase
@@ -122,6 +123,9 @@ class NumberFieldTest(XimpiaTestCase):
         pass
 
     def test_number(self):
+        print
+        print
+        print
         user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_number.json') as f:
             doc_number_str = f.read()
@@ -133,8 +137,10 @@ class NumberFieldTest(XimpiaTestCase):
         doc_type = 'test-number-field'
         index = 'my-site__base'
         response = self.c.post(
-            reverse('document-definition',
-                    kwargs={'doc_type': 'test-string-field'}) + request_attributes,
+            reverse('document-definition-list',
+                    kwargs={
+                        'doc_type': doc_type
+                    }) + request_attributes,
             json.dumps(doc_number),
             content_type="application/json",
         )

@@ -35,11 +35,3 @@ urlpatterns = [
     url(r'^v1/create-site$', SetupSite.as_view(), name='create_site'),
     url(r'^v1/connect$', Connect.as_view(), name='connect'),
 ]
-
-"""
-    url(r'^v1/document-definition/(?P<doc_type>[-\w]+)$', DocumentDefinition.as_view(
-        {
-            'post': 'create'
-        }
-    ), name='document-definition'),
-"""
