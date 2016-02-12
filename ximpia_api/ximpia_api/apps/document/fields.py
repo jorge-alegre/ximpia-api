@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -41,6 +42,7 @@ class StringField(object):
     doc_type = None
     type = None
     version = None
+    validation_errors = []
 
     def __init__(self, **kwargs):
         """
@@ -246,6 +248,7 @@ class NumberField(object):
     only_negative = None
     mode = None
     version = None
+    validation_errors = []
 
     def __init__(self, **kwargs):
         """
@@ -284,7 +287,6 @@ class NumberField(object):
         """
         Make Number mapping
 
-        :param version:
         :return:
         """
         mappings = {
@@ -416,6 +418,7 @@ class TextField(object):
     min_length = None
     doc_type = None
     version = None
+    validation_errors = []
 
     def __init__(self, **kwargs):
         """
@@ -515,6 +518,7 @@ class CheckField(object):
     allowed_attributes = {
         u'hint',
         u'comment',
+        u'default',
         u'display_name',
         u'type',
         u'name',
@@ -529,10 +533,9 @@ class CheckField(object):
     comment = None
     display_name = None
     validations = None
-    max_length = None
-    min_length = None
     doc_type = None
     version = None
+    validation_errors = []
 
     def __init__(self, **kwargs):
         """
@@ -616,4 +619,142 @@ class CheckField(object):
         :return:
         """
         check = True
+        return check
+
+
+class DateTimeField(object):
+
+    allowed_attributes = {
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'add_summary',
+        u'default',
+        u'min_datetime',
+        u'max_datetime',
+        u'is_create_date',
+        u'is_timestamp',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    validations = None
+    doc_type = None
+    version = None
+    min_datetime = None
+    max_datetime = None
+    default = None
+    is_create_date = None
+    is_timestamp = None
+    validation_errors = []
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
+
+    def make_mapping(self):
+        """
+        Make datetime mapping
+
+        :return:
+        """
+        mappings = {
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, self.version
+            ): {
+                u'type': 'date',
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self):
+        """
+        Get physical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field']
+
+    def get_logical(self):
+        """
+        Get logical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field_name']
+
+    @classmethod
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
+        """
+        Validate field
+
+        :param value:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = True
+        min_datetime = field_config.get('min_datetime', None)
+        max_datetime = field_config.get('max_datetime', None)
+        is_create_date = field_config.get('is_create_date', None)
+        is_timestamp = field_config.get('is_timestamp', None)
+        default = field_config.get('default', None)
+        if (default or value) and (is_timestamp or is_create_date):
+            check = False
+        if not value:
+            value = default
+        # Check date ranges
+        date_format = '%Y-%m-%dT%H:%M:%S'
+        value_obj = datetime.strptime(value, date_format)
+        if min_datetime:
+            min_obj = datetime.strptime(min_datetime, date_format)
+            if value_obj < min_obj:
+                check = False
+        if max_datetime:
+            max_obj = datetime.strptime(max_datetime, date_format)
+            if value_obj > max_obj:
+                check = False
         return check
