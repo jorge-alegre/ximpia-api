@@ -2,10 +2,8 @@ import logging
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from django.utils.text import slugify
 
 from base import exceptions
-from document import Document
 
 __author__ = 'jorgealegre'
 
@@ -509,4 +507,113 @@ class TextField(object):
             check = False
         if min_length and len(value) < min_length:
             check = False
+        return check
+
+
+class CheckField(object):
+
+    allowed_attributes = {
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+    }
+
+    type = None
+    name = None
+    default = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    validations = None
+    max_length = None
+    min_length = None
+    doc_type = None
+    version = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
+
+    def make_mapping(self):
+        """
+        Make check mapping
+
+        :return:
+        """
+        mappings = {
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, self.version
+            ): {
+                u'type': 'boolean',
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self):
+        """
+        Get physical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field']
+
+    def get_logical(self):
+        """
+        Get logical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field_name']
+
+    @classmethod
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
+        """
+        Validate field
+
+        :param value:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = True
         return check
