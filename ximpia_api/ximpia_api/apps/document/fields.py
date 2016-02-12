@@ -42,6 +42,7 @@ class StringField(object):
     is_autocomplete = None
     doc_type = None
     type = None
+    version = None
 
     def __init__(self, **kwargs):
         """
@@ -68,8 +69,10 @@ class StringField(object):
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
         for attr_name in kwargs:
             setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
 
-    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+    def make_mapping(self):
         """
         Create the mapping structure to create mappings and update mappings
 
@@ -79,17 +82,17 @@ class StringField(object):
         # How we set version fields??? We get field versions for name
         mappings = {
             u'{}__{}__{}'.format(
-                self.doc_type, self.name, version
+                self.doc_type, self.name, self.version
             ): {
                 u'type': u'string',
                 u'fields': {
                     u'{doc_type}__{field_name}__{version}'.format(
                         doc_type=self.doc_type,
                         field_name=self.name,
-                        version=version): {
+                        version=self.version): {
                             u'type': u'string'
                     },
-                    u'raw__{version}'.format(version=version): {
+                    u'raw__{version}'.format(version=self.version): {
                         u'type': u'string',
                         u'index': u'not_analyzed'
                     }
@@ -99,7 +102,7 @@ class StringField(object):
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
-            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
+            mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
                 u"type": u"{doc_tyoe}__{field_name}_completion".format(
                     doc_type=self.doc_type,
                     field_name=self.name
@@ -125,15 +128,34 @@ class StringField(object):
 
         """
         return {
-            'field': '{doc_type}__{field_name}'.format(
+            'field': '{doc_type}__{field_name}__{version}'.format(
                 doc_type=self.doc_type,
-                field_name=self.name
+                field_name=self.name,
+                version=self.version
             ),
             'field_name': self.name,
         }
 
+    def get_physical(self):
+        """
+        Get physical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field']
+
+    def get_logical(self):
+        """
+        Get logical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field_name']
+
     @classmethod
-    def validate(cls, value, field_config, doc_config, patterns_data=None, tag=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
         """
         Run all validations for the field
 
@@ -174,9 +196,6 @@ class StringField(object):
                     # logger.debug(u'StringField.validate :: choice {} error!'.format(choice_name))
             else:
                 check = False
-        if not tag:
-            check = False
-            # logger.debug(u'StringField.validate :: tag error!')
         # field validations
         if validations:
             for validation_data in validations:
@@ -186,9 +205,6 @@ class StringField(object):
                                                           type=validation_data['type']
                                                       ))
                 value = patterns_data[validation_name]
-                """logger.debug(u'StringField.validate :: validation_data: {} name: {}'.format(
-                    validation_data, validation_name
-                ))"""
                 if not value:
                     check = False
                     break
@@ -231,6 +247,7 @@ class NumberField(object):
     only_positive = None
     only_negative = None
     mode = None
+    version = None
 
     def __init__(self, **kwargs):
         """
@@ -262,8 +279,10 @@ class NumberField(object):
             self.mode = 'long'
         if self.mode not in self.allowed_modes:
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
 
-    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+    def make_mapping(self):
         """
         Make Number mapping
 
@@ -272,7 +291,7 @@ class NumberField(object):
         """
         mappings = {
             u'{}__{}__{}'.format(
-                self.doc_type, self.name, version
+                self.doc_type, self.name, self.version
             ): {
                 u'type': self.mode,
             }
@@ -280,7 +299,7 @@ class NumberField(object):
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
-            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
+            mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
                 u"type": u"{doc_tyoe}__{field_name}_completion".format(
                     doc_type=self.doc_type,
                     field_name=self.name
@@ -306,16 +325,34 @@ class NumberField(object):
 
         """
         return {
-            'field': '{doc_type}__{field_name}'.format(
+            'field': '{doc_type}__{field_name}__{version}'.format(
                 doc_type=self.doc_type,
-                field_name=self.name
+                field_name=self.name,
+                version=self.version
             ),
             'field_name': self.name,
         }
 
+    def get_physical(self):
+        """
+        Get physical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field']
+
+    def get_logical(self):
+        """
+        Get logical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field_name']
+
     @classmethod
-    def validate(cls, value, field_config, doc_config, patterns_data=None,
-                 tag=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
         """
         Validate field
 
@@ -331,8 +368,6 @@ class NumberField(object):
         only_positive = field_config.get('only_positive', None)
         only_negative = field_config.get('only_negative', None)
         validations = field_config.get('validations', None)
-        if not tag:
-            check = False
         if max_value and value > max_value:
             check = False
         if min_value and value < min_value:
@@ -382,6 +417,7 @@ class TextField(object):
     max_length = None
     min_length = None
     doc_type = None
+    version = None
 
     def __init__(self, **kwargs):
         """
@@ -396,17 +432,18 @@ class TextField(object):
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
         for attr_name in kwargs:
             setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
 
-    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+    def make_mapping(self):
         """
         Make Text mapping
 
-        :param version:
         :return:
         """
         mappings = {
             u'{}__{}__{}'.format(
-                self.doc_type, self.name, version
+                self.doc_type, self.name, self.version
             ): {
                 u'type': 'string',
             }
@@ -414,3 +451,62 @@ class TextField(object):
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self):
+        """
+        Get physical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field']
+
+    def get_logical(self):
+        """
+        Get logical field
+
+        :return:
+        """
+        field_items = self.get_field_items()
+        return field_items['field_name']
+
+    @classmethod
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
+        """
+        Validate field
+
+        :param value:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = True
+        max_length = field_config.get('max_length', None)
+        min_length = field_config.get('min_length', None)
+        if max_length and len(value) > max_length:
+            check = False
+        if min_length and len(value) < min_length:
+            check = False
+        return check
