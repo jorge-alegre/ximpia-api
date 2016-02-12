@@ -69,7 +69,7 @@ class StringField(object):
         for attr_name in kwargs:
             setattr(self, attr_name, kwargs[attr_name])
 
-    def make_mapping(self, version='v1'):
+    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
         """
         Create the mapping structure to create mappings and update mappings
 
@@ -133,7 +133,7 @@ class StringField(object):
         }
 
     @classmethod
-    def validate(cls, value, field_config, doc_config, patterns_data=None, tag='v1'):
+    def validate(cls, value, field_config, doc_config, patterns_data=None, tag=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
         """
         Run all validations for the field
 
@@ -263,7 +263,7 @@ class NumberField(object):
         if self.mode not in self.allowed_modes:
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
 
-    def make_mapping(self, version='v1'):
+    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
         """
         Make Number mapping
 
@@ -314,7 +314,8 @@ class NumberField(object):
         }
 
     @classmethod
-    def validate(cls, value, field_config, doc_config, patterns_data=None, tag='v1'):
+    def validate(cls, value, field_config, doc_config, patterns_data=None,
+                 tag=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
         """
         Validate field
 
@@ -352,3 +353,63 @@ class NumberField(object):
                     check = False
                     break
         return check
+
+
+class TextField(object):
+
+    allowed_attributes = {
+        u'add_summary',
+        u'default',
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'validations',
+    }
+
+    type = None
+    name = None
+    default = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    validations = None
+    is_autocomplete = None
+    doc_type = None
+
+    def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
+        """
+        Make Text mapping
+
+        Analyzer???
+        Tokenizer????
+        Languages???
+
+        :param version:
+        :return:
+        """
+        mappings = {
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, version
+            ): {
+                u'type': 'string',
+            }
+        }
+        if self.add_to_summary:
+            mappings[u'copy_to'] = u'text__v1'
+        if self.is_autocomplete:
+            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
+                u"type": u"{doc_tyoe}__{field_name}_completion".format(
+                    doc_type=self.doc_type,
+                    field_name=self.name
+                ),
+                u"analyzer": u"simple_whitespace",
+                u"payloads": True,
+                u"preserve_separators": True,
+                u"preserve_position_increments": True,
+                u"max_input_length": 50
+            }
+        return mappings
