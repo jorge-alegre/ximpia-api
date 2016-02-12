@@ -367,6 +367,8 @@ class TextField(object):
         u'name',
         u'doc_type',
         u'validations',
+        u'max_length',
+        u'min_length',
     }
 
     type = None
@@ -377,16 +379,27 @@ class TextField(object):
     comment = None
     display_name = None
     validations = None
-    is_autocomplete = None
+    max_length = None
+    min_length = None
     doc_type = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'TextField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
 
     def make_mapping(self, version=settings.REST_FRAMEWORK.get['DEFAULT_VERSION']):
         """
         Make Text mapping
-
-        Analyzer???
-        Tokenizer????
-        Languages???
 
         :param version:
         :return:
@@ -400,16 +413,4 @@ class TextField(object):
         }
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
-        if self.is_autocomplete:
-            mappings[u'{}__{}'.format(self.name, version)][u'fields'][u'completion__v1'] = {
-                u"type": u"{doc_tyoe}__{field_name}_completion".format(
-                    doc_type=self.doc_type,
-                    field_name=self.name
-                ),
-                u"analyzer": u"simple_whitespace",
-                u"payloads": True,
-                u"preserve_separators": True,
-                u"preserve_position_increments": True,
-                u"max_input_length": 50
-            }
         return mappings
