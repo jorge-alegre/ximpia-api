@@ -284,7 +284,6 @@ class NumberField(object):
         """
         Make Number mapping
 
-        :param version:
         :return:
         """
         mappings = {
