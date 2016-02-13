@@ -242,3 +242,52 @@ class NumberFieldTest(XimpiaTestCase):
                     'value': 50
                 }
             )))
+
+
+class MapFieldTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_map(self):
+        from document.fields import MapField
+        print
+        print
+        print
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_map.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        doc_type = 'test-map-field'
+        field_data = doc_map['settings']
+        field_data['name'] = 'settings'
+        field_data['doc_type'] = doc_type
+        # Test make_mapping
+        field = MapField(**field_data)
+        mappings = field.make_mapping()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(mappings)
+        physical = field.get_physical(
+            {
+                'settings': {
+                    'age': 45,
+                    'name': 'James'
+                }
+            }
+        )
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        check = field.validate(
+            {
+                'settings': {
+                    'age': 45,
+                    'name': 'James'
+                }
+            },
+            field_data,
+            doc_map
+        )
+        logger.debug(u'MapFieldTest :: check: {}'.format(check))
