@@ -136,14 +136,18 @@ class StringField(object):
             'field_name': self.name,
         }
 
-    def get_physical(self):
+    def get_physical(self, value):
         """
         Get physical field
+
+        :param value:
 
         :return:
         """
         field_items = self.get_field_items()
-        return field_items['field']
+        return {
+            field_items['field']: value
+        }
 
     def get_logical(self):
         """
@@ -333,14 +337,18 @@ class NumberField(object):
             'field_name': self.name,
         }
 
-    def get_physical(self):
+    def get_physical(self, value):
         """
         Get physical field
+
+        :param value:
 
         :return:
         """
         field_items = self.get_field_items()
-        return field_items['field']
+        return {
+            field_items['field']: value
+        }
 
     def get_logical(self):
         """
@@ -474,14 +482,18 @@ class TextField(object):
             'field_name': self.name,
         }
 
-    def get_physical(self):
+    def get_physical(self, value):
         """
         Get physical field
+
+        :param value:
 
         :return:
         """
         field_items = self.get_field_items()
-        return field_items['field']
+        return {
+            field_items['field']: value
+        }
 
     def get_logical(self):
         """
@@ -589,14 +601,18 @@ class CheckField(object):
             'field_name': self.name,
         }
 
-    def get_physical(self):
+    def get_physical(self, value):
         """
         Get physical field
+
+        :param value:
 
         :return:
         """
         field_items = self.get_field_items()
-        return field_items['field']
+        return {
+            field_items['field']: value
+        }
 
     def get_logical(self):
         """
@@ -681,7 +697,8 @@ class DateTimeField(object):
             u'{}__{}__{}'.format(
                 self.doc_type, self.name, self.version
             ): {
-                u'type': 'date',
+                u'type': u'date',
+                u"format": u"dateOptionalTime"
             }
         }
         return mappings
@@ -707,14 +724,18 @@ class DateTimeField(object):
             'field_name': self.name,
         }
 
-    def get_physical(self):
+    def get_physical(self, value):
         """
         Get physical field
+
+        :param value:
 
         :return:
         """
         field_items = self.get_field_items()
-        return field_items['field']
+        return {
+            field_items['field']: value
+        }
 
     def get_logical(self):
         """
@@ -758,3 +779,210 @@ class DateTimeField(object):
             if value_obj > max_obj:
                 check = False
         return check
+
+
+class MapField(object):
+
+    allowed_attributes = {
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'add_summary',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    validations = None
+    doc_type = None
+    version = None
+    items = None
+    validation_errors = []
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        Logical
+        =======
+        {
+          count: 34,
+          my_section: {
+            name1: "James",
+            profile: {
+              last_name: "Stuart",
+              age: 34
+            }
+          }
+        }
+
+        Document Definition
+        ===================
+        {
+          my_section: {
+            type: map,
+            display_name: My Section
+            items: {
+              name1: {
+                type: string
+                ...
+              },
+              name2: {
+                type: map,
+                items: {
+                }
+              }
+            }
+          }
+        }
+
+        Mappings
+        ========
+        type__my_section__v1: {
+          type: object
+          properties: {
+            type__my_section__name1__v1: {
+              type: string,
+              fields: {
+                ...
+              }
+            },
+            type__my_section__name2__v1: {
+              type: object,
+              properties: {
+              }
+            }
+          }
+        }
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'MapField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK.get['DEFAULT_VERSION']
+
+    def make_mapping(self):
+        """
+        Make datetime mapping
+
+        :return:
+        """
+        object_properties = {}
+        for field_data in self.items:
+            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            module = 'document.fields'
+            instance = __import__(module)
+            for comp in module.split('.')[1:]:
+                instance = getattr(instance, comp)
+            field_class = getattr(instance, '{}Field'.format(field_data['type'].capitalize()))
+            field_data['doc_type'] = item_doc_type
+            field_instance = field_class(**field_data)
+            field_mapping = field_instance.make_mapping()
+            object_properties['{}__{}__{}__{}'.format(
+                self.doc_type,
+                self.name,
+                field_data['name'],
+                field_data['name'].split('__')[-1]
+            )] = field_mapping
+        mappings = {
+            u'{}__{}__{}'.format(
+                self.doc_type, self.name, self.version
+            ): {
+                u'type': 'object',
+                u'properties': object_properties
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self, logical):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param logical:
+        {
+          count: 34,
+          my_section: {
+            name1: "James",
+            profile: {
+              last_name: "Stuart",
+              age: 34
+            }
+          }
+        }
+        This provides values for fields
+
+        :return:
+        {
+          type__count__v1: 34,
+          type__my_section__v1: {
+            type__my_section__name1__v1: "James",
+            type__my_section__profile__v1: {
+              type__my_section__profile__last_name__v1: "Stuart",
+              type__my_section__profile__age__v1: 34
+            }
+          }
+        }
+
+        """
+        items_map = {}
+        for field_data in self.items:
+            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            module = 'document.fields'
+            instance = __import__(module)
+            for comp in module.split('.')[1:]:
+                instance = getattr(instance, comp)
+            field_class = getattr(instance, '{}Field'.format(field_data['type'].capitalize()))
+            field_data['doc_type'] = item_doc_type
+            field_instance = field_class(**field_data)
+            item_physical = field_instance.get_physical()
+            items_map['{}__{}__{}__{}'.format(
+                self.doc_type,
+                self.name,
+                field_data['name'],
+                field_data['name'].split('__')[-1]
+            )] = item_physical
+        physical = {
+            u'{type}__{name}__{version}'.format(
+                type=self.doc_type,
+                name=self.name,
+                version=self.version
+            ): items_map
+        }
+        return physical
