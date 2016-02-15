@@ -959,6 +959,7 @@ class MapField(object):
 
         """
         logger.debug(u'MapField.get_physical :: values: {}'.format(values))
+        logger.debug(u'MapField.get_physical :: name: {}'.format(self.name))
         items_map = {}
         for field_data_key in self.items:
             field_data = self.items[field_data_key]
@@ -974,8 +975,13 @@ class MapField(object):
             field_data['doc_type'] = item_doc_type
             field_instance = field_class(**field_data)
             logger.debug(u'MapField.get_physical :: field_instance: {}'.format(field_instance))
+            logger.debug(u'MapField.get_physical :: values: {}'.format(values))
+            if self.name in values:
+                target_value = values[self.name][field_data['name']]
+            else:
+                target_value = values[field_data['name']]
             item_physical = field_instance.get_physical(
-                values[self.name][field_data['name']]
+                target_value
             )
             items_map.update(item_physical)
         physical = {

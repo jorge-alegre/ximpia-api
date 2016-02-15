@@ -275,7 +275,11 @@ class MapFieldTest(XimpiaTestCase):
             {
                 'settings': {
                     'age': 45,
-                    'name': 'James'
+                    'name': 'James',
+                    'profile': {
+                        'fb': 'james6667',
+                        'twitter': 'james0009'
+                    }
                 }
             }
         )
@@ -284,7 +288,11 @@ class MapFieldTest(XimpiaTestCase):
             {
                 'settings': {
                     'age': 45,
-                    'name': 'James'
+                    'name': 'James',
+                    'profile': {
+                        'fb': 'james6667',
+                        'twitter': 'james0009'
+                    }
                 }
             },
             field_data,

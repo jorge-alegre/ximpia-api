@@ -20,6 +20,24 @@
         "type": "string",
         "display_name": "Name",
         "hint": "Name"
+      },
+      "profile": {
+        "type": "map",
+        "display_name": "Profile",
+        "hint": "Profile",
+        "comment": "Profile data",
+        "items": {
+          "fb": {
+            "type": "string",
+            "display_name": "Facebook",
+            "hint": "Facebook"
+          },
+          "twitter": {
+            "type": "string",
+            "display_name": "Twitter",
+            "hint": "Twitter"
+          }
+        }
       }
     }
   }
