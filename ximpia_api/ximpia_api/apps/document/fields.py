@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 
 from base import exceptions
+from . import Validator
 
 __author__ = 'jorgealegre'
 
@@ -175,7 +176,7 @@ class StringField(object):
 
         :return:
         """
-        check = True
+        check = Validator(True, [])
         # min_length and max_length for string
         min_length = field_config.get('min_length', None)
         max_length = field_config.get('max_length', None)
@@ -183,12 +184,10 @@ class StringField(object):
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
-                check = False
-                # logger.debug(u'StringField.validate :: min length error!')
+                check.add_error(u'min length error')
         if max_length:
             if len(value) > max_length:
-                check = False
-                # logger.debug(u'StringField.validate :: max length error!')
+                check.add_error(u'max length error')
         if field_choices and value != '':
             # If we have some value in field, validate with choices
             choice_name = field_choices['choice_name']
@@ -196,10 +195,9 @@ class StringField(object):
                                   doc_config['choices'][choice_name])
             if choice_value:
                 if choice_value[0]['choice_item_name'] != value:
-                    check = False
-                    # logger.debug(u'StringField.validate :: choice {} error!'.format(choice_name))
+                    check.add_error(u'choice {} error'.format(choice_name))
             else:
-                check = False
+                check.invalid()
         # field validations
         if validations:
             for validation_data in validations:
@@ -210,7 +208,7 @@ class StringField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check = False
+                    check.add_error(u'Error in validation {}'.format(validation_name))
                     break
         return check
 
@@ -370,20 +368,20 @@ class NumberField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, [])
         min_value = field_config.get('min_value', None)
         max_value = field_config.get('max_value', None)
         only_positive = field_config.get('only_positive', None)
         only_negative = field_config.get('only_negative', None)
         validations = field_config.get('validations', None)
         if max_value and value > max_value:
-            check = False
+            check.add_error(u'error max_value')
         if min_value and value < min_value:
-            check = False
+            check.add_error(u'error min_value')
         if only_positive and value < 0:
-            check = False
+            check.add_error(u'error only_positive')
         if only_negative and value > 0:
-            check = False
+            check.add_error(u'error only_negative')
         if validations:
             for validation_data in validations:
                 validation_name = validation_data.get('name',
@@ -393,7 +391,7 @@ class NumberField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check = False
+                    check.add_error(u'error validation {}'.format(validation_name))
                     break
         return check
 
@@ -515,13 +513,13 @@ class TextField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, [])
         max_length = field_config.get('max_length', None)
         min_length = field_config.get('min_length', None)
         if max_length and len(value) > max_length:
-            check = False
+            check.add_error(u'error max_length')
         if min_length and len(value) < min_length:
-            check = False
+            check.add_error(u'error min_length')
         return check
 
 
@@ -634,7 +632,7 @@ class CheckField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, [])
         return check
 
 
@@ -757,14 +755,14 @@ class DateTimeField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, [])
         min_datetime = field_config.get('min_datetime', None)
         max_datetime = field_config.get('max_datetime', None)
         is_create_date = field_config.get('is_create_date', None)
         is_timestamp = field_config.get('is_timestamp', None)
         default = field_config.get('default', None)
         if (default or value) and (is_timestamp or is_create_date):
-            check = False
+            check.add_error(u'Timestamp or create date defined and I receive also "default" or "value" for field')
         if not value:
             value = default
         # Check date ranges
@@ -773,11 +771,11 @@ class DateTimeField(object):
         if min_datetime:
             min_obj = datetime.strptime(min_datetime, date_format)
             if value_obj < min_obj:
-                check = False
+                check.add_error(u'error min_datetime')
         if max_datetime:
             max_obj = datetime.strptime(max_datetime, date_format)
             if value_obj > max_obj:
-                check = False
+                check.add_error(u'error max_datetime')
         return check
 
 

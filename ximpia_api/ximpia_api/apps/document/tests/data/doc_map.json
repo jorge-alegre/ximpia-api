@@ -28,9 +28,17 @@
         "comment": "Profile data",
         "items": {
           "fb": {
-            "type": "string",
+            "type": "map",
             "display_name": "Facebook",
-            "hint": "Facebook"
+            "hint": "Facebook",
+            "items": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            }
           },
           "twitter": {
             "type": "string",
