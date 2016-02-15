@@ -1022,7 +1022,11 @@ class MapField(object):
             field_data['doc_type'] = item_doc_type
             field_instance = field_class(**field_data)
             logger.debug(u'MapField.validate :: field_instance: {}'.format(field_instance))
-            value = values[name][field_data['name']]
+            if name in values:
+                value = values[name][field_data['name']]
+            else:
+                value = values[field_data['name']]
+            # value = values[name][field_data['name']]
             field_pattern_data = None
             if patterns_data and field_data_key in patterns_data:
                 field_pattern_data = patterns_data[field_data_key]
