@@ -833,3 +833,29 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
         es_response_raw.status_code in [200, 201] and es_response['errors'] is False,
         len(es_response['items'])
     ))
+
+
+class Validator(object):
+
+    check = False
+    errors = []
+
+    def __init__(self, check, errors):
+        self.check = check
+        self.errors = errors
+
+    def __call__(self, *args, **kwargs):
+        return self.check
+
+    def __str__(self, *args, **kwargs):
+        return 'true' if self.check else 'false : {}'.format(self.errors)
+
+    def add_error(self, error):
+        self.errors.append(error)
+        self.check = False
+
+    def valid(self):
+        self.check = True
+
+    def invalid(self):
+        self.check = False

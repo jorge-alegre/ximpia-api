@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "messages": {
+      "name_not_valid": "This name is not valid",
+      "thank-you": "Thanks for submitting info"
+    }
+  },
+  "settings": {
+    "type": "map",
+    "display_name": "Setting",
+    "hint": "User settings",
+    "comment": "Field for user settings",
+    "items": {
+      "age": {
+        "type": "number",
+        "display_name": "Age",
+        "hint": "Age"
+      },
+      "name": {
+        "type": "string",
+        "display_name": "Name",
+        "hint": "Name"
+      },
+      "profile": {
+        "type": "map",
+        "display_name": "Profile",
+        "hint": "Profile",
+        "comment": "Profile data",
+        "items": {
+          "fb": {
+            "type": "map",
+            "display_name": "Facebook",
+            "hint": "Facebook",
+            "items": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          },
+          "twitter": {
+            "type": "string",
+            "display_name": "Twitter",
+            "hint": "Twitter"
+          }
+        }
+      }
+    }
+  }
+}
