@@ -838,7 +838,7 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
 class Validator(object):
 
     check = False
-    errors = []
+    errors = {}
 
     def __init__(self, check, errors):
         self.check = check
@@ -850,8 +850,9 @@ class Validator(object):
     def __str__(self, *args, **kwargs):
         return 'true' if self.check else 'false : {}'.format(self.errors)
 
-    def add_error(self, error):
-        self.errors.append(error)
+    def add_error(self, field, error):
+        self.errors.setdefault(field, [])
+        self.errors[field].append(error)
         self.check = False
 
     def valid(self):

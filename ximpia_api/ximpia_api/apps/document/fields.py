@@ -176,18 +176,19 @@ class StringField(object):
 
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
         # min_length and max_length for string
+        name = field_config.get('name', 'general')
         min_length = field_config.get('min_length', None)
         max_length = field_config.get('max_length', None)
         field_choices = field_config.get('choices', None)
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
-                check.add_error(u'min length error')
+                check.add_error(name, u'min length error')
         if max_length:
             if len(value) > max_length:
-                check.add_error(u'max length error')
+                check.add_error(name, u'max length error')
         if field_choices and value != '':
             # If we have some value in field, validate with choices
             choice_name = field_choices['choice_name']
@@ -195,7 +196,7 @@ class StringField(object):
                                   doc_config['choices'][choice_name])
             if choice_value:
                 if choice_value[0]['choice_item_name'] != value:
-                    check.add_error(u'choice {} error'.format(choice_name))
+                    check.add_error(name, u'choice {} error'.format(choice_name))
             else:
                 check.invalid()
         # field validations
@@ -208,7 +209,7 @@ class StringField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check.add_error(u'Error in validation {}'.format(validation_name))
+                    check.add_error(name, u'Error in validation {}'.format(validation_name))
                     break
         return check
 
@@ -368,20 +369,21 @@ class NumberField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         min_value = field_config.get('min_value', None)
         max_value = field_config.get('max_value', None)
         only_positive = field_config.get('only_positive', None)
         only_negative = field_config.get('only_negative', None)
         validations = field_config.get('validations', None)
         if max_value and value > max_value:
-            check.add_error(u'error max_value')
+            check.add_error(name, u'error max_value')
         if min_value and value < min_value:
-            check.add_error(u'error min_value')
+            check.add_error(name, u'error min_value')
         if only_positive and value < 0:
-            check.add_error(u'error only_positive')
+            check.add_error(name, u'error only_positive')
         if only_negative and value > 0:
-            check.add_error(u'error only_negative')
+            check.add_error(name, u'error only_negative')
         if validations:
             for validation_data in validations:
                 validation_name = validation_data.get('name',
@@ -391,7 +393,7 @@ class NumberField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check.add_error(u'error validation {}'.format(validation_name))
+                    check.add_error(name, u'error validation {}'.format(validation_name))
                     break
         return check
 
@@ -513,13 +515,14 @@ class TextField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         max_length = field_config.get('max_length', None)
         min_length = field_config.get('min_length', None)
         if max_length and len(value) > max_length:
-            check.add_error(u'error max_length')
+            check.add_error(name, u'error max_length')
         if min_length and len(value) < min_length:
-            check.add_error(u'error min_length')
+            check.add_error(name, u'error min_length')
         return check
 
 
@@ -632,7 +635,7 @@ class CheckField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
         return check
 
 
@@ -755,14 +758,16 @@ class DateTimeField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         min_datetime = field_config.get('min_datetime', None)
         max_datetime = field_config.get('max_datetime', None)
         is_create_date = field_config.get('is_create_date', None)
         is_timestamp = field_config.get('is_timestamp', None)
         default = field_config.get('default', None)
         if (default or value) and (is_timestamp or is_create_date):
-            check.add_error(u'Timestamp or create date defined and I receive also "default" or "value" for field')
+            check.add_error(name,
+                            u'Timestamp or create date defined and I receive also "default" or "value" for field')
         if not value:
             value = default
         # Check date ranges
@@ -771,11 +776,11 @@ class DateTimeField(object):
         if min_datetime:
             min_obj = datetime.strptime(min_datetime, date_format)
             if value_obj < min_obj:
-                check.add_error(u'error min_datetime')
+                check.add_error(name, u'error min_datetime')
         if max_datetime:
             max_obj = datetime.strptime(max_datetime, date_format)
             if value_obj > max_obj:
-                check.add_error(u'error max_datetime')
+                check.add_error(name, u'error max_datetime')
         return check
 
 
@@ -998,13 +1003,13 @@ class MapField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, {})
         items = field_config.get('items', None)
-        name = field_config.get('name', None)
+        name = field_config.get('name', 'general')
         logger.debug(u'MapField.validate :: field_config: {}'.format(field_config))
         logger.debug(u'MapField.validate :: items: {}'.format(items))
         logger.debug(u'MapField.validate :: name: {}'.format(name))
-        doc_type = doc_config.get('', None)
+        doc_type = doc_config.get('doc_type', None)
         for field_data_key in items:
             field_data = items[field_data_key]
             field_data['name'] = field_data_key
@@ -1028,7 +1033,10 @@ class MapField(object):
             field_pattern_data = None
             if patterns_data and field_data_key in patterns_data:
                 field_pattern_data = patterns_data[field_data_key]
-            check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
+            check_item = field_instance.validate(value, field_data, doc_config,
+                                                 patterns_data=field_pattern_data)
+            if not check_item:
+                check.add_error(name, check_item.errors.values()[0])
             logger.debug(u'MapField.validate :: item check: {}'.format(check))
         logger.debug(u'MapField.validate :: return check: {}'.format(check))
         return check
@@ -1279,7 +1287,7 @@ class MapListField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, {})
         items = field_config.get('items', None)
         name = field_config.get('name', None)
         logger.debug(u'MapListField.validate :: field_config: {}'.format(field_config))
@@ -1314,4 +1322,155 @@ class MapListField(object):
                 check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
                 logger.debug(u'MapListField.validate :: item check: {}'.format(check))
         logger.debug(u'MapListField.validate :: return check: {}'.format(check))
+        return check
+
+
+class ListField(object):
+
+    allowed_attributes = {
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'add_summary',
+        u'mode',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    doc_type = None
+    version = None
+    mode = None
+    items = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'ListField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
+    def make_mapping(self):
+        """
+        Make mapping
+
+        :return:
+        """
+        mappings = None
+        if self.type == 'date':
+            mappings = {
+                u'{}__{}__{}'.format(
+                    self.doc_type, self.name, self.version
+                ): {
+                    'type': 'date',
+                    "format": "dateOptionalTime"
+                }
+            }
+        elif self.type == 'string':
+            mappings = {
+                u'{}__{}__{}'.format(
+                    self.doc_type, self.name, self.version
+                ): {
+                    'type': 'string',
+                    'fields': {
+                        u'{}__{}__{}'.format(
+                            self.doc_type, self.name, self.version
+                        ): {
+
+                        },
+                        'raw__v1': {
+                            'type': 'string',
+                            'index': 'not_analyzed'
+                        }
+                    }
+                }
+            }
+        elif self.type == 'number':
+            mappings = {
+                u'{}__{}__{}'.format(
+                    self.doc_type, self.name, self.version
+                ): {
+                    u'type': self.mode,
+                }
+            }
+        elif self.type == 'check':
+            mappings = {
+                u'{}__{}__{}'.format(
+                    self.doc_type, self.name, self.version
+                ): {
+                    u'type': 'boolean',
+                }
+            }
+        if mappings:
+            if self.add_to_summary:
+                mappings[u'copy_to'] = u'text__v1'
+            return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self, values):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param values:
+
+        :return:
+
+        """
+        return {
+            self.get_field_items()['field']: values
+        }
+
+    @classmethod
+    def validate(cls, values, field_config, doc_config, patterns_data=None):
+        """
+        Validate field: We call validate for all fields
+
+        :param values:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = Validator(True, {})
+        name = field_config.get('name', None)
+        doc_type = doc_config.get('doc_type', None)
         return check
