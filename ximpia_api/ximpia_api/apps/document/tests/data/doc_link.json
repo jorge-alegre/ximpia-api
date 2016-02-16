@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "choices": {
+      "customer_status": [
+        ["approved", "Approved"],
+        ["created", "Created"],
+        ["pending", "Pending"],
+        ["draft", "Draft"],
+        ["ended", "Ended"]
+      ]
+    },
+    "messages": {
+      "name_not_valid": "This name is not valid",
+      "thank-you": "Thanks for submitting info"
+    },
+    "validations": [
+      {
+        "type": "not-exists",
+        "path": "mydoc.status",
+        "value": "created"
+      }
+    ],
+    "permissions": [
+      {
+        "name": "can-create",
+        "user": {
+          "id": "dskjfdhjs8$"
+        },
+        "type": "allow",
+        "locations": [
+          {
+            "type": "site",
+            "name": "site",
+            "value": "my-site"
+          }
+        ],
+        "modes": ["insert", "update", "display", "delete"]
+      }
+    ]
+  },
+  "tag": {
+    "type": "link",
+    "display_name": "Tag",
+    "hint": "Version tag",
+    "comment": "Version tag"
+  }
+}
