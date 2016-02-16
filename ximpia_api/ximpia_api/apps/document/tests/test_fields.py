@@ -497,3 +497,49 @@ class LinkFieldTest(XimpiaTestCase):
             }
         )
         logger.debug(u'LinkFieldTest :: check: {}'.format(check))
+
+
+class LinksFieldTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_links(self):
+        from document.fields import LinksField
+        print
+        print
+        print
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_links.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        doc_type = 'test-links-field'
+        field_data = doc_map['tags']
+        field_data['field_name'] = 'tags'
+        doc_config = doc_map['_meta']
+        # Test make_mapping
+        field = LinksField(**field_data)
+        mappings = field.make_mapping()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(mappings)
+        physical = field.get_physical(
+            {
+                'ids': ['Lolskklsk88999', 'dsdsjkjs77877']
+            }
+        )
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        """check = field.validate(
+            {
+                'id': 'Lolskklsk88999'
+            },
+            field_data,
+            doc_config,
+            patterns_data={
+                'exists': True
+            }
+        )
+        logger.debug(u'LinkFieldTest :: check: {}'.format(check))"""

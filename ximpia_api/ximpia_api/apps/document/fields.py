@@ -1642,3 +1642,143 @@ class LinkField(object):
         if not value:
             check.add_error(name, u'Error in validation {}'.format('exists'))
         return check
+
+
+class LinksField(object):
+
+    allowed_attributes = {
+        u'hint',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'field_name',
+        u'doc_type',
+        u'add_summary',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    doc_type = None
+    version = None
+    field_name = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        Logical
+        =======
+        {doc_type}: {
+          "ids": ["idshhjds77787LL", "28982jjkKK"]
+        }
+
+        Physical
+        ========
+        {doc_type}__v1: [
+          {
+            "id": "",
+            ... [ Rest of document fields ]
+          }
+        ]
+
+        Mapping
+        =======
+        We get from document type mapping
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'LinkField :: kwargs: {}'.format(kwargs))
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.doc_type = kwargs['name']
+
+    def make_mapping(self):
+        """
+        Make mapping
+
+        :return:
+        """
+        mappings = {
+            u'{}__{}'.format(
+                self.field_name, self.version
+            ): {
+                'type': 'nested',
+                "include_in_parent": True,
+                "dynamic": False,
+                'properties': {
+                    'id': {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                    }
+                }
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'doc__field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{field_name}__{version}'.format(
+                field_name=self.field_name,
+                version=self.version
+            ),
+            'field_name': self.field_name,
+        }
+
+    def get_physical(self, values):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param values:
+
+        :return:
+
+        """
+        return {
+            self.get_field_items()['field']: map(lambda x: {
+                'id': x
+            }, values['ids'])
+        }
+
+    @classmethod
+    def validate(cls, values, field_config, doc_config, patterns_data=None):
+        """
+        Validate field: We check id exists for document type
+
+        :param values:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
+        for value in patterns_data['exists'].values():
+            if not value:
+                check.add_error(name, u'Error in validation {}'.format('exists'))
+        return check
