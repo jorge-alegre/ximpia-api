@@ -1294,8 +1294,6 @@ class MapListField(object):
         logger.debug(u'MapListField.validate :: items: {}'.format(items))
         logger.debug(u'MapListField.validate :: name: {}'.format(name))
         doc_type = doc_config.get('', None)
-
-        items_list = []
         for value_item in values[name]:
             for field_data_key in items:
                 field_data = items[field_data_key]
@@ -1319,7 +1317,10 @@ class MapListField(object):
                 field_pattern_data = None
                 if patterns_data and field_data_key in patterns_data:
                     field_pattern_data = patterns_data[field_data_key]
-                check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
+                check_item = field_instance.validate(value, field_data, doc_config,
+                                                     patterns_data=field_pattern_data)
+                if not check_item:
+                    check.add_error(name, check_item.errors.values()[0])
                 logger.debug(u'MapListField.validate :: item check: {}'.format(check))
         logger.debug(u'MapListField.validate :: return check: {}'.format(check))
         return check
@@ -1472,5 +1473,23 @@ class ListField(object):
         """
         check = Validator(True, {})
         name = field_config.get('name', None)
-        doc_type = doc_config.get('doc_type', None)
+        type_ = field_config.get('type', None)
+        if type_ == 'string':
+            for value in values:
+                check_field = StringField.validate(value, field_config, doc_config,
+                                                   patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
+        elif type_ == 'number':
+            for value in values:
+                check_field = NumberField.validate(value, field_config, doc_config,
+                                                   patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
+        elif type_ == 'date':
+            for value in values:
+                check_field = DateTimeField.validate(value, field_config, doc_config,
+                                                     patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
         return check
