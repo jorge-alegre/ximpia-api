@@ -847,6 +847,9 @@ class Validator(object):
     def __call__(self, *args, **kwargs):
         return self.check
 
+    def __str__(self, *args, **kwargs):
+        return 'true' if self.check else 'false : {}'.format(self.errors)
+
     def add_error(self, error):
         self.errors.append(error)
         self.check = False

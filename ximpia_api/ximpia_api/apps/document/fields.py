@@ -1286,30 +1286,32 @@ class MapListField(object):
         logger.debug(u'MapListField.validate :: items: {}'.format(items))
         logger.debug(u'MapListField.validate :: name: {}'.format(name))
         doc_type = doc_config.get('', None)
-        for field_data_key in items:
-            field_data = items[field_data_key]
-            field_data['name'] = field_data_key
-            logger.debug(u'MapListField.validate :: key: {}'.format(field_data_key))
-            logger.debug(u'MapListField.validate :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(doc_type, name)
-            module = 'document.fields'
-            instance = __import__(module)
-            for comp in module.split('.')[1:]:
-                instance = getattr(instance, comp)
-            logger.debug(u'MapListField.validate :: instance: {}'.format(instance))
-            field_class = getattr(instance, '{}Field'.format(field_data['type'].capitalize()))
-            field_data['doc_type'] = item_doc_type
-            field_instance = field_class(**field_data)
-            logger.debug(u'MapListField.validate :: field_instance: {}'.format(field_instance))
-            if name in values:
-                value = values[name][field_data['name']]
-            else:
-                value = values[field_data['name']]
-            # value = values[name][field_data['name']]
-            field_pattern_data = None
-            if patterns_data and field_data_key in patterns_data:
-                field_pattern_data = patterns_data[field_data_key]
-            check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
-            logger.debug(u'MapListField.validate :: item check: {}'.format(check))
+
+        items_list = []
+        for value_item in values[name]:
+            for field_data_key in items:
+                field_data = items[field_data_key]
+                field_data['name'] = field_data_key
+                logger.debug(u'MapListField.validate :: key: {}'.format(field_data_key))
+                logger.debug(u'MapListField.validate :: field_data: {}'.format(field_data))
+                item_doc_type = u'{}__{}'.format(doc_type, name)
+                module = 'document.fields'
+                instance = __import__(module)
+                for comp in module.split('.')[1:]:
+                    instance = getattr(instance, comp)
+                logger.debug(u'MapListField.validate :: instance: {}'.format(instance))
+                field_class = getattr(instance, '{}Field'.format(field_data['type'].capitalize()))
+                field_data['doc_type'] = item_doc_type
+                field_instance = field_class(**field_data)
+                logger.debug(u'MapListField.validate :: field_instance: {}'.format(field_instance))
+                if name in value_item:
+                    value = value_item[name][field_data['name']]
+                else:
+                    value = value_item[field_data['name']]
+                field_pattern_data = None
+                if patterns_data and field_data_key in patterns_data:
+                    field_pattern_data = patterns_data[field_data_key]
+                check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
+                logger.debug(u'MapListField.validate :: item check: {}'.format(check))
         logger.debug(u'MapListField.validate :: return check: {}'.format(check))
         return check
