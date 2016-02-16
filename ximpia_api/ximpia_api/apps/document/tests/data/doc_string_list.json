@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "choices": {
+      "customer_status": [
+        ["approved", "Approved"],
+        ["created", "Created"],
+        ["pending", "Pending"],
+        ["draft", "Draft"],
+        ["ended", "Ended"]
+      ]
+    },
+    "messages": {
+      "name_not_valid": "This name is not valid",
+      "thank-you": "Thanks for submitting info"
+    },
+    "validations": [
+      {
+        "type": "not-exists",
+        "path": "mydoc.status",
+        "value": "created"
+      }
+    ],
+    "permissions": [
+      {
+        "name": "can-create",
+        "user": {
+          "id": "dskjfdhjs8$"
+        },
+        "type": "allow",
+        "locations": [
+          {
+            "type": "site",
+            "name": "site",
+            "value": "my-site"
+          }
+        ],
+        "modes": ["insert", "update", "display", "delete"]
+      }
+    ]
+  },
+  "status": {
+    "type": "list<string>",
+    "display_name": "Status",
+    "hint": "Customer status",
+    "comment": "This is the customer status before purchasing",
+    "max_length": 30,
+    "choices": {
+      "name": "customer_status",
+      "default": "created"
+    }
+  }
+}

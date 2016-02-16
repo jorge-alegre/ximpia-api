@@ -1372,8 +1372,9 @@ class ListField(object):
 
         :return:
         """
+        item_type = self.type.split('<')[1][:-1]
         mappings = None
-        if self.type == 'date':
+        if item_type == 'date':
             mappings = {
                 u'{}__{}__{}'.format(
                     self.doc_type, self.name, self.version
@@ -1382,7 +1383,7 @@ class ListField(object):
                     "format": "dateOptionalTime"
                 }
             }
-        elif self.type == 'string':
+        elif item_type == 'string':
             mappings = {
                 u'{}__{}__{}'.format(
                     self.doc_type, self.name, self.version
@@ -1401,7 +1402,7 @@ class ListField(object):
                     }
                 }
             }
-        elif self.type == 'number':
+        elif item_type == 'number':
             mappings = {
                 u'{}__{}__{}'.format(
                     self.doc_type, self.name, self.version
@@ -1409,7 +1410,7 @@ class ListField(object):
                     u'type': self.mode,
                 }
             }
-        elif self.type == 'check':
+        elif item_type == 'check':
             mappings = {
                 u'{}__{}__{}'.format(
                     self.doc_type, self.name, self.version
@@ -1474,19 +1475,20 @@ class ListField(object):
         check = Validator(True, {})
         name = field_config.get('name', None)
         type_ = field_config.get('type', None)
-        if type_ == 'string':
+        item_type = type_.split('<')[1][:-1]
+        if item_type == 'string':
             for value in values:
                 check_field = StringField.validate(value, field_config, doc_config,
                                                    patterns_data=patterns_data)
                 if not check_field:
                     check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
-        elif type_ == 'number':
+        elif item_type == 'number':
             for value in values:
                 check_field = NumberField.validate(value, field_config, doc_config,
                                                    patterns_data=patterns_data)
                 if not check_field:
                     check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
-        elif type_ == 'date':
+        elif item_type == 'date':
             for value in values:
                 check_field = DateTimeField.validate(value, field_config, doc_config,
                                                      patterns_data=patterns_data)

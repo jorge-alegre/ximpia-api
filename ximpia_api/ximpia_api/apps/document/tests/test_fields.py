@@ -394,3 +394,92 @@ class MapListFieldTest(XimpiaTestCase):
             doc_map
         )
         logger.debug(u'MapFieldTest :: check: {}'.format(check))
+
+
+class ListFieldTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_list_map(self):
+        from document.fields import MapListField
+        print
+        print
+        print
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_map_list.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        doc_type = 'test-map-list-field'
+        field_data = doc_map['settings']
+        field_data['name'] = 'settings'
+        field_data['doc_type'] = doc_type
+        # Test make_mapping
+        field = MapListField(**field_data)
+        mappings = field.make_mapping()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(mappings)
+        physical = field.get_physical(
+            {
+                'settings': [
+                    {
+                        'age': 45,
+                        'name': 'James',
+                        'profile': {
+                            'fb': {
+                                'name': 'james0067',
+                                'url': 'http://facebook.com/'
+                            },
+                            'twitter': 'james0009'
+                        }
+                    },
+                    {
+                        'age': 23,
+                        'name': 'John',
+                        'profile': {
+                            'fb': {
+                                'name': 'john0067',
+                                'url': 'http://facebook.com/john'
+                            },
+                            'twitter': 'john0009'
+                        }
+                    }
+                ]
+            }
+        )
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        check = field.validate(
+            {
+                'settings': [
+                    {
+                        'age': 45,
+                        'name': 'James',
+                        'profile': {
+                            'fb': {
+                                'name': 'james0067',
+                                'url': 'http://facebook.com/'
+                            },
+                            'twitter': 'james0009'
+                        }
+                    },
+                    {
+                        'age': 23,
+                        'name': 'John',
+                        'profile': {
+                            'fb': {
+                                'name': 'john0067',
+                                'url': 'http://facebook.com/john'
+                            },
+                            'twitter': 'john0009'
+                        }
+                    }
+                ]
+            },
+            field_data,
+            doc_map
+        )
+        logger.debug(u'MapFieldTest :: check: {}'.format(check))
