@@ -176,6 +176,9 @@ class StringField(object):
 
         :return:
         """
+        logger.debug(u'StringField.validate :: value: {} field_config: {} doc_config: {}'.format(
+            value, field_config, doc_config
+        ))
         check = Validator(True, {})
         # min_length and max_length for string
         name = field_config.get('name', 'general')
@@ -191,7 +194,7 @@ class StringField(object):
                 check.add_error(name, u'max length error')
         if field_choices and value != '':
             # If we have some value in field, validate with choices
-            choice_name = field_choices['choice_name']
+            choice_name = field_choices['name']
             choice_value = filter(lambda x: x['choice_item_name'] == value,
                                   doc_config['choices'][choice_name])
             if choice_value:
@@ -1358,7 +1361,18 @@ class ListField(object):
         :return:
         """
         logger.debug(u'ListField :: kwargs: {}'.format(kwargs))
-        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        item_type = kwargs['type'].split('<')[1][:-1]
+        if item_type == 'string':
+            allowed_attributes = StringField.allowed_attributes
+        elif item_type == 'date':
+            allowed_attributes = DateTimeField.allowed_attributes
+        elif item_type == 'number':
+            allowed_attributes = NumberField.allowed_attributes
+        elif item_type == 'check':
+            allowed_attributes = CheckField.allowed_attributes
+        else:
+            raise exceptions.XimpiaAPIException(_(u'Type not supported'))
+        not_validated_fields = filter(lambda x: x not in allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
         for attr_name in kwargs:
@@ -1393,7 +1407,7 @@ class ListField(object):
                         u'{}__{}__{}'.format(
                             self.doc_type, self.name, self.version
                         ): {
-
+                            'type': 'string'
                         },
                         'raw__v1': {
                             'type': 'string',
@@ -1478,6 +1492,7 @@ class ListField(object):
         item_type = type_.split('<')[1][:-1]
         if item_type == 'string':
             for value in values:
+                logger.debug(u'ListField.validate :: value: {}'.format(value))
                 check_field = StringField.validate(value, field_config, doc_config,
                                                    patterns_data=patterns_data)
                 if not check_field:

@@ -73,6 +73,5 @@ def pattern_validate_field(index, field_name, field_value, doc, field_class, pat
         field_config,
         doc_config,
         patterns_data=patterns_data,
-        tag=tag,
     )
-    return field_validate
+    return field_validate.check

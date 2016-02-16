@@ -405,81 +405,49 @@ class ListFieldTest(XimpiaTestCase):
     def tearDown(self):
         pass
 
-    def test_list_map(self):
-        from document.fields import MapListField
+    def test_list(self):
+        from document.fields import ListField
         print
         print
         print
         user = self.connect_user(user='my_site_admin', is_admin=True)
-        with open('ximpia_api/apps/document/tests/data/doc_map_list.json') as f:
+        with open('ximpia_api/apps/document/tests/data/doc_string_list.json') as f:
             doc_map_str = f.read()
         doc_map = json.loads(doc_map_str)
-        doc_type = 'test-map-list-field'
-        field_data = doc_map['settings']
-        field_data['name'] = 'settings'
+        doc_type = 'test-list-field'
+        field_data = doc_map['status']
+        field_data['name'] = 'status'
         field_data['doc_type'] = doc_type
+        doc_config = doc_map['_meta']
+        del doc_config['choices']
+        doc_config['choices'] = {}
+        doc_config['choices']['customer_status'] = [
+            {
+                'choice_item_name': 'approved'
+            },
+            {
+                'choice_item_name': 'created'
+            },
+            {
+                'choice_item_name': 'pending'
+            }
+        ]
         # Test make_mapping
-        field = MapListField(**field_data)
+        field = ListField(**field_data)
         mappings = field.make_mapping()
         import pprint
         pprint.PrettyPrinter(indent=4).pprint(mappings)
         physical = field.get_physical(
-            {
-                'settings': [
-                    {
-                        'age': 45,
-                        'name': 'James',
-                        'profile': {
-                            'fb': {
-                                'name': 'james0067',
-                                'url': 'http://facebook.com/'
-                            },
-                            'twitter': 'james0009'
-                        }
-                    },
-                    {
-                        'age': 23,
-                        'name': 'John',
-                        'profile': {
-                            'fb': {
-                                'name': 'john0067',
-                                'url': 'http://facebook.com/john'
-                            },
-                            'twitter': 'john0009'
-                        }
-                    }
-                ]
-            }
+            [
+                'approved', 'created', 'pending'
+            ]
         )
         pprint.PrettyPrinter(indent=4).pprint(physical)
         check = field.validate(
-            {
-                'settings': [
-                    {
-                        'age': 45,
-                        'name': 'James',
-                        'profile': {
-                            'fb': {
-                                'name': 'james0067',
-                                'url': 'http://facebook.com/'
-                            },
-                            'twitter': 'james0009'
-                        }
-                    },
-                    {
-                        'age': 23,
-                        'name': 'John',
-                        'profile': {
-                            'fb': {
-                                'name': 'john0067',
-                                'url': 'http://facebook.com/john'
-                            },
-                            'twitter': 'john0009'
-                        }
-                    }
-                ]
-            },
+            [
+                'approved', 'created', 'pending'
+            ],
             field_data,
-            doc_map
+            doc_config
         )
-        logger.debug(u'MapFieldTest :: check: {}'.format(check))
+        logger.debug(u'ListFieldTest :: check: {}'.format(check))
