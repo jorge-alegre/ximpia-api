@@ -762,6 +762,11 @@ class DocumentDefinition(viewsets.ModelViewSet):
                                                                                 dir(instance)))
             field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
             logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
+            field_type_raw = instance_data['type']
+            field_type = field_type_raw
+            if '<' in field_type_raw:
+                field_type = field_type_raw.split('<'[0])
+            logger.debug(u'DocumentDefinition.create :: field type: {}'.format(field_type))
             instance_data['name'] = field_name
             instance_data['doc_type'] = doc_type
             field_instance = field_class(**instance_data)
@@ -775,6 +780,7 @@ class DocumentDefinition(viewsets.ModelViewSet):
                     'field-version__doc_type__v1': doc_type,
                     'field-version__field__v1': field_items['field'],
                     'field-version__field_name__v1': field_items['field_name'],
+                    'field-version__type__v1': field_type,
                     'field-version__version__v1': 'v1',
                     'tag__v1': db_document_definition.get('tag', None),
                     'branch__v1': db_document_definition.get('branch', None),
