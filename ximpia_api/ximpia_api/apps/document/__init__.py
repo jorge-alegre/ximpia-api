@@ -860,3 +860,136 @@ class Validator(object):
 
     def invalid(self):
         self.check = False
+
+
+class DocumentDefinition(object):
+
+    logical_source = {}
+    doc_type = None
+    branch_name = None
+    tag_name = None
+
+    def __init__(self, logical, doc_type, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
+                 branch_name=None):
+        self.logical_source = logical
+        self.doc_type = doc_type
+        self.branch_name = branch_name
+        self.tag_name = tag_name
+
+    def get_mapping(self):
+        """
+        Would generate mappings for document and properties for fields
+
+        :return:
+        """
+        doc_mapping = {
+            self.doc_type: {
+                'dynamic': 'strict',
+                '_timestamp': {
+                    "enabled": True
+                },
+                "properties": {
+                }
+            }
+        }
+        # travel fields and get mapping for whole document
+        document_definition_logical = self.get_logical()
+        for field_name in document_definition_logical.keys():
+            if field_name == '_meta':
+                continue
+        return doc_mapping
+
+    def get_logical(self):
+        """
+        Get parsed logical, with same structure than physical but
+
+        :return:
+        """
+        input_document = dict()
+        input_document['_meta'] = {}
+        input_document_request = self.logical_source
+        for doc_field in input_document_request['_meta']:
+            if doc_field == 'choices':
+                input_document['_meta']['choices'] = []
+                for choice_name in input_document_request['_meta']['choices']:
+                    request_list = input_document_request['_meta']['choices'][choice_name]
+                    choice_list = []
+                    for choice_items in request_list:
+                        choice_list.append(
+                            {
+                                'name': choice_items[0],
+                                'value': choice_items[1]
+                            }
+                        )
+                    input_document['_meta']['choices'].append(
+                        {
+                            'choice_name': choice_list
+                        }
+                    )
+            elif doc_field == 'messages':
+                input_document['_meta']['messages'] = []
+                for message_name in input_document_request['_meta']['messages']:
+                    input_document['_meta']['messages'].append(
+                        {
+                            'name': message_name,
+                            'value': input_document_request['_meta']['messages'][message_name]
+                        }
+                    )
+            elif doc_field == 'validations':
+                # We need to generate from pattern class
+                # So far, exists, not-exists have same structure
+                input_document['_meta']['validations'] = []
+                for validation_data in input_document_request['_meta']['validations']:
+                        input_document['_meta']['validations'].append(
+                            validation_data
+                        )
+            else:
+                input_document['_meta'][doc_field] = input_document_request['_meta'][doc_field]
+        for field in input_document_request:
+            if field != '_meta':
+                # we check validations. Only support is-unique, exists and not-exists
+                field_data = input_document_request[field]
+                if 'validations' in field_data and filter(lambda x: x['type'] == 'is-unique',
+                                                          field_data['validations']):
+                    validations_new = []
+                    for validation_data in field_data['validations']:
+                        if validation_data['type'] == 'is-unique':
+                            validation_data_item = {
+                                'type': 'not-exists',
+                                'path': '{doc_type}.{field}'.format(
+                                    doc_type=self.doc_type,
+                                    field=field
+                                ),
+                                'value': 'self'
+                            }
+                            validations_new.append(validation_data_item)
+                    field_data['validations'] = validations_new
+                input_document[field] = field_data
+        if self.tag_name:
+            # tag_name = input_document_request['_meta']['tag']
+            tag = Document.objects.filter('tag',
+                                          **{
+                                              'tag__slug__v1.raw__v1': self.tag_name
+                                          })[0]
+            input_document['_meta']['tag'] = tag['_source']
+            input_document['_meta']['tag']['tag__id'] = tag['_id']
+        if self.branch_name:
+            # branch_name = input_document_request['_meta']['branch']
+            branch = Document.objects.filter('branch',
+                                             **{
+                                                 'branch__slug__v1.raw__v1': self.branch_name
+                                             })[0]
+            input_document['_meta']['branch'] = branch['_source']
+            input_document['_meta']['branch']['branch__id'] = branch['_id']
+        return input_document
+
+    def get_physical(self):
+        """
+        Get physical structure for document
+
+        :return:
+        """
+        pass
+
+    def get_field_versions(self):
+        pass
