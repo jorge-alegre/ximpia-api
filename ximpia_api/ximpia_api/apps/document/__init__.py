@@ -868,6 +868,7 @@ class DocumentDefinition(object):
     doc_type = None
     branch_name = None
     tag_name = None
+    field_map = {}
 
     def __init__(self, logical, doc_type, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
                  branch_name=None):
@@ -875,6 +876,34 @@ class DocumentDefinition(object):
         self.doc_type = doc_type
         self.branch_name = branch_name
         self.tag_name = tag_name
+        self.field_map = {}
+        self.logical = None
+
+    def _do_field_instance(self, field_name):
+        """
+        Process field instance
+
+        :param field_name:
+        :return:
+        """
+        instance_data = self.logical[field_name]
+        module = 'document.fields'
+        instance = __import__(module)
+        for comp in module.split('.')[1:]:
+            instance = getattr(instance, comp)
+        logger.debug(u'DocumentDefinition.create :: instance: {} {}'.format(instance,
+                                                                            dir(instance)))
+        field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+        logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
+        field_type_raw = instance_data['type']
+        field_type = field_type_raw
+        if '<' in field_type_raw:
+            field_type = field_type_raw.split('<'[0])
+        logger.debug(u'DocumentDefinition.create :: field type: {}'.format(field_type))
+        instance_data['name'] = field_name
+        instance_data['doc_type'] = self.doc_type
+        field_instance = field_class(**instance_data)
+        self.field_map[field_name] = field_instance
 
     def get_mapping(self):
         """
@@ -893,10 +922,31 @@ class DocumentDefinition(object):
             }
         }
         # travel fields and get mapping for whole document
-        document_definition_logical = self.get_logical()
-        for field_name in document_definition_logical.keys():
+        if not self.logical:
+            self.logical = self.get_logical()
+        for field_name in self.logical.keys():
             if field_name == '_meta':
                 continue
+            instance_data = self.logical[field_name]
+            module = 'document.fields'
+            instance = __import__(module)
+            for comp in module.split('.')[1:]:
+                instance = getattr(instance, comp)
+            logger.debug(u'DocumentDefinition.create :: instance: {} {}'.format(instance,
+                                                                                dir(instance)))
+            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+            logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
+            field_type_raw = instance_data['type']
+            field_type = field_type_raw
+            if '<' in field_type_raw:
+                field_type = field_type_raw.split('<'[0])
+            logger.debug(u'DocumentDefinition.create :: field type: {}'.format(field_type))
+            instance_data['name'] = field_name
+            instance_data['doc_type'] = self.doc_type
+            field_instance = field_class(**instance_data)
+            field_items = field_instance.get_field_items()
+            field_mapping = field_instance.make_mapping()
+            doc_mapping[self.doc_type]['properties'].update(field_mapping)
         return doc_mapping
 
     def get_logical(self):
