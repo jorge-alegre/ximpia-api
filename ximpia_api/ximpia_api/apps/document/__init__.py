@@ -1027,7 +1027,21 @@ class DocumentDefinition(object):
 
         :return:
         """
-        pass
+        physical = {}
+        if not self.logical:
+            self.logical = self.get_logical()
+        for field_name in self.logical.keys():
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            field_items = field_instance.get_field_items()
+            # field_physical = field_instance.get_physical(self.logical[field_name])
+            physical[field_items['field']] = field_instance.get_physical(self.logical[field_name])
+        return physical
 
     def get_field_versions(self):
         pass
