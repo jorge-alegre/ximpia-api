@@ -14,7 +14,7 @@ from django.utils.text import slugify
 
 from base import exceptions
 
-from document import to_physical_doc, Document
+from document import to_physical_doc, Document, DocumentDefinition
 from base import get_es_response, get_path_search, get_site
 
 __author__ = 'jorgealegre'
@@ -436,95 +436,9 @@ class Completion(generics.RetrieveAPIView):
         return Response(responses)
 
 
-class DocumentDefinition(viewsets.ModelViewSet):
+class DocumentDefinitionView(viewsets.ModelViewSet):
 
     lookup_field = 'id'
-
-    @classmethod
-    def _generate_input_document(cls, input_document_request, doc_type, tag_name, branch_name):
-        """
-        Generate internal definition document for ES, same structure as mappings
-
-        :param input_document_request:
-        :param doc_type:
-        :return:
-        """
-        input_document = dict()
-        input_document['_meta'] = {}
-        for doc_field in input_document_request['_meta']:
-            if doc_field == 'choices':
-                input_document['_meta']['choices'] = []
-                for choice_name in input_document_request['_meta']['choices']:
-                    request_list = input_document_request['_meta']['choices'][choice_name]
-                    choice_list = []
-                    for choice_items in request_list:
-                        choice_list.append(
-                            {
-                                'name': choice_items[0],
-                                'value': choice_items[1]
-                            }
-                        )
-                    input_document['_meta']['choices'].append(
-                        {
-                            'choice_name': choice_list
-                        }
-                    )
-            elif doc_field == 'messages':
-                input_document['_meta']['messages'] = []
-                for message_name in input_document_request['_meta']['messages']:
-                    input_document['_meta']['messages'].append(
-                        {
-                            'name': message_name,
-                            'value': input_document_request['_meta']['messages'][message_name]
-                        }
-                    )
-            elif doc_field == 'validations':
-                # We need to generate from pattern class
-                # So far, exists, not-exists have same structure
-                input_document['_meta']['validations'] = []
-                for validation_data in input_document_request['_meta']['validations']:
-                        input_document['_meta']['validations'].append(
-                            validation_data
-                        )
-            else:
-                input_document['_meta'][doc_field] = input_document_request['_meta'][doc_field]
-        for field in input_document_request:
-            if field != '_meta':
-                # we check validations. Only support is-unique, exists and not-exists
-                field_data = input_document_request[field]
-                if 'validations' in field_data and filter(lambda x: x['type'] == 'is-unique',
-                                                          field_data['validations']):
-                    validations_new = []
-                    for validation_data in field_data['validations']:
-                        if validation_data['type'] == 'is-unique':
-                            validation_data_item = {
-                                'type': 'not-exists',
-                                'path': '{doc_type}.{field}'.format(
-                                    doc_type=doc_type,
-                                    field=field
-                                ),
-                                'value': 'self'
-                            }
-                            validations_new.append(validation_data_item)
-                    field_data['validations'] = validations_new
-                input_document[field] = field_data
-        if tag_name:
-            # tag_name = input_document_request['_meta']['tag']
-            tag = Document.objects.filter('tag',
-                                          **{
-                                              'tag__slug__v1.raw__v1': tag_name
-                                          })[0]
-            input_document['_meta']['tag'] = tag['_source']
-            input_document['_meta']['tag']['tag__id'] = tag['_id']
-        if branch_name:
-            # branch_name = input_document_request['_meta']['branch']
-            branch = Document.objects.filter('branch',
-                                             **{
-                                                 'branch__slug__v1.raw__v1': branch_name
-                                             })[0]
-            input_document['_meta']['branch'] = branch['_source']
-            input_document['_meta']['branch']['branch__id'] = branch['_id']
-        return input_document
 
     def create(self, request, *args, **kwargs):
         """
@@ -612,15 +526,11 @@ class DocumentDefinition(viewsets.ModelViewSet):
         if not admin_groups:
             raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
         # generate mappings
-        document_definition_input = self._generate_input_document(
-            json.loads(request.body), doc_type, tag_name, branch_name
-        )
+        doc_def = DocumentDefinition(json.loads(request.body), doc_type, tag_name=tag_name,
+                                     branch_name=branch_name)
+        document_definition_input = doc_def.logical
         logger.info(u'DocumentDefinition.create :: document_definition_input: {}'.format(
             pprint.PrettyPrinter(indent=4).pformat(document_definition_input)))
-        """if 'tag' not in document_definition_input['_meta'] or document_definition_input['_meta']['tag']:
-            tag = settings.DEFAULT_VERSION
-        else:
-            tag = document_definition_input['_meta']['tag']"""
         bulk_queries = list()
         # Check db validations: tag exists, document definition not exists, no fields
         bulk_queries.append(
@@ -723,14 +633,6 @@ class DocumentDefinition(viewsets.ModelViewSet):
         # End validations
         ##################
 
-        # Link Fields
-        # 1. We need to get all in single query
-        # 2. We get document definitions physical, then convert to logical and keep in a map
-        # 3. mapping???? mapping for document type?
-        # 4. create_ximpia :: old flow: mapping -> field versions
-        #                     new flow: doc definition logical -> mappings, field versions, physical,
-        #                                                         logical_parsed
-
         # Build db document definition
         db_document_definition = {
             'fields': []
@@ -747,50 +649,15 @@ class DocumentDefinition(viewsets.ModelViewSet):
             'user_name': user.username
         }
         # Build data
-        doc_mapping = {
-            doc_type: {
-                'dynamic': 'strict',
-                '_timestamp': {
-                    "enabled": True
-                },
-                "properties": {
-                }
-            }
-        }
+        doc_mapping = doc_def.get_mapping()
         fields_version_str = ''
-        for field_name in document_definition_input.keys():
+        for field_name in doc_def.logical.keys():
             if field_name == '_meta':
                 continue
-
-            instance_data = document_definition_input[field_name]
-            module = 'document.fields'
-            instance = __import__(module)
-            for comp in module.split('.')[1:]:
-                instance = getattr(instance, comp)
-            logger.debug(u'DocumentDefinition.create :: instance: {} {}'.format(instance,
-                                                                                dir(instance)))
-            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
-            logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
-            field_type_raw = instance_data['type']
-            field_type = field_type_raw
-            if '<' in field_type_raw:
-                field_type = field_type_raw.split('<'[0])
-            logger.debug(u'DocumentDefinition.create :: field type: {}'.format(field_type))
-            instance_data['name'] = field_name
-            instance_data['doc_type'] = doc_type
-            field_instance = field_class(**instance_data)
+            field_instance = doc_def.field_map[field_name]
             field_items = field_instance.get_field_items()
-            field_mapping = field_instance.make_mapping()
-            doc_mapping[doc_type]['properties'].update(field_mapping)
+            field_type = field_instance.type
             bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
-            if field_type == 'link':
-                # field_type: link
-                # 1. We only have definition for id
-                # 2. Get link document definition
-                pass
-            elif field_type == 'links':
-                # similar than for link
-                pass
             # Note: field__v1 would need to be generated by fields, since changes for links, string fields, etc...
             bulk_data = json.dumps(
                 {

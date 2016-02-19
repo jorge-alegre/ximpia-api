@@ -21,11 +21,12 @@ from rest_framework import routers
 # from ximpia_api.ximpia_api.apps.xp_user.views import User
 from base.views import SetupSite
 from xp_user.views import UserSignup, Connect, User
-from document.views import DocumentDefinition
+from document.views import DocumentDefinitionView
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register(r'users', User, base_name='user')
-router.register(r'document-definition/(?P<doc_type>[-\w]+)', DocumentDefinition, base_name='document-definition')
+router.register(r'document-definition/(?P<doc_type>[-\w]+)', DocumentDefinitionView,
+                base_name='document-definition')
 
 urlpatterns = [
     # url(r'^admin/', include(admin.site.urls)),
