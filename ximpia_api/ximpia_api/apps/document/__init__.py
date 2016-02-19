@@ -5,6 +5,7 @@ import logging
 from requests.adapters import HTTPAdapter
 
 from django.utils.translation import ugettext as _
+from django.utils.text import slugify
 from django.conf import settings
 
 from base import exceptions, get_es_response, get_path_search
@@ -879,6 +880,108 @@ class DocumentDefinition(object):
         self.field_map = {}
         self.logical = None
 
+    def _get_documents(self, doc_types):
+        """
+        We can get documents like tag, branch and also link field, links field
+
+        :param doc_types:
+
+        :return:
+        """
+        # We need the document definition, doc_type and tag would be enough
+        # We would need the physical data, that we inject into Link and Links field types
+        # We do bulk query for this
+        documents = {}
+        bulk_queries = {}
+        bulk_queries_keys = []
+        if not self.logical:
+            self.logical = self.get_logical()
+        for field_name in self.logical.keys():
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            if field_instance.type in ['link', 'links']:
+                pass
+        if self.tag_name:
+            # We need data for tag, so insert into field-version tag embedded object
+            bulk_queries_keys.append('tag_data')
+            bulk_queries['tag_data'] = (json.dumps(
+                {
+                    'index': settings.SITE_BASE_INDEX,
+                    'type': 'tag'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'tag__slug__v1.raw__v1': slugify(self.tag_name)
+                        }
+                    }
+                }
+            )
+            )
+        if self.branch_name:
+            bulk_queries_keys.append('branch_data')
+            bulk_queries['branch_data'] = (json.dumps(
+                {
+                    'index': settings.SITE_BASE_INDEX,
+                    'type': 'branch'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'branch__slug__v1.raw__v1': slugify(self.branch_name)
+                        }
+                    }
+                }
+            )
+            )
+        # Make ES request
+        es_response_raw = requests.get(
+            '{host}/_msearch'.format(
+                host=settings.ELASTIC_SEARCH_HOST
+            ),
+            data=''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition._get_documents :: response validations: {}'.format(
+            es_response
+        ))
+        responses = es_response.get('responses', [])
+        """if responses[0]['hits']['total'] > 0:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        if responses[1]['hits']['total'] > 0:
+            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
+        if responses[2]['hits']['total'] == 0:
+            raise exceptions.XimpiaAPIException(_(u'Tag does not exist'))"""
+        # update self.logical with tag and branch
+        if 'tag_data' in bulk_queries_keys:
+            try:
+                response = responses[bulk_queries_keys.index('tag_data')]['hits']['hits'][0]
+                self.logical['_meta']['tag'] = response['_source']
+                self.logical['_meta']['tag']['tag__id'] = response['_id']
+            except IndexError:
+                pass
+        if 'branch_data' in bulk_queries_keys:
+            try:
+                response = responses[bulk_queries_keys.index('branch_data')]['hits']['hits'][0]
+                self.logical['_meta']['branch'] = response['_source']
+                self.logical['_meta']['branch']['tag__id'] = response['_id']
+            except IndexError:
+                pass
+        return documents
+
     def _do_field_instance(self, field_name):
         """
         Process field instance
@@ -1003,22 +1106,6 @@ class DocumentDefinition(object):
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
                 input_document[field] = field_data
-        if self.tag_name:
-            # tag_name = input_document_request['_meta']['tag']
-            tag = Document.objects.filter('tag',
-                                          **{
-                                              'tag__slug__v1.raw__v1': self.tag_name
-                                          })[0]
-            input_document['_meta']['tag'] = tag['_source']
-            input_document['_meta']['tag']['tag__id'] = tag['_id']
-        if self.branch_name:
-            # branch_name = input_document_request['_meta']['branch']
-            branch = Document.objects.filter('branch',
-                                             **{
-                                                 'branch__slug__v1.raw__v1': self.branch_name
-                                             })[0]
-            input_document['_meta']['branch'] = branch['_source']
-            input_document['_meta']['branch']['branch__id'] = branch['_id']
         return input_document
 
     def get_physical(self):
