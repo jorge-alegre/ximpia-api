@@ -885,6 +885,21 @@ class DocumentDefinition(object):
         self.docs = {}
         self._get_documents()
 
+    def _get_field_index(self, field_instance):
+        """
+        Get field index, for link and links fields
+
+        :param field_instance:
+        :return:
+        """
+        if 'app' in field_instance and field_instance['app']:
+            index = u'{app}'.format(
+                app=field_instance['app']
+            )
+        else:
+            index = self.index
+        return index
+
     def _get_documents(self):
         """
         We can get documents like tag, branch and also link field, links field
@@ -909,12 +924,7 @@ class DocumentDefinition(object):
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
             if field_instance.type in ['link', 'links']:
-                if 'app' in field_instance and field_instance['app']:
-                    index = u'{app}'.format(
-                        app=field_instance['app']
-                    )
-                else:
-                    index = self.index
+                index = self._get_field_index(field_instance)
                 if field_instance.type_remote not in self.mappings:
                     self.mappings[field_instance.type_remote] = get_mapping(
                         field_instance.type_remote,
@@ -1087,6 +1097,13 @@ class DocumentDefinition(object):
                 field_instance = self.field_map[field_name]
             # field_items = field_instance.get_field_items()
             field_mapping = field_instance.make_mapping()
+            if field_instance.type in ['link', 'links']:
+                if field_instance.type_remote in self.mappings:
+                    doc_type = field_instance.type_remote
+                    index = self._get_field_index(field_instance)
+                    field_mapping.update(
+                        self.mappings[field_instance.type_remote][index]['mappings'][doc_type]['properties']
+                    )
             doc_mapping[self.doc_type]['properties'].update(field_mapping)
         return doc_mapping
 
