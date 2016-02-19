@@ -470,3 +470,25 @@ def get_resource(request, path, method_type, data=None):
 
 def get_version(request):
     return getattr(request, 'version', settings.DEFAULT_VERSION)
+
+
+def get_mapping(doc_type, index=settings.SITE_BASE_INDEX):
+    """
+    Get mapping
+
+    :param doc_type:
+    :param index:
+    :return:
+    """
+    response_raw = req_session.get(
+        '{host}/{index}_mapping/{type}'.format(
+            host=settings.ELASTIC_SEARCH_HOST,
+            index=index,
+            type=doc_type
+        )
+    )
+    logger.info(u'get_mapping :: response: {}'.format(
+        response_raw
+    ))
+    response = response_raw.json()
+    return response

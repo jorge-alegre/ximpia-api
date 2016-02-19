@@ -1522,6 +1522,8 @@ class LinkField(object):
         u'name',
         u'doc_type',
         u'add_summary',
+        u'type_remote',
+        u'app'
     }
 
     type = None
@@ -1532,6 +1534,8 @@ class LinkField(object):
     display_name = None
     doc_type = None
     version = None
+    type_remote = None
+    app = None
 
     def __init__(self, **kwargs):
         """

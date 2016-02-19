@@ -870,24 +870,28 @@ class DocumentDefinition(object):
     branch_name = None
     tag_name = None
     field_map = {}
+    docs = {}
+    mappings = {}
 
     def __init__(self, logical, doc_type, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
-                 branch_name=None):
+                 branch_name=None, index=settings.SITE_BASE_INDEX):
         self.logical_source = logical
         self.doc_type = doc_type
         self.branch_name = branch_name
         self.tag_name = tag_name
         self.field_map = {}
         self.logical = None
+        self.index = index
+        self.docs = {}
+        self._get_documents()
 
-    def _get_documents(self, doc_types):
+    def _get_documents(self):
         """
         We can get documents like tag, branch and also link field, links field
 
-        :param doc_types:
-
         :return:
         """
+        from base import get_mapping
         # We need the document definition, doc_type and tag would be enough
         # We would need the physical data, that we inject into Link and Links field types
         # We do bulk query for this
@@ -905,7 +909,43 @@ class DocumentDefinition(object):
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
             if field_instance.type in ['link', 'links']:
-                pass
+                if 'app' in field_instance and field_instance['app']:
+                    index = u'{app}'.format(
+                        app=field_instance['app']
+                    )
+                else:
+                    index = self.index
+                if field_instance.type_remote not in self.mappings:
+                    self.mappings[field_instance.type_remote] = get_mapping(
+                        field_instance.type_remote,
+                        index=index
+                    )
+                query_key = u'{doc_type}-{field_name}'.format(
+                    doc_type=field_instance.type_remote,
+                    field_name=field_instance.name
+                )
+                if field_instance.type == 'link':
+                    values = [self.logical[field_instance['name']]['id']]
+                else:
+                    values = [self.logical[field_instance['name']]['ids']]
+                bulk_queries_keys.append(query_key)
+                # query by id
+                bulk_queries[query_key] = (json.dumps(
+                    {
+                        'index': index,
+                        'type': field_instance.type_remote
+                    }
+                ), json.dumps(
+                    {
+                        'query': {
+                            'ids': {
+                                'type': field_instance.type_remote,
+                                'values': values
+                            }
+                        }
+                    }
+                )
+                )
         if self.tag_name:
             # We need data for tag, so insert into field-version tag embedded object
             bulk_queries_keys.append('tag_data')
@@ -948,38 +988,48 @@ class DocumentDefinition(object):
             )
             )
         # Make ES request
+        bulk_queries_request = map(lambda x: bulk_queries[x], bulk_queries_keys)
         es_response_raw = requests.get(
             '{host}/_msearch'.format(
                 host=settings.ELASTIC_SEARCH_HOST
             ),
-            data=''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries))
+            data=''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries_request))
         )
         es_response = es_response_raw.json()
         logger.info(u'DocumentDefinition._get_documents :: response validations: {}'.format(
             es_response
         ))
         responses = es_response.get('responses', [])
-        """if responses[0]['hits']['total'] > 0:
-            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
-        if responses[1]['hits']['total'] > 0:
-            raise exceptions.XimpiaAPIException(_(u'Document definition already exists'))
-        if responses[2]['hits']['total'] == 0:
-            raise exceptions.XimpiaAPIException(_(u'Tag does not exist'))"""
         # update self.logical with tag and branch
         if 'tag_data' in bulk_queries_keys:
             try:
                 response = responses[bulk_queries_keys.index('tag_data')]['hits']['hits'][0]
-                self.logical['_meta']['tag'] = response['_source']
-                self.logical['_meta']['tag']['tag__id'] = response['_id']
+                self.docs['tag'] = response['_source']
+                self.docs['tag']['tag__id'] = response['_id']
             except IndexError:
                 pass
         if 'branch_data' in bulk_queries_keys:
             try:
                 response = responses[bulk_queries_keys.index('branch_data')]['hits']['hits'][0]
-                self.logical['_meta']['branch'] = response['_source']
-                self.logical['_meta']['branch']['tag__id'] = response['_id']
+                self.docs['branch'] = response['_source']
+                self.docs['branch']['branch__id'] = response['_id']
             except IndexError:
                 pass
+        # parse link and links
+        for key in bulk_queries_keys:
+            if key not in ['tag_data', 'branch_data']:
+                response = responses[bulk_queries_keys.index(key)]['hits']['hits']
+                doc_type, field_name = key.split('-')
+                if doc_type == 'link':
+                    self.docs[field_name] = response[0]['_source']
+                    self.docs[field_name][u'{}__id'.format(doc_type)] = response[0]['_id']
+                elif doc_type == 'links':
+                    values = []
+                    for value_raw in response['hits']['hits']:
+                        value = {'id': value_raw['_id']}
+                        value.update(value_raw['_source'])
+                        values.append(value)
+                    self.docs[field_name] = values
         return documents
 
     def _do_field_instance(self, field_name):
