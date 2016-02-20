@@ -947,11 +947,13 @@ class DocumentDefinition(object):
                 field_instance = self.field_map[field_name]
             if field_instance.type in ['link', 'links']:
                 index = self._get_field_index(field_instance)
+                # mappings
                 if field_instance.type_remote not in self.mappings:
                     self.mappings[field_instance.type_remote] = get_mapping(
                         field_instance.type_remote,
                         index=index
                     )
+                # data
                 query_key = u'{doc_type}-{field_name}'.format(
                     doc_type=field_instance.type_remote,
                     field_name=field_instance.name
@@ -1117,7 +1119,6 @@ class DocumentDefinition(object):
             else:
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
-            # field_items = field_instance.get_field_items()
             field_mapping = field_instance.make_mapping()
             if field_instance.type in ['link', 'links']:
                 if field_instance.type_remote in self.mappings:
@@ -1198,8 +1199,6 @@ class DocumentDefinition(object):
                             }
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
-                """input_document['fields'].setdefault(field_data['type'], [])
-                input_document['fields'].field_data['type'].append(field_data)"""
                 input_document[field] = field_data
         return input_document
 
@@ -1227,7 +1226,13 @@ class DocumentDefinition(object):
         """
         if not self.logical:
             self.logical = self.get_logical()
-        for field_name in self.logical.keys():
+        # Write physical meta fields into main root node
+        for meta_item in self.logical['_meta']:
+            meta_field = u'document-definition__{field}__v1'.format(
+                field=meta_item
+            )
+            self.physical[meta_field] = self.logical['_meta'][meta_item]
+        for field_name in self.logical:
             if field_name == '_meta':
                 continue
             if field_name in self.field_map:
@@ -1235,8 +1240,13 @@ class DocumentDefinition(object):
             else:
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
-            field_items = field_instance.get_field_items()
-            self.physical[field_items['field']] = field_instance.get_physical(self.logical[field_name])
+            self.physical['document-definition__fields__v1'].setdefault(
+                u'document-definition__fields__{}__v1'.format(field_instance.type),
+                []
+            )
+            fields_node = self.physical['document-definition__fields__v1']
+            type_field = u'document-definition__fields__{}__v1'.format(field_instance.type)
+            fields_node[type_field].append(field_instance.get_def_physical())
         return self.physical
 
     def get_field_versions(self, index, user):

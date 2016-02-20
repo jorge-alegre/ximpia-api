@@ -137,6 +137,15 @@ class StringField(object):
             'field_name': self.name,
         }
 
+    def get_def_physical(self):
+        """
+        Get physical for document-definition type
+
+        :return:
+        """
+        # u'document-definition__fields__{}__v1'.format(field_instance.type)
+        return {}
+
     def get_physical(self, value):
         """
         Get physical field
