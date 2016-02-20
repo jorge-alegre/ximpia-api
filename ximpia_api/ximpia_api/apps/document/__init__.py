@@ -1092,7 +1092,7 @@ class DocumentDefinition(object):
 
     def get_mapping(self):
         """
-        Would generate mappings for document and properties for fields
+        Would generate mappings for document. No mapping generated for document definition.
 
         :return:
         """
@@ -1131,17 +1131,16 @@ class DocumentDefinition(object):
 
     def get_logical(self):
         """
-        Get parsed logical, with same structure than physical but
+        Get parsed logical
 
         :return:
         """
-        from datetime import datetime
         input_document = dict()
-        # input_document['_meta'] = {}
+        input_document['_meta'] = {}
         input_document_request = self.logical_source
         for doc_field in input_document_request['_meta']:
             if doc_field == 'choices':
-                input_document['choices'] = []
+                input_document['_meta']['choices'] = []
                 for choice_name in input_document_request['_meta']['choices']:
                     request_list = input_document_request['_meta']['choices'][choice_name]
                     choice_list = []
@@ -1152,15 +1151,15 @@ class DocumentDefinition(object):
                                 'value': choice_items[1]
                             }
                         )
-                    input_document['choices'].append(
+                    input_document['_meta']['choices'].append(
                         {
                             'choice_name': choice_list
                         }
                     )
             elif doc_field == 'messages':
-                input_document['messages'] = []
+                input_document['_meta']['messages'] = []
                 for message_name in input_document_request['_meta']['messages']:
-                    input_document['messages'].append(
+                    input_document['_meta']['messages'].append(
                         {
                             'name': message_name,
                             'value': input_document_request['_meta']['messages'][message_name]
@@ -1169,9 +1168,9 @@ class DocumentDefinition(object):
             elif doc_field == 'validations':
                 # We need to generate from pattern class
                 # So far, exists, not-exists have same structure
-                input_document['validations'] = []
+                input_document['_meta']['validations'] = []
                 for validation_data in input_document_request['_meta']['validations']:
-                        input_document['validations'].append(
+                        input_document['_meta']['validations'].append(
                             validation_data
                         )
             else:
@@ -1199,12 +1198,15 @@ class DocumentDefinition(object):
                             }
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
-                input_document['fields'].setdefault(field_data['type'], [])
-                input_document['fields'].field_data['type'].append(field_data)
+                """input_document['fields'].setdefault(field_data['type'], [])
+                input_document['fields'].field_data['type'].append(field_data)"""
+                input_document[field] = field_data
         return input_document
 
     def put_timestamp(self, user):
         """
+        Put timestamp for document definition and user data into physical doc for db writing.
+        Physical could have been created or not yet.
 
         :param user:
         :return:
@@ -1219,7 +1221,7 @@ class DocumentDefinition(object):
 
     def get_physical(self):
         """
-        Get physical structure for document
+        Get physical for document definition doc-type
 
         :return:
         """
