@@ -872,8 +872,9 @@ class DocumentDefinition(object):
     field_map = {}
     docs = {}
     mappings = {}
+    user = None
 
-    def __init__(self, logical, doc_type, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
+    def __init__(self, logical, doc_type, user, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
                  branch_name=None, index=settings.SITE_BASE_INDEX):
         self.logical_source = logical
         self.doc_type = doc_type
@@ -884,6 +885,7 @@ class DocumentDefinition(object):
         self.index = index
         self.docs = {}
         self._get_documents()
+        self.user = user
 
     def _get_field_index(self, field_instance):
         """
@@ -1113,12 +1115,13 @@ class DocumentDefinition(object):
 
         :return:
         """
+        from datetime import datetime
         input_document = dict()
-        input_document['_meta'] = {}
+        # input_document['_meta'] = {}
         input_document_request = self.logical_source
         for doc_field in input_document_request['_meta']:
             if doc_field == 'choices':
-                input_document['_meta']['choices'] = []
+                input_document['choices'] = []
                 for choice_name in input_document_request['_meta']['choices']:
                     request_list = input_document_request['_meta']['choices'][choice_name]
                     choice_list = []
@@ -1129,15 +1132,15 @@ class DocumentDefinition(object):
                                 'value': choice_items[1]
                             }
                         )
-                    input_document['_meta']['choices'].append(
+                    input_document['choices'].append(
                         {
                             'choice_name': choice_list
                         }
                     )
             elif doc_field == 'messages':
-                input_document['_meta']['messages'] = []
+                input_document['messages'] = []
                 for message_name in input_document_request['_meta']['messages']:
-                    input_document['_meta']['messages'].append(
+                    input_document['messages'].append(
                         {
                             'name': message_name,
                             'value': input_document_request['_meta']['messages'][message_name]
@@ -1146,17 +1149,21 @@ class DocumentDefinition(object):
             elif doc_field == 'validations':
                 # We need to generate from pattern class
                 # So far, exists, not-exists have same structure
-                input_document['_meta']['validations'] = []
+                input_document['validations'] = []
                 for validation_data in input_document_request['_meta']['validations']:
-                        input_document['_meta']['validations'].append(
+                        input_document['validations'].append(
                             validation_data
                         )
             else:
                 input_document['_meta'][doc_field] = input_document_request['_meta'][doc_field]
+        input_document['fields'] = {}
         for field in input_document_request:
             if field != '_meta':
                 # we check validations. Only support is-unique, exists and not-exists
                 field_data = input_document_request[field]
+                if 'active' not in field_data:
+                    field_data['active'] = True
+                field_data['name'] = field
                 if 'validations' in field_data and filter(lambda x: x['type'] == 'is-unique',
                                                           field_data['validations']):
                     validations_new = []
@@ -1172,7 +1179,14 @@ class DocumentDefinition(object):
                             }
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
-                input_document[field] = field_data
+                input_document['fields'].setdefault(field_data['type'], [])
+                input_document['fields'].field_data['type'].append(field_data)
+        input_document['created_on'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        if self.user:
+            input_document['created_by'] = {
+                'id': self.user.id,
+                'user_name': self.user.username
+            }
         return input_document
 
     def get_physical(self):

@@ -526,7 +526,7 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
         if not admin_groups:
             raise exceptions.XimpiaAPIException(_(u'User needs to be admin'))
         # generate mappings
-        doc_def = DocumentDefinition(json.loads(request.body), doc_type, tag_name=tag_name,
+        doc_def = DocumentDefinition(json.loads(request.body), doc_type, user, tag_name=tag_name,
                                      branch_name=branch_name)
         document_definition_input = doc_def.logical
         logger.info(u'DocumentDefinition.create :: document_definition_input: {}'.format(
@@ -633,27 +633,10 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
         # End validations
         ##################
 
-        # Build db document definition
-        db_document_definition = {
-            'fields': []
-        }
-        for meta_field in document_definition_input['_meta'].keys():
-            db_document_definition[meta_field] = document_definition_input['_meta'][meta_field]
-        for field_name in document_definition_input.keys():
-            db_field = document_definition_input[field_name]
-            db_field['name'] = field_name
-            db_document_definition['fields'].append(db_field)
-        db_document_definition['created_on'] = now_es
-        db_document_definition['created_by'] = {
-            'id': user.id,
-            'user_name': user.username
-        }
         # Build data
         doc_mapping = doc_def.get_mapping()
         fields_version_str = ''
-        for field_name in doc_def.logical.keys():
-            if field_name == '_meta':
-                continue
+        for field_name in doc_def.field_map:
             field_instance = doc_def.field_map[field_name]
             field_items = field_instance.get_field_items()
             field_type = field_instance.type
@@ -666,8 +649,8 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
                     'field-version__field_name__v1': field_items['field_name'],
                     'field-version__type__v1': field_type,
                     'field-version__version__v1': 'v1',
-                    'tag__v1': db_document_definition.get('tag', None),
-                    'branch__v1': db_document_definition.get('branch', None),
+                    'tag__v1': doc_def.logical.get('tag', None),
+                    'branch__v1': doc_def.logical.get('branch', None),
                     'field-version__is_active__v1': True,
                     'field-version__created_on__v1': now_es,
                     'field-version__created_by__v1': {
@@ -690,9 +673,7 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
                 doc_type=doc_type
             ),
             data=json.dumps(
-                to_physical_doc(
-                    doc_type, db_document_definition
-                )
+                doc_def.get_physical()
             )
         )
         es_response = es_response_raw.json()
