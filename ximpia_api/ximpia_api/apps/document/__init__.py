@@ -872,10 +872,29 @@ class DocumentDefinition(object):
     field_map = {}
     docs = {}
     mappings = {}
+    physical = {}
     user = None
 
     def __init__(self, logical, doc_type, user, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
                  branch_name=None, index=settings.SITE_BASE_INDEX):
+        """
+        Document definition entity that generates all data associated with a document definition
+
+        * Mapping: For new document we generate mapping that later allows writing data into document
+        * Physical Definition: Physical data for document definition mapping, with "_meta" as normal fields
+          and fields inside a nested "fields" node.
+        * Logical Definition: Logical document with some injections for tag, branch and _meta having same
+        physical structure
+        * Logical Source: Access to source logical document received (logical_source class attribute)
+
+        :param logical:
+        :param doc_type:
+        :param user:
+        :param tag_name:
+        :param branch_name:
+        :param index:
+        :return:
+        """
         self.logical_source = logical
         self.doc_type = doc_type
         self.branch_name = branch_name
@@ -886,6 +905,7 @@ class DocumentDefinition(object):
         self.docs = {}
         self._get_documents()
         self.user = user
+        self.physical = {}
 
     def _get_field_index(self, field_instance):
         """
@@ -1181,13 +1201,21 @@ class DocumentDefinition(object):
                     field_data['validations'] = validations_new
                 input_document['fields'].setdefault(field_data['type'], [])
                 input_document['fields'].field_data['type'].append(field_data)
-        input_document['created_on'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        if self.user:
-            input_document['created_by'] = {
-                'id': self.user.id,
-                'user_name': self.user.username
-            }
         return input_document
+
+    def put_timestamp(self, user):
+        """
+
+        :param user:
+        :return:
+        """
+        from datetime import datetime
+        self.physical['document-definition__created_on__v1'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        if self.user:
+            self.physical['document-definition__created_by__v1'] = {
+                'document-definition__created_by__id': user.id,
+                'document-definition__created_by__user_name__v1': user.username
+                }
 
     def get_physical(self):
         """
@@ -1195,7 +1223,6 @@ class DocumentDefinition(object):
 
         :return:
         """
-        physical = {}
         if not self.logical:
             self.logical = self.get_logical()
         for field_name in self.logical.keys():
@@ -1207,9 +1234,8 @@ class DocumentDefinition(object):
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
             field_items = field_instance.get_field_items()
-            # field_physical = field_instance.get_physical(self.logical[field_name])
-            physical[field_items['field']] = field_instance.get_physical(self.logical[field_name])
-        return physical
+            self.physical[field_items['field']] = field_instance.get_physical(self.logical[field_name])
+        return self.physical
 
     def get_field_versions(self, index, user):
         """
