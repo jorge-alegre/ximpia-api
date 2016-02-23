@@ -122,6 +122,14 @@ class Field(object):
                         prefix=prefix
                     )] = self.field_data[key]['default']
             elif key == 'items':
+                """
+                "items": {
+                    "field": {
+                        "type": "string,
+                        ...
+                    }
+                }
+                """
                 # MapField: dict MapListField: list
                 if self.type == 'map':
                     items_node = physical[u'document-definition__fields__{type}__items__v1'.format(
