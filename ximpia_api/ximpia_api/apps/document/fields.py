@@ -12,10 +12,158 @@ __author__ = 'jorgealegre'
 logger = logging.getLogger(__name__)
 
 
-class StringField(object):
+class Field(object):
+
+    allowed_attributes = {}
+    field_data = {}
+    type = None
+
+    def get_def_physical(self):
+        """
+        Get physical for document-definition type
+
+        Example for StringField document definition physical:
+        {
+          document-definition__fields__string__active__v1: True,
+          document-definition__fields__string__validations__v1: [
+            document-definition__fields__string__validations__type__v1: ,
+            document-definition__fields__string__validations__path__v1: ,
+            document-definition__fields__string__validations__value__v1: ,
+            document-definition__fields__string__validations__modes__v1: ,
+            document-definition__fields__string__validations__context__v1:
+          ],
+          document-definition__fields__string__choices__v1: {
+            document-definition__fields__string__choices__choice_name__v1: '',
+            document-definition__fields__string__choices__default_value__v1: '',
+          },
+          document-definition__fields__string__default__v1: '',
+          document-definition__fields__string__add_summary__v1: True,
+          document-definition__fields__string__hint__v1: '',
+          document-definition__fields__string__comment__v1: '',
+          document-definition__fields__string__display_name__v1: '',
+          document-definition__fields__string__max_length__v1: None,
+          document-definition__fields__string__min_length__v1: None,
+          document-definition__fields__string__is_autocomplete__v1: False
+        }
+
+        :return:
+        """
+        physical = {}
+        for key in self.allowed_attributes:
+            # We catch complex structures for all fields
+            if key in ['validations', 'choices', 'items']:
+                physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                    type=self.type,
+                    field=key
+                )] = {}
+            else:
+                physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                    type=self.type,
+                    field=key
+                )] = None
+            if key == 'validations':
+                validations_node = physical[u'document-definition__fields__{type}__validations__v1'.format(
+                    type=self.type
+                )]
+                """
+                "validations": [
+                    {
+                        "type": "is-unique"
+                    }
+                ]
+                """
+                prefix = u'document-definition__fields__{type}__validations'.format(
+                    type=self.type
+                )
+                if key in self.field_data and self.field_data[key]:
+                    validations_node[u'{}prefix__type__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{}prefix__path__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{}prefix__value__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{}prefix__modes__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{}prefix__context__v1'.format(prefix=prefix)] = None
+                    if self.field_data[key]['type']:
+                        validations_node[u'{}prefix__type__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['type']
+                    if self.field_data[key]['path']:
+                        validations_node[u'{}prefix__path__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['path']
+                    if self.field_data[key]['value']:
+                        validations_node[u'{}prefix__value__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['value']
+                    if self.field_data[key]['modes']:
+                        validations_node[u'{}prefix__modes__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['modes']
+                    if self.field_data[key]['context']:
+                        validations_node[u'{}prefix__context__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['context']
+            elif key == 'choices':
+                """
+                "choices": {
+                    "name": "customer_status",
+                    "default": "created"
+                }
+                """
+                choice_node = physical[u'document-definition__fields__{type}__choices__v1'.format(
+                    type=self.type
+                )]
+                prefix = u'document-definition__fields__{type}__choices'.format(
+                    type=self.type
+                )
+                if key in self.field_data and self.field_data[key]:
+                    choice_node[u'{prefix}__choice_name__v1'.format(
+                        prefix=prefix
+                    )] = self.field_data[key]['name']
+                    choice_node[u'{prefix}__default_value__v1'.format(
+                        prefix=prefix
+                    )] = self.field_data[key]['default']
+            elif key == 'items':
+                # MapField: dict MapListField: list
+                if self.type == 'map':
+                    items_node = physical[u'document-definition__fields__{type}__items__v1'.format(
+                        type=self.type
+                    )]
+                    for map_field in self.field_data[key]:
+                        # We need to instance field
+                        instance_data = self.field_data[key][map_field]
+                        module = 'document.fields'
+                        instance = __import__(module)
+                        for comp in module.split('.')[1:]:
+                            instance = getattr(instance, comp)
+                        logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(instance,
+                                                                                         dir(instance)))
+                        field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                        field_type_raw = instance_data['type']
+                        field_type = field_type_raw
+                        if '<' in field_type_raw:
+                            field_type = field_type_raw.split('<'[0])
+                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                        instance_data['name'] = map_field
+                        instance_data['doc_type'] = None
+                        field_instance = field_class(**instance_data)
+                        items_node[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                            type=self.type,
+                            field=map_field
+                        )] = field_instance.get_def_physical()
+            else:
+                if key in self.field_data and self.field_data[key]:
+                    physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )] = self.field_data[key]
+        return physical
+
+
+class StringField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'choices',
         u'default',
         u'hint',
@@ -44,6 +192,7 @@ class StringField(object):
     type = None
     version = None
     validation_errors = []
+    field_data = {}
 
     def __init__(self, **kwargs):
         """
@@ -65,6 +214,7 @@ class StringField(object):
         :return:
         """
         logger.debug(u'StringField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -73,9 +223,21 @@ class StringField(object):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
+    def make_mapping_definition(self):
+        """
+        Builds mapping for document definition
+
+        :return:
+        """
+        mappings = {
+            u'properties': {
+            }
+        }
+        return mappings
+
     def make_mapping(self):
         """
-        Create the mapping structure to create mappings and update mappings
+        Create the mapping structure for document to be created
 
         :return:
         """
@@ -136,15 +298,6 @@ class StringField(object):
             ),
             'field_name': self.name,
         }
-
-    def get_def_physical(self):
-        """
-        Get physical for document-definition type
-
-        :return:
-        """
-        # u'document-definition__fields__{}__v1'.format(field_instance.type)
-        return {}
 
     def get_physical(self, value):
         """
@@ -226,7 +379,7 @@ class StringField(object):
         return check
 
 
-class NumberField(object):
+class NumberField(Field):
 
     allowed_attributes = {
         u'add_summary',
@@ -410,7 +563,7 @@ class NumberField(object):
         return check
 
 
-class TextField(object):
+class TextField(Field):
 
     allowed_attributes = {
         u'add_summary',
@@ -538,7 +691,7 @@ class TextField(object):
         return check
 
 
-class CheckField(object):
+class CheckField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -651,7 +804,7 @@ class CheckField(object):
         return check
 
 
-class DateTimeField(object):
+class DateTimeField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -796,7 +949,7 @@ class DateTimeField(object):
         return check
 
 
-class MapField(object):
+class MapField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -1054,7 +1207,7 @@ class MapField(object):
         return check
 
 
-class MapListField(object):
+class MapListField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -1338,7 +1491,7 @@ class MapListField(object):
         return check
 
 
-class ListField(object):
+class ListField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -1521,7 +1674,7 @@ class ListField(object):
         return check
 
 
-class LinkField(object):
+class LinkField(Field):
 
     allowed_attributes = {
         u'hint',
@@ -1657,7 +1810,7 @@ class LinkField(object):
         return check
 
 
-class LinksField(object):
+class LinksField(Field):
 
     allowed_attributes = {
         u'hint',
