@@ -18,7 +18,7 @@ class Field(object):
     field_data = {}
     type = None
 
-    def get_def_physical(self):
+    def get_def_physical_mapping(self):
         """
         Get physical for document-definition type
 
@@ -46,9 +46,16 @@ class Field(object):
           document-definition__fields__string__is_autocomplete__v1: False
         }
 
+        mappings is the fields mappings for document definition
+
         :return:
+        {
+            "physical": ...
+            "mappings": ...
+        }
         """
         physical = {}
+        mappings = {}
         for key in self.allowed_attributes:
             # We catch complex structures for all fields
             if key in ['validations', 'choices', 'items']:
@@ -164,7 +171,10 @@ class Field(object):
                         type=self.type,
                         field=key
                     )] = self.field_data[key]
-        return physical
+        return {
+            'physical': physical,
+            'mappings': mappings
+        }
 
 
 class StringField(Field):
@@ -231,17 +241,27 @@ class StringField(Field):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
-    def make_mapping_definition(self):
+    @classmethod
+    def build_mapping(cls, field_name):
         """
-        Builds mapping for document definition
+        Return mapping that corresponds to this field, no matter if goes for document definition
+        or structure for document
 
+        :param field_name:
         :return:
         """
-        mappings = {
-            u'properties': {
+        return {
+            'type': 'string',
+            'fields': {
+                field_name: {
+                    'type': 'string'
+                },
+                'raw__v1': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
             }
         }
-        return mappings
 
     def make_mapping(self):
         """
@@ -254,22 +274,11 @@ class StringField(Field):
         mappings = {
             u'{}__{}__{}'.format(
                 self.doc_type, self.name, self.version
-            ): {
-                u'type': u'string',
-                u'fields': {
-                    u'{doc_type}__{field_name}__{version}'.format(
-                        doc_type=self.doc_type,
-                        field_name=self.name,
-                        version=self.version): {
-                            u'type': u'string'
-                    },
-                    u'raw__{version}'.format(version=self.version): {
-                        u'type': u'string',
-                        u'index': u'not_analyzed'
-                    }
-                }
+            ): self.build_mapping(u'{doc_type}__{field_name}__{version}'.format(
+                doc_type=self.doc_type,
+                field_name=self.name,
+                version=self.version))
             }
-        }
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
@@ -458,6 +467,12 @@ class NumberField(Field):
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
+    @classmethod
+    def build_mapping(cls, mode='long'):
+        return {
+            'type': mode
+        }
 
     def make_mapping(self):
         """
@@ -739,6 +754,12 @@ class CheckField(Field):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
+    @classmethod
+    def build_mapping(cls):
+        return {
+            'type': 'bool'
+        }
+
     def make_mapping(self):
         """
         Make check mapping
@@ -860,6 +881,13 @@ class DateTimeField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
+    @classmethod
+    def build_mapping(cls):
+        return {
+            u'type': u'date',
+            u"format": u"dateOptionalTime"
+        }
 
     def make_mapping(self):
         """
