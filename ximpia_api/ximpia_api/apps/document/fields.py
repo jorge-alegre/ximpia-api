@@ -61,22 +61,6 @@ class Field(object):
         """
         physical = {}
         for key in self.allowed_attributes:
-            """instance_data = self.field_data
-            module = 'document.fields'
-            instance = __import__(module)
-            for comp in module.split('.')[1:]:
-                instance = getattr(instance, comp)
-            logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(instance,
-                                                                             dir(instance)))
-            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
-            logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
-            field_type_raw = key_instance_data['type']
-            field_type = field_type_raw
-            if '<' in field_type_raw:
-                field_type = field_type_raw.split('<'[0])
-            logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-            field_instance = field_class(**key_instance_data)"""
-
             # We catch complex structures for all fields
             if key in ['validations', 'choices', 'items']:
                 physical[u'document-definition__fields__{type}__{field}__v1'.format(
@@ -185,6 +169,9 @@ class Field(object):
                             type=self.type,
                             field=map_field
                         )] = key_field_instance.get_def_physical()
+                if self.type == 'map-list':
+                    # TODO
+                    pass
             else:
                 if key in self.field_data and self.field_data[key]:
                     field_name = u'document-definition__fields__{type}__{field}__v1'.format(
@@ -195,14 +182,133 @@ class Field(object):
         return physical
 
     def get_def_mappings(self):
+        """
+        Get mapping for field for document definition
+
+        :return:
+        """
         mappings = {}
         for key in self.allowed_attributes:
             if key == 'validations':
-                pass
+                mappings[u"document-definition__fields__string__validations__v1"] = {
+                    u"type": u"nested",
+                    u"properties": {
+                        u"document-definition__fields__string__validations__type__v1": {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"document-definition__fields__string__validations__path__v1": {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"document-definition__fields__string__validations__value__v1": {
+                            u"type": u"string",
+                            u"index": u"no"
+                        },
+                        u"document-definition__fields__string__validations__modes__v1": {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"document-definition__fields__string__validations__context__v1": {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        }
+                    }
+                }
             elif key == 'choices':
-                pass
+                mappings[u"document-definition__fields__{type}__choices__v1".format(type=self.type)] = {
+                    u"type": u"object",
+                    u"properties": {
+                        u"document-definition__fields__{type}__choices__choice_name__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"fields": {
+                                u"document-definition__fields__{type}__choices__choice_name__v1".format(
+                                    type=self.type): {
+                                    u"type": u"string"
+                                },
+                                u"raw__v1": {
+                                    u"type": u"string",
+                                    u"index": u"not_analyzed"
+                                }
+                            }
+                        },
+                        u"document-definition__fields__{type}__choices__default_value__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"fields": {
+                                u"document-definition__fields__{type}__choices__default_value__v1".format(
+                                    type=self.type): {
+                                    u"type": u"string"
+                                },
+                                u"raw__v1": {
+                                    u"type": u"string",
+                                    u"index": u"not_analyzed"
+                                }
+                            }
+                        }
+                    }
+                }
             elif key == 'items':
-                pass
+                if self.type == 'map':
+                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )
+                    mappings[root_name] = {}
+                    items_node = mappings[root_name]
+                    for map_field in self.field_data[key]:
+                        key_instance_data = self.field_data[key][map_field]
+                        module = 'document.fields'
+                        key_instance = __import__(module)
+                        for comp in module.split('.')[1:]:
+                            key_instance = getattr(key_instance, comp)
+                        logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
+                                                                                         dir(key_instance)))
+                        field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
+                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                        field_type_raw = key_instance_data['type']
+                        field_type = field_type_raw
+                        if '<' in field_type_raw:
+                            field_type = field_type_raw.split('<'[0])
+                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                        key_instance_data['name'] = map_field
+                        key_instance_data['doc_type'] = None
+                        key_field_instance = field_class(**key_instance_data)
+                        items_node[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                            type=self.type,
+                            field=map_field
+                        )] = key_field_instance.get_def_mappings()
+                elif self.type == 'map-list':
+                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )
+                    mappings[root_name] = []
+                    items_node = mappings[root_name]
+                    for map_dict in self.field_data[key]:
+                        map_dict_ = {}
+                        for map_field in map_dict:
+                            key_instance_data = self.field_data[key][map_field]
+                            module = 'document.fields'
+                            key_instance = __import__(module)
+                            for comp in module.split('.')[1:]:
+                                key_instance = getattr(key_instance, comp)
+                            logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
+                                                                                             dir(key_instance)))
+                            field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
+                            logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                            field_type_raw = key_instance_data['type']
+                            field_type = field_type_raw
+                            if '<' in field_type_raw:
+                                field_type = field_type_raw.split('<'[0])
+                            logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                            key_instance_data['name'] = map_field
+                            key_instance_data['doc_type'] = None
+                            key_field_instance = field_class(**key_instance_data)
+                            map_dict_[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                                type=self.type,
+                                field=map_field
+                            )] = key_field_instance.get_def_mappings()
+                        items_node.append(map_dict_)
             else:
                 if key in self.field_data and self.field_data[key]:
                     field_name = u'document-definition__fields__{type}__{field}__v1'.format(
@@ -272,7 +378,6 @@ class StringField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'StringField :: kwargs: {}'.format(kwargs))
         self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
@@ -497,8 +602,8 @@ class NumberField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'NumberField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -666,8 +771,8 @@ class TextField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'TextField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -789,8 +894,8 @@ class CheckField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -918,8 +1023,8 @@ class DateTimeField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1113,8 +1218,8 @@ class MapField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'MapField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1383,7 +1488,7 @@ class MapListField(Field):
         :return:
         """
         logger.debug(u'MapListField :: kwargs: {}'.format(kwargs))
-        self.attributes = kwargs
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1606,8 +1711,8 @@ class ListField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'ListField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         item_type = kwargs['type'].split('<')[1][:-1]
         if item_type == 'string':
             allowed_attributes = StringField.allowed_attributes
@@ -1808,8 +1913,8 @@ class LinkField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'LinkField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1945,8 +2050,8 @@ class LinksField(Field):
         :param kwargs:
         :return:
         """
-        self.attributes = kwargs
         logger.debug(u'LinkField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
