@@ -170,8 +170,36 @@ class Field(object):
                             field=map_field
                         )] = key_field_instance.get_def_physical()
                 if self.type == 'map-list':
-                    # TODO
-                    pass
+                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )
+                    items_node = physical[root_name]
+                    for map_dict in self.field_data[key]:
+                        map_dict_ = {}
+                        for map_field in map_dict:
+                            key_instance_data = self.field_data[key][map_field]
+                            module = 'document.fields'
+                            key_instance = __import__(module)
+                            for comp in module.split('.')[1:]:
+                                key_instance = getattr(key_instance, comp)
+                            logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
+                                                                                             dir(key_instance)))
+                            field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
+                            logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                            field_type_raw = key_instance_data['type']
+                            field_type = field_type_raw
+                            if '<' in field_type_raw:
+                                field_type = field_type_raw.split('<'[0])
+                            logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                            key_instance_data['name'] = map_field
+                            key_instance_data['doc_type'] = None
+                            key_field_instance = field_class(**key_instance_data)
+                            map_dict_[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                                type=self.type,
+                                field=map_field
+                            )] = key_field_instance.get_def_physical()
+                        items_node.append(map_dict_)
             else:
                 if key in self.field_data and self.field_data[key]:
                     field_name = u'document-definition__fields__{type}__{field}__v1'.format(
