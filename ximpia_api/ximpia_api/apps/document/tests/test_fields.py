@@ -710,3 +710,58 @@ class LogicalToPhysicalTest(XimpiaTestCase):
         with open('ximpia_api/apps/document/tests/data/doc_all_logical.json') as f:
             doc_logical_str = f.read()
         doc_logical = json.loads(doc_logical_str)
+
+
+class FieldDocDefTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_mappings(self):
+        from document.fields import StringField, NumberField, DateTimeField, CheckField, ListField, \
+            LinkField, LinksField, MapField, MapListField
+        # string
+        mapping = StringField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # number
+        mapping = NumberField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # datetime
+        mapping = DateTimeField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # check
+        mapping = CheckField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # list
+        mapping = ListField(**{'type': 'list<string>'}).get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # link
+        mapping = LinkField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # links
+        mapping = LinksField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # map
+        mapping = MapField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+        # map-list
+        mapping = MapListField().get_def_mappings()
+        self.assertTrue(len(mapping) != 0)
+
+    def test_string(self):
+        from document.fields import StringField
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
+            doc_string_str = f.read()
+        doc_string = json.loads(doc_string_str)
+        field_data = doc_string['status']
+        field_data['name'] = 'status'
+        field = StringField(**field_data)
+        logger.debug(u'FieldDocDefTest.test_string :: field: {}'.format(field))
+
+    def test_number(self):
+        pass

@@ -20,8 +20,9 @@ class Field(object):
     name = None
 
     boolean_attributes = {'add_summary', 'active', 'only_positive', 'only_negative'}
-    string_attributes = {'default', 'hint', 'comment', 'display_name', 'type', 'name', 'doc_type', 'mode',
-                         'type_remote', 'app'}
+    string_attributes = {'display_name', 'type', 'name', 'doc_type', 'mode',
+                         'type_remote', 'app', 'embedded_into'}
+    text_attributes = {'hint', 'comment'}
     number_attributes = {'max_length', 'min_length', 'min_value', 'max_value'}
 
     def get_def_physical(self):
@@ -282,55 +283,6 @@ class Field(object):
                         }
                     }
                 }
-            elif key == 'items':
-                if self.type in ['map', 'map-list']:
-                    """
-                    map:
-                    {
-                        "items": {
-                            "my-field": {
-                                "type": "string"
-                                ...
-                            }
-                        }
-                    }
-                    ->
-                    "fields": [
-                        {
-                            "type": "string",
-                            "embedded_into": "map1.map2",   (field names logical inside doc)
-                        }
-                    ]
-                    """
-                    mappings[u'items'] = []
-                    items = self.allowed_attributes[key]
-                    for item_key in items:
-                        # item_type = items[item_key]['type']
-                        # key_instance_data = self.field_data[key][map_field]
-                        key_instance_data = items[item_key]
-                        module = 'document.fields'
-                        key_instance = __import__(module)
-                        for comp in module.split('.')[1:]:
-                            key_instance = getattr(key_instance, comp)
-                        logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
-                                                                                         dir(key_instance)))
-                        field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
-                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
-                        field_type_raw = key_instance_data['type']
-                        field_type = field_type_raw
-                        if '<' in field_type_raw:
-                            field_type = field_type_raw.split('<'[0])
-                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                        key_instance_data[u'name'] = key_instance_data['name']
-                        key_instance_data[u'doc_type'] = None
-                        if u'embedded_into' in key_instance_data:
-                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
-                        else:
-                            key_instance_data[u'embedded_into'] = self.name
-                        key_field_instance = field_class(**key_instance_data)
-                        mappings[u'items'].append(
-                            key_field_instance.get_def_mappings()
-                        )
             else:
                 field_name = u'document-definition__fields__{type}__{field}__v1'.format(
                     type=self.type,
@@ -338,10 +290,23 @@ class Field(object):
                 )
                 if key in self.string_attributes:
                     mappings[field_name] = StringField.build_mapping(field_name)
+                elif key in self.text_attributes:
+                    mappings[field_name] = TextField.build_mapping()
                 elif key in self.boolean_attributes:
                     mappings[field_name] = CheckField.build_mapping()
                 elif key in self.number_attributes:
                     mappings[field_name] = NumberField.build_mapping(mode='integer')
+                elif key == 'default':
+                    if self.type == 'number':
+                        mappings[field_name] = NumberField.build_mapping(mode='integer')
+                    elif self.type == 'string':
+                        mappings[field_name] = StringField.build_mapping(field_name)
+                    elif self.type == 'text':
+                        mappings[field_name] = TextField.build_mapping()
+                    elif self.type == 'date':
+                        mappings[field_name] = DateTimeField.build_mapping()
+                    elif self.type == 'check':
+                        mappings[field_name] = CheckField.build_mapping()
         return mappings
 
 
@@ -361,6 +326,7 @@ class StringField(Field):
         u'name',
         u'doc_type',
         u'validations',
+        u'embedded_into',
     }
 
     name = None
@@ -379,6 +345,7 @@ class StringField(Field):
     version = None
     validation_errors = []
     field_data = {}
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -399,6 +366,7 @@ class StringField(Field):
         :param kwargs:
         :return:
         """
+        self.type = 'string'
         logger.debug(u'StringField :: kwargs: {}'.format(kwargs))
         self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
@@ -581,6 +549,7 @@ class NumberField(Field):
         u'doc_type',
         u'mode',
         u'validations',
+        u'embedded_into',
     }
 
     allowed_modes = {'long', 'integer', 'short', 'byte', 'double', 'float'}
@@ -602,6 +571,7 @@ class NumberField(Field):
     mode = None
     version = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -624,6 +594,7 @@ class NumberField(Field):
         :return:
         """
         logger.debug(u'NumberField :: kwargs: {}'.format(kwargs))
+        self.type = 'number'
         self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
@@ -769,6 +740,7 @@ class TextField(Field):
         u'validations',
         u'max_length',
         u'min_length',
+        u'embedded_into',
     }
 
     type = None
@@ -784,6 +756,7 @@ class TextField(Field):
     doc_type = None
     version = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -801,6 +774,19 @@ class TextField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
+    @classmethod
+    def build_mapping(cls):
+        """
+        Return mapping that corresponds to this field, no matter if goes for document definition
+        or structure for document
+
+        :param field_name:
+        :return:
+        """
+        return {
+            'type': 'string',
+        }
 
     def make_mapping(self):
         """
@@ -894,6 +880,7 @@ class CheckField(Field):
         u'type',
         u'name',
         u'doc_type',
+        u'embedded_into',
     }
 
     type = None
@@ -907,6 +894,8 @@ class CheckField(Field):
     doc_type = None
     version = None
     validation_errors = []
+    embedded_into = None
+
 
     def __init__(self, **kwargs):
         """
@@ -916,6 +905,7 @@ class CheckField(Field):
         :return:
         """
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.type = 'check'
         self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
@@ -1019,6 +1009,7 @@ class DateTimeField(Field):
         u'max_datetime',
         u'is_create_date',
         u'is_timestamp',
+        u'embedded_into',
     }
 
     type = None
@@ -1036,6 +1027,7 @@ class DateTimeField(Field):
     is_create_date = None
     is_timestamp = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1045,6 +1037,7 @@ class DateTimeField(Field):
         :return:
         """
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.type = 'datetime'
         self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
@@ -1168,6 +1161,7 @@ class MapField(Field):
         u'doc_type',
         u'add_summary',
         u'items',
+        u'embedded_into',
     }
 
     type = None
@@ -1179,6 +1173,7 @@ class MapField(Field):
     doc_type = None
     version = None
     items = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1248,6 +1243,7 @@ class MapField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'map'
 
     def make_mapping(self):
         """
@@ -1427,6 +1423,7 @@ class MapListField(Field):
         u'doc_type',
         u'add_summary',
         u'items',
+        u'embedded_into',
     }
 
     type = None
@@ -1438,6 +1435,7 @@ class MapListField(Field):
     doc_type = None
     version = None
     items = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1517,6 +1515,7 @@ class MapListField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'map-list'
 
     def make_mapping(self):
         """
@@ -1712,6 +1711,7 @@ class ListField(Field):
         u'doc_type',
         u'add_summary',
         u'mode',
+        u'embedded_into',
     }
 
     type = None
@@ -1724,6 +1724,7 @@ class ListField(Field):
     version = None
     mode = None
     items = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1752,6 +1753,7 @@ class ListField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'list'
 
     def make_mapping(self):
         """
@@ -1896,7 +1898,8 @@ class LinkField(Field):
         u'doc_type',
         u'add_summary',
         u'type_remote',
-        u'app'
+        u'app',
+        u'embedded_into',
     }
 
     type = None
@@ -1909,6 +1912,7 @@ class LinkField(Field):
     version = None
     type_remote = None
     app = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1943,7 +1947,8 @@ class LinkField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
-        self.doc_type = kwargs['name']
+        self.doc_type = kwargs.get('name', None)
+        self.type = 'link'
 
     def make_mapping(self):
         """
@@ -2033,6 +2038,9 @@ class LinksField(Field):
         u'field_name',
         u'doc_type',
         u'add_summary',
+        u'type_remote',
+        u'app',
+        u'embedded_into',
     }
 
     type = None
@@ -2044,6 +2052,9 @@ class LinksField(Field):
     doc_type = None
     version = None
     field_name = None
+    type_remote = None
+    app = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -2080,7 +2091,8 @@ class LinksField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
-        self.doc_type = kwargs['name']
+        self.doc_type = kwargs.get('name', None)
+        self.type = 'links'
 
     def make_mapping(self):
         """
