@@ -277,43 +277,26 @@ class Field(object):
                     }
                 }
             elif key == 'items':
-                if self.type == 'map':
+                if self.type in ['map', 'map-list']:
                     """
                     map:
                     {
-                        "my-field": {
-                            "type": "string"
-                            ...
+                        "items": {
+                            "my-field": {
+                                "type": "string"
+                                ...
+                            }
                         }
                     }
-
                     ->
-
-                    map proposal
-                    ============
                     "fields": [
                         {
                             "type": "string",
                             "embedded_into": "map1.map2",   (field names logical inside doc)
                         }
                     ]
-
-                    ideas:
-                    - map into another document definition??? and then we would merge them???
-                    - include all map fields into same structure??
-
-                    map-list proposal
-                    =================
-
-                    "map-list": [
-                        {
-                            "type": "string"
-                            ...
-                        }
-                    ]
-
                     """
-                    mappings = []
+                    mappings[u'items'] = []
                     items = self.allowed_attributes[key]
                     for item_key in items:
                         # item_type = items[item_key]['type']
@@ -339,42 +322,9 @@ class Field(object):
                         else:
                             key_instance_data[u'embedded_into'] = self.name
                         key_field_instance = field_class(**key_instance_data)
-                        mappings.append(
+                        mappings[u'items'].append(
                             key_field_instance.get_def_mappings()
                         )
-                elif self.type == 'map-list':
-                    pass
-                    """root_name = u'document-definition__fields__{type}__{field}__v1'.format(
-                        type=self.type,
-                        field=key
-                    )
-                    mappings[root_name] = []
-                    items_node = mappings[root_name]
-                    for map_dict in self.field_data[key]:
-                        map_dict_ = {}
-                        for map_field in map_dict:
-                            key_instance_data = self.field_data[key][map_field]
-                            module = 'document.fields'
-                            key_instance = __import__(module)
-                            for comp in module.split('.')[1:]:
-                                key_instance = getattr(key_instance, comp)
-                            logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
-                                                                                             dir(key_instance)))
-                            field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
-                            logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
-                            field_type_raw = key_instance_data['type']
-                            field_type = field_type_raw
-                            if '<' in field_type_raw:
-                                field_type = field_type_raw.split('<'[0])
-                            logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                            key_instance_data['name'] = map_field
-                            key_instance_data['doc_type'] = None
-                            key_field_instance = field_class(**key_instance_data)
-                            map_dict_[u'document-definition__fields__{type}__items__{field}__v1'.format(
-                                type=self.type,
-                                field=map_field
-                            )] = key_field_instance.get_def_mappings()
-                        items_node.append(map_dict_)"""
             else:
                 field_name = u'document-definition__fields__{type}__{field}__v1'.format(
                     type=self.type,
