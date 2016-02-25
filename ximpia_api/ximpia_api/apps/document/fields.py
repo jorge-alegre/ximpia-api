@@ -63,11 +63,15 @@ class Field(object):
         physical = {}
         for key in self.allowed_attributes:
             # We catch complex structures for all fields
-            if key in ['validations', 'choices', 'items']:
+            if key in ['validations', 'choices']:
                 physical[u'document-definition__fields__{type}__{field}__v1'.format(
                     type=self.type,
                     field=key
                 )] = {}
+            elif key == 'items' and self.type == 'map':
+                physical[u'items'] = {}
+            elif key == 'items' and self.type == 'map-list':
+                physical[u'items'] = []
             else:
                 physical[u'document-definition__fields__{type}__{field}__v1'.format(
                     type=self.type,
@@ -144,9 +148,7 @@ class Field(object):
                 """
                 # MapField: dict MapListField: list
                 if self.type == 'map':
-                    items_node = physical[u'document-definition__fields__{type}__items__v1'.format(
-                        type=self.type
-                    )]
+                    items_node = physical[u'items']
                     for map_field in self.field_data[key]:
                         # We need to instance field
                         key_instance_data = self.field_data[key][map_field]
@@ -163,19 +165,19 @@ class Field(object):
                         if '<' in field_type_raw:
                             field_type = field_type_raw.split('<'[0])
                         logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                        key_instance_data['name'] = map_field
-                        key_instance_data['doc_type'] = None
+                        key_instance_data[u'name'] = map_field
+                        key_instance_data[u'doc_type'] = None
+                        if u'embedded_into' in key_instance_data:
+                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                        else:
+                            key_instance_data[u'embedded_into'] = self.name
                         key_field_instance = field_class(**key_instance_data)
                         items_node[u'document-definition__fields__{type}__items__{field}__v1'.format(
                             type=self.type,
                             field=map_field
                         )] = key_field_instance.get_def_physical()
                 if self.type == 'map-list':
-                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
-                        type=self.type,
-                        field=key
-                    )
-                    items_node = physical[root_name]
+                    items_node = physical[u'items']
                     for map_dict in self.field_data[key]:
                         map_dict_ = {}
                         for map_field in map_dict:
@@ -193,8 +195,12 @@ class Field(object):
                             if '<' in field_type_raw:
                                 field_type = field_type_raw.split('<'[0])
                             logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                            key_instance_data['name'] = map_field
-                            key_instance_data['doc_type'] = None
+                            key_instance_data[u'name'] = map_field
+                            key_instance_data[u'doc_type'] = None
+                            if u'embedded_into' in key_instance_data:
+                                key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                            else:
+                                key_instance_data[u'embedded_into'] = self.name
                             key_field_instance = field_class(**key_instance_data)
                             map_dict_[u'document-definition__fields__{type}__items__{field}__v1'.format(
                                 type=self.type,
