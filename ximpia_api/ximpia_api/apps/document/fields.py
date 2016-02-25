@@ -17,6 +17,7 @@ class Field(object):
     allowed_attributes = {}
     field_data = {}
     type = None
+    name = None
 
     boolean_attributes = {'add_summary', 'active', 'only_positive', 'only_negative'}
     string_attributes = {'default', 'hint', 'comment', 'display_name', 'type', 'name', 'doc_type', 'mode',
@@ -218,26 +219,26 @@ class Field(object):
         mappings = {}
         for key in self.allowed_attributes:
             if key == 'validations':
-                mappings[u"document-definition__fields__string__validations__v1"] = {
+                mappings[u"document-definition__fields__{type}__validations__v1".format(type=self.type)] = {
                     u"type": u"nested",
                     u"properties": {
-                        u"document-definition__fields__string__validations__type__v1": {
+                        u"document-definition__fields__{type}__validations__type__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__string__validations__path__v1": {
+                        u"document-definition__fields__{type}__validations__path__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__string__validations__value__v1": {
+                        u"document-definition__fields__{type}__validations__value__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"no"
                         },
-                        u"document-definition__fields__string__validations__modes__v1": {
+                        u"document-definition__fields__{type}__validations__modes__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__string__validations__context__v1": {
+                        u"document-definition__fields__{type}__validations__context__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         }
@@ -277,14 +278,47 @@ class Field(object):
                 }
             elif key == 'items':
                 if self.type == 'map':
-                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
-                        type=self.type,
-                        field=key
-                    )
-                    mappings[root_name] = {}
-                    items_node = mappings[root_name]
-                    for map_field in self.field_data[key]:
-                        key_instance_data = self.field_data[key][map_field]
+                    """
+                    map:
+                    {
+                        "my-field": {
+                            "type": "string"
+                            ...
+                        }
+                    }
+
+                    ->
+
+                    map proposal
+                    ============
+                    "fields": [
+                        {
+                            "type": "string",
+                            "embedded_into": "map1.map2",   (field names logical inside doc)
+                        }
+                    ]
+
+                    ideas:
+                    - map into another document definition??? and then we would merge them???
+                    - include all map fields into same structure??
+
+                    map-list proposal
+                    =================
+
+                    "map-list": [
+                        {
+                            "type": "string"
+                            ...
+                        }
+                    ]
+
+                    """
+                    mappings = []
+                    items = self.allowed_attributes[key]
+                    for item_key in items:
+                        # item_type = items[item_key]['type']
+                        # key_instance_data = self.field_data[key][map_field]
+                        key_instance_data = items[item_key]
                         module = 'document.fields'
                         key_instance = __import__(module)
                         for comp in module.split('.')[1:]:
@@ -298,15 +332,19 @@ class Field(object):
                         if '<' in field_type_raw:
                             field_type = field_type_raw.split('<'[0])
                         logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                        key_instance_data['name'] = map_field
-                        key_instance_data['doc_type'] = None
+                        key_instance_data[u'name'] = key_instance_data['name']
+                        key_instance_data[u'doc_type'] = None
+                        if u'embedded_into' in key_instance_data:
+                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                        else:
+                            key_instance_data[u'embedded_into'] = self.name
                         key_field_instance = field_class(**key_instance_data)
-                        items_node[u'document-definition__fields__{type}__items__{field}__v1'.format(
-                            type=self.type,
-                            field=map_field
-                        )] = key_field_instance.get_def_mappings()
+                        mappings.append(
+                            key_field_instance.get_def_mappings()
+                        )
                 elif self.type == 'map-list':
-                    root_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                    pass
+                    """root_name = u'document-definition__fields__{type}__{field}__v1'.format(
                         type=self.type,
                         field=key
                     )
@@ -336,19 +374,18 @@ class Field(object):
                                 type=self.type,
                                 field=map_field
                             )] = key_field_instance.get_def_mappings()
-                        items_node.append(map_dict_)
+                        items_node.append(map_dict_)"""
             else:
-                if key in self.field_data and self.field_data[key]:
-                    field_name = u'document-definition__fields__{type}__{field}__v1'.format(
-                        type=self.type,
-                        field=key
-                    )
-                    if key in self.string_attributes:
-                        mappings[field_name] = StringField.build_mapping(field_name)
-                    elif key in self.boolean_attributes:
-                        mappings[field_name] = CheckField.build_mapping()
-                    elif key in self.number_attributes:
-                        mappings[field_name] = NumberField.build_mapping(mode='integer')
+                field_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                    type=self.type,
+                    field=key
+                )
+                if key in self.string_attributes:
+                    mappings[field_name] = StringField.build_mapping(field_name)
+                elif key in self.boolean_attributes:
+                    mappings[field_name] = CheckField.build_mapping()
+                elif key in self.number_attributes:
+                    mappings[field_name] = NumberField.build_mapping(mode='integer')
         return mappings
 
 
