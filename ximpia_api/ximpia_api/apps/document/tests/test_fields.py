@@ -754,14 +754,28 @@ class FieldDocDefTest(XimpiaTestCase):
 
     def test_string(self):
         from document.fields import StringField
-        user = self.connect_user(user='my_site_admin', is_admin=True)
         with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
             doc_string_str = f.read()
         doc_string = json.loads(doc_string_str)
         field_data = doc_string['status']
         field_data['name'] = 'status'
         field = StringField(**field_data)
-        logger.debug(u'FieldDocDefTest.test_string :: field: {}'.format(field))
+        physical = field.get_def_physical()
+        # logger.debug(u'FieldDocDefTest.test_string :: physical: {}'.format(physical))
+        """import pprint
+        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        self.assertTrue(len(physical) != 0)
 
     def test_number(self):
-        pass
+        from document.fields import NumberField
+        with open('ximpia_api/apps/document/tests/data/doc_number.json') as f:
+            doc_number_str = f.read()
+        doc_number = json.loads(doc_number_str)
+        field_data = doc_number['number_tries']
+        field_data['name'] = 'number_tries'
+        field = NumberField(**field_data)
+        physical = field.get_def_physical()
+        # logger.debug(u'FieldDocDefTest.test_string :: physical: {}'.format(physical))
+        """import pprint
+        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        self.assertTrue(len(physical) != 0)

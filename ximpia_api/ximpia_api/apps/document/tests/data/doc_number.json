@@ -18,7 +18,8 @@
     "hint": "Number of Tries",
     "comment": "Number of tries for request",
     "only_positive": true,
-    "max_value": 10
+    "max_value": 10,
+    "default": 5
   },
   "amount": {
     "type": "number",

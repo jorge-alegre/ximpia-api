@@ -64,12 +64,7 @@ class Field(object):
         physical = {}
         for key in self.allowed_attributes:
             # We catch complex structures for all fields
-            if key in ['validations', 'choices']:
-                physical[u'document-definition__fields__{type}__{field}__v1'.format(
-                    type=self.type,
-                    field=key
-                )] = {}
-            elif key == 'items' and self.type == 'map':
+            if key == 'items' and self.type == 'map':
                 physical[u'items'] = {}
             elif key == 'items' and self.type == 'map-list':
                 physical[u'items'] = []
@@ -93,6 +88,10 @@ class Field(object):
                     type=self.type
                 )
                 if key in self.field_data and self.field_data[key]:
+                    physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )] = {}
                     validations_node[u'{}prefix__type__v1'.format(prefix=prefix)] = None
                     validations_node[u'{}prefix__path__v1'.format(prefix=prefix)] = None
                     validations_node[u'{}prefix__value__v1'.format(prefix=prefix)] = None
@@ -125,13 +124,17 @@ class Field(object):
                     "default": "created"
                 }
                 """
-                choice_node = physical[u'document-definition__fields__{type}__choices__v1'.format(
-                    type=self.type
-                )]
                 prefix = u'document-definition__fields__{type}__choices'.format(
                     type=self.type
                 )
                 if key in self.field_data and self.field_data[key]:
+                    physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )] = {}
+                    choice_node = physical[u'document-definition__fields__{type}__choices__v1'.format(
+                        type=self.type
+                    )]
                     choice_node[u'{prefix}__choice_name__v1'.format(
                         prefix=prefix
                     )] = self.field_data[key]['name']
@@ -603,6 +606,7 @@ class NumberField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if not self.mode:
             self.mode = 'long'
+            self.field_data['mode'] = 'long'
         if self.mode not in self.allowed_modes:
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
         if 'version' not in kwargs:
