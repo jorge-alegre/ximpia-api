@@ -761,7 +761,6 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'status'
         field = StringField(**field_data)
         physical = field.get_def_physical()
-        # logger.debug(u'FieldDocDefTest.test_string :: physical: {}'.format(physical))
         """import pprint
         pprint.PrettyPrinter(indent=4).pprint(physical)"""
         self.assertTrue(len(physical) != 0)
@@ -775,7 +774,19 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'number_tries'
         field = NumberField(**field_data)
         physical = field.get_def_physical()
-        # logger.debug(u'FieldDocDefTest.test_string :: physical: {}'.format(physical))
         """import pprint
         pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        self.assertTrue(len(physical) != 0)
+
+    def test_list(self):
+        from document.fields import ListField
+        with open('ximpia_api/apps/document/tests/data/doc_string_list.json') as f:
+            doc_string_list_str = f.read()
+        doc_string_list = json.loads(doc_string_list_str)
+        field_data = doc_string_list['status']
+        field_data['name'] = 'status'
+        field = ListField(**field_data)
+        physical = field.get_def_physical()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)

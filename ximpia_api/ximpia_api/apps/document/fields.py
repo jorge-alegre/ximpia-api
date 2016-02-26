@@ -1716,6 +1716,8 @@ class ListField(Field):
         u'add_summary',
         u'mode',
         u'embedded_into',
+        u'validations',
+        u'choices',
     }
 
     type = None
@@ -1729,6 +1731,8 @@ class ListField(Field):
     mode = None
     items = None
     embedded_into = None
+    choices = None
+    validations = None
 
     def __init__(self, **kwargs):
         """
@@ -1739,10 +1743,10 @@ class ListField(Field):
         """
         logger.debug(u'ListField :: kwargs: {}'.format(kwargs))
         self.field_data = kwargs
-        item_type = kwargs['type'].split('<')[1][:-1]
+        item_type = kwargs['type'].split('-')[1]
         if item_type == 'string':
             allowed_attributes = StringField.allowed_attributes
-        elif item_type == 'date':
+        elif item_type == 'datetime':
             allowed_attributes = DateTimeField.allowed_attributes
         elif item_type == 'number':
             allowed_attributes = NumberField.allowed_attributes
@@ -1750,6 +1754,7 @@ class ListField(Field):
             allowed_attributes = CheckField.allowed_attributes
         else:
             raise exceptions.XimpiaAPIException(_(u'Type not supported'))
+        self.allowed_attributes = allowed_attributes
         not_validated_fields = filter(lambda x: x not in allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1757,7 +1762,14 @@ class ListField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
-        self.type = 'list'
+        if item_type == 'string':
+            self.type = 'list-string'
+        elif item_type == 'datetime':
+            self.type = 'list-datetime'
+        elif item_type == 'number':
+            self.type = 'list-number'
+        elif item_type == 'check':
+            self.type = 'list-check'
 
     def make_mapping(self):
         """
