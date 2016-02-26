@@ -8,10 +8,10 @@
       "enabled": false
     },
     "properties": {
-      "document-definition__doc_type__v1": {
+      "doc_type__v1": {
         "type": "string",
         "fields": {
-          "document-definition__doc_type__v1": {
+          "doc_type__v1": {
             "type": "string"
           },
           "raw__v1": {
@@ -331,13 +331,13 @@
           }
         }
       },
-      "document-definition__choices__v1": {
+      "choices__v1": {
         "type": "nested",
         "properties": {
-          "document-definition__choices__name__v1": {
+          "choices__name__v1": {
             "type": "string",
             "fields": {
-              "document-definition__choices__name__v1": {
+              "choices__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -346,13 +346,13 @@
               }
             }
           },
-          "document-definition__choices__items__v1": {
+          "choices__items__v1": {
             "type": "nested",
             "properties": {
-              "document-definition__choices__items__name__v1": {
+              "choices__items__name__v1": {
                 "type": "string",
                 "fields": {
-                  "document-definition__choices__items__name__v1": {
+                  "choices__items__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -361,10 +361,10 @@
                   }
                 }
               },
-              "document-definition__choices__items__value__v1": {
+              "choices__items__value__v1": {
                 "type": "string",
                 "fields": {
-                  "document-definition__choices__items__name__v1": {
+                  "choices__items__name__v1": {
                     "type": "string"
                   },
                   "raw__v1": {
@@ -377,17 +377,17 @@
           }
         }
       },
-      "document-definition__editable_fields__v1": {
+      "editable_fields__v1": {
         "type": "string",
         "index": "no"
       },
-      "document-definition__messages__v1": {
+      "messages__v1": {
         "type": "nested",
         "properties": {
-          "document-definition__messages__name__v1": {
+          "messages__name__v1": {
             "type": "string",
             "fields": {
-              "document-definition__messages__name__v1": {
+              "messages__name__v1": {
                 "type": "string"
               },
               "raw__v1": {
@@ -396,16 +396,16 @@
               }
             }
           },
-          "document-definition__messages__value__v1": {
+          "messages__value__v1": {
             "type": "string",
             "index": "no"
           }
         }
       },
-      "document-definition__comment__v1": {
+      "comment__v1": {
         "type": "string"
       },
-      "document-definition__permissions__v1": {
+      "permissions__v1": {
         "type": "nested",
         "properties": {
           "id__v1": {
@@ -522,156 +522,50 @@
           }
         }
       },
-      "document-definition__validations__v1": {
+      "validations__v1": {
         "type": "nested",
         "properties": {
-          "document-definition__validations__type__v1": {
+          "validations__type__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document-definition__validations__path__v1": {
+          "validations__path__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document-definition__validations__value__v1": {
+          "validations__value__v1": {
             "type": "string",
             "index": "no"
           },
-          "document-definition__validations__modes__v1": {
+          "validations__modes__v1": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document-definition__validations__context__v1": {
+          "validations__context__v1": {
             "type": "string",
             "index": "not_analyzed"
           }
         }
       },
-      "document-definition__fields__v1": {
+      "fields__v1": {
         "type": "object",
         "properties": {
-          "document-definition__fields__string__v1": {
-            "type": "nested",
-            "properties": {
-              "document-definition__fields__string__active__v1": {
-                "type": "boolean"
-              },
-              "document-definition__fields__string__validations__v1": {
-                "type": "nested",
-                "properties": {
-                  "document-definition__fields__string__validations__type__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  },
-                  "document-definition__fields__string__validations__path__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  },
-                  "document-definition__fields__string__validations__value__v1": {
-                    "type": "string",
-                    "index": "no"
-                  },
-                  "document-definition__fields__string__validations__modes__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  },
-                  "document-definition__fields__string__validations__context__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
-              },
-              "document-definition__fields__string__choices__v1": {
-                "type": "object",
-                "properties": {
-                  "document-definition__fields__string__choices__choice_name__v1": {
-                    "type": "string",
-                    "fields": {
-                      "document-definition__fields__string__choices__choice_name__v1": {
-                        "type": "string"
-                      },
-                      "raw__v1": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                      }
-                    }
-                  },
-                  "document-definition__fields__string__choices__default_value__v1": {
-                    "type": "string",
-                    "fields": {
-                      "document-definition__fields__string__choices__default_value__v1": {
-                        "type": "string"
-                      },
-                      "raw__v1": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                      }
-                    }
-                  }
-                }
-              },
-              "document-definition__fields__string__default__v1": {
-                "type": "string",
-                "fields": {
-                  "document-definition__fields__string__default__v1": {
-                    "type": "string"
-                  },
-                  "raw__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
-              },
-              "document-definition__fields__string__add_summary__v1": {
-                "type": "boolean"
-              },
-              "document-definition__fields__string__hint__v1": {
-                "type": "string",
-                "index": "not_analyzed"
-              },
-              "document-definition__fields__string__comment__v1": {
-                "type": "string",
-                "index": "not_analyzed"
-              },
-              "document-definition__fields__string__display_name__v1": {
-                "type": "string",
-                "fields": {
-                  "display_name__v1": {
-                    "type": "string"
-                  },
-                  "raw__v1": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
-              },
-              "document-definition__fields__string__max_length__v1": {
-                "type": "integer"
-              },
-              "document-definition__fields__string__min_length__v1": {
-                "type": "integer"
-              },
-              "document-definition__fields__string__is_autocomplete__v1": {
-                "type": "boolean"
-              }
-            }
-          }
         }
       },
-      "document-definition__created_on__v1" : {
+      "created_on__v1" : {
         "type" : "date",
         "format" : "dateOptionalTime"
       },
-      "document-definition__created_by__v1": {
+      "created_by__v1": {
         "properties": {
-          "document-definition__created_by__id": {
+          "created_by__id": {
             "type": "string",
             "index": "not_analyzed"
           },
-          "document-definition__created_by__user_name__v1": {
+          "created_by__user_name__v1": {
             "type": "string",
             "fields": {
-              "document-definition__created_by__user_name__v1": {
+              "created_by__user_name__v1": {
                 "type": "string"
               }
             }

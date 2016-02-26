@@ -69,12 +69,12 @@ class Field(object):
             elif key == 'items' and self.type == 'map-list':
                 physical[u'items'] = []
             else:
-                physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                physical[u'fields__{type}__{field}__v1'.format(
                     type=self.type,
                     field=key
                 )] = None
             if key == 'validations':
-                validations_node = physical[u'document-definition__fields__{type}__validations__v1'.format(
+                validations_node = physical[u'fields__{type}__validations__v1'.format(
                     type=self.type
                 )]
                 """
@@ -84,11 +84,11 @@ class Field(object):
                     }
                 ]
                 """
-                prefix = u'document-definition__fields__{type}__validations'.format(
+                prefix = u'fields__{type}__validations'.format(
                     type=self.type
                 )
                 if key in self.field_data and self.field_data[key]:
-                    physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                    physical[u'fields__{type}__{field}__v1'.format(
                         type=self.type,
                         field=key
                     )] = {}
@@ -124,15 +124,15 @@ class Field(object):
                     "default": "created"
                 }
                 """
-                prefix = u'document-definition__fields__{type}__choices'.format(
+                prefix = u'fields__{type}__choices'.format(
                     type=self.type
                 )
                 if key in self.field_data and self.field_data[key]:
-                    physical[u'document-definition__fields__{type}__{field}__v1'.format(
+                    physical[u'fields__{type}__{field}__v1'.format(
                         type=self.type,
                         field=key
                     )] = {}
-                    choice_node = physical[u'document-definition__fields__{type}__choices__v1'.format(
+                    choice_node = physical[u'fields__{type}__choices__v1'.format(
                         type=self.type
                     )]
                     choice_node[u'{prefix}__choice_name__v1'.format(
@@ -176,7 +176,7 @@ class Field(object):
                         else:
                             key_instance_data[u'embedded_into'] = self.name
                         key_field_instance = field_class(**key_instance_data)
-                        items_node[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                        items_node[u'fields__{type}__items__{field}__v1'.format(
                             type=self.type,
                             field=map_field
                         )] = key_field_instance.get_def_physical()
@@ -206,14 +206,14 @@ class Field(object):
                             else:
                                 key_instance_data[u'embedded_into'] = self.name
                             key_field_instance = field_class(**key_instance_data)
-                            map_dict_[u'document-definition__fields__{type}__items__{field}__v1'.format(
+                            map_dict_[u'fields__{type}__items__{field}__v1'.format(
                                 type=self.type,
                                 field=map_field
                             )] = key_field_instance.get_def_physical()
                         items_node.append(map_dict_)
             else:
                 if key in self.field_data and self.field_data[key]:
-                    field_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                    field_name = u'fields__{type}__{field}__v1'.format(
                         type=self.type,
                         field=key
                     )
@@ -438,8 +438,7 @@ class StringField(Field):
         mappings = {
             u'{}__{}__{}'.format(
                 self.doc_type, self.name, self.version
-            ): self.build_mapping(u'{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            ): self.build_mapping(u'{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version))
             }
@@ -447,8 +446,7 @@ class StringField(Field):
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
             mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
-                u"type": u"{doc_tyoe}__{field_name}_completion".format(
-                    doc_type=self.doc_type,
+                u"type": u"{field_name}_completion".format(
                     field_name=self.name
                 ),
                 u"analyzer": u"simple_whitespace",
@@ -472,8 +470,7 @@ class StringField(Field):
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -650,8 +647,8 @@ class NumberField(Field):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': self.mode,
             }
@@ -660,8 +657,7 @@ class NumberField(Field):
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
             mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
-                u"type": u"{doc_tyoe}__{field_name}_completion".format(
-                    doc_type=self.doc_type,
+                u"type": u"{field_name}_completion".format(
                     field_name=self.name
                 ),
                 u"analyzer": u"simple_whitespace",
@@ -685,8 +681,7 @@ class NumberField(Field):
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -810,7 +805,6 @@ class TextField(Field):
         Return mapping that corresponds to this field, no matter if goes for document definition
         or structure for document
 
-        :param field_name:
         :return:
         """
         return {
@@ -824,8 +818,8 @@ class TextField(Field):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'string',
             }
@@ -847,8 +841,7 @@ class TextField(Field):
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -925,7 +918,6 @@ class CheckField(Field):
     validation_errors = []
     embedded_into = None
 
-
     def __init__(self, **kwargs):
         """
         Constructor
@@ -957,8 +949,8 @@ class CheckField(Field):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'boolean',
             }
@@ -972,14 +964,13 @@ class CheckField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -1090,8 +1081,8 @@ class DateTimeField(Field):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': u'date',
                 u"format": u"dateOptionalTime"
@@ -1106,14 +1097,13 @@ class DateTimeField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -1285,7 +1275,7 @@ class MapField(Field):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapField.make_mapping :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -1298,8 +1288,8 @@ class MapField(Field):
             logger.debug(u'MapField.make_mapping :: field_mapping: {}'.format(field_mapping))
             object_properties.update(field_mapping)
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'object',
                 u'properties': object_properties
@@ -1314,14 +1304,13 @@ class MapField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -1367,7 +1356,7 @@ class MapField(Field):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapField.get_physical :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -1557,7 +1546,7 @@ class MapListField(Field):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapListField.make_mapping :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -1570,8 +1559,8 @@ class MapListField(Field):
             logger.debug(u'MapListField.make_mapping :: field_mapping: {}'.format(field_mapping))
             object_properties.update(field_mapping)
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'nested',
                 u"include_in_parent": True,
@@ -1588,14 +1577,13 @@ class MapListField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -1654,7 +1642,7 @@ class MapListField(Field):
                 field_data = self.items[field_data_key]
                 field_data['name'] = field_data_key
                 logger.debug(u'MapListField.get_physical :: field_data: {}'.format(field_data))
-                item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+                item_doc_type = u'{}'.format(self.name)
                 module = 'document.fields'
                 instance = __import__(module)
                 for comp in module.split('.')[1:]:
@@ -1806,8 +1794,8 @@ class ListField(Field):
         mappings = None
         if item_type == 'date':
             mappings = {
-                u'{}__{}__{}'.format(
-                    self.doc_type, self.name, self.version
+                u'{}__{}'.format(
+                    self.name, self.version
                 ): {
                     'type': 'date',
                     "format": "dateOptionalTime"
@@ -1815,13 +1803,13 @@ class ListField(Field):
             }
         elif item_type == 'string':
             mappings = {
-                u'{}__{}__{}'.format(
-                    self.doc_type, self.name, self.version
+                u'{}__{}'.format(
+                    self.name, self.version
                 ): {
                     'type': 'string',
                     'fields': {
-                        u'{}__{}__{}'.format(
-                            self.doc_type, self.name, self.version
+                        u'{}__{}'.format(
+                            self.name, self.version
                         ): {
                             'type': 'string'
                         },
@@ -1834,16 +1822,16 @@ class ListField(Field):
             }
         elif item_type == 'number':
             mappings = {
-                u'{}__{}__{}'.format(
-                    self.doc_type, self.name, self.version
+                u'{}__{}'.format(
+                    self.name, self.version
                 ): {
                     u'type': self.mode,
                 }
             }
         elif item_type == 'check':
             mappings = {
-                u'{}__{}__{}'.format(
-                    self.doc_type, self.name, self.version
+                u'{}__{}'.format(
+                    self.name, self.version
                 ): {
                     u'type': 'boolean',
                 }
@@ -1860,14 +1848,13 @@ class ListField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -2019,7 +2006,7 @@ class LinkField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
@@ -2165,7 +2152,7 @@ class LinksField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
