@@ -224,6 +224,31 @@ class Field(object):
         """
         Get mapping for field for document definition
 
+        map
+        ===
+        We will write mapping for map attributes, not items. items inside would go into fields with
+        attribute embedded_into pointing to map. In case map inside map, would point map1.map2, etc...
+
+        map-list
+        ========
+        logical:
+        {
+            "values: [
+                {
+                  "name": StringField(...),
+                  "description": StringField(...),
+                  "counter": NumberField(...)
+                },
+                {
+                  "name": StringField(...),
+                  "description": StringField(...),
+                  "counter": NumberField(...)
+                }
+            ]
+        }
+        We would have map-list with attributes into doc def fields, but not items
+        How include items in doc def???
+
         :return:
         """
         mappings = {}

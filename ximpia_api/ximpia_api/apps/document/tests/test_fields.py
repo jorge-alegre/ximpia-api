@@ -787,6 +787,29 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'status'
         field = ListField(**field_data)
         physical = field.get_def_physical()
+        """import pprint
+        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        self.assertTrue(len(physical) != 0)
+
+    def test_map(self):
+        from document.fields import MapField
+        with open('ximpia_api/apps/document/tests/data/doc_map-simple.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        field_data = doc_map['settings']
+        field_data['name'] = 'settings'
+        field = MapField(**field_data)
+        physical = field.get_def_physical()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        self.assertTrue(len(physical) != 0)
+        with open('ximpia_api/apps/document/tests/data/doc_map.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        field_data = doc_map['settings']
+        field_data['name'] = 'settings'
+        field = MapField(**field_data)
+        physical = field.get_def_physical()
         import pprint
         pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
