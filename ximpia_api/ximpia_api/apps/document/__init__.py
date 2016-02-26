@@ -1211,11 +1211,11 @@ class DocumentDefinition(object):
         :return:
         """
         from datetime import datetime
-        self.physical['document-definition__created_on__v1'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        self.physical[u'created_on__v1'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         if self.user:
-            self.physical['document-definition__created_by__v1'] = {
-                'document-definition__created_by__id': user.id,
-                'document-definition__created_by__user_name__v1': user.username
+            self.physical[u'created_by__v1'] = {
+                u'created_by__id': user.id,
+                u'created_by__user_name__v1': user.username
                 }
 
     def get_physical(self):
@@ -1228,7 +1228,7 @@ class DocumentDefinition(object):
             self.logical = self.get_logical()
         # Write physical meta fields into main root node
         for meta_item in self.logical['_meta']:
-            meta_field = u'document-definition__{field}__v1'.format(
+            meta_field = u'{field}__v1'.format(
                 field=meta_item
             )
             self.physical[meta_field] = self.logical['_meta'][meta_item]
@@ -1241,11 +1241,11 @@ class DocumentDefinition(object):
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
             self.physical['document-definition__fields__v1'].setdefault(
-                u'document-definition__fields__{}__v1'.format(field_instance.type),
+                u'fields__{}__v1'.format(field_instance.type),
                 []
             )
             fields_node = self.physical['document-definition__fields__v1']
-            type_field = u'document-definition__fields__{}__v1'.format(field_instance.type)
+            type_field = u'fields__{}__v1'.format(field_instance.type)
             fields_node[type_field].append(field_instance.get_def_physical())
         return self.physical
 
