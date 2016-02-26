@@ -818,3 +818,15 @@ class FieldDocDefTest(XimpiaTestCase):
         physical = field.get_def_physical()
         pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
+
+    def test_map_list(self):
+        from document.fields import MapListField
+        with open('ximpia_api/apps/document/tests/data/doc_map_list.json') as f:
+            doc_map_list_str = f.read()
+        doc_map_list = json.loads(doc_map_list_str)
+        field_data = doc_map_list['settings']
+        field_data['name'] = 'settings'
+        field = MapListField(**field_data)
+        physical = field.get_def_physical()
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        self.assertTrue(len(physical) != 0)
