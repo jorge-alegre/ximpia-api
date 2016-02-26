@@ -1,6 +1,7 @@
 import json
 import logging
 import requests
+import pprint
 
 from django.test import RequestFactory
 # from django.core.urlresolvers import reverse
@@ -727,30 +728,39 @@ class FieldDocDefTest(XimpiaTestCase):
         # string
         mapping = StringField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # number
         mapping = NumberField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # datetime
         mapping = DateTimeField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # check
         mapping = CheckField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # list
-        mapping = ListField(**{'type': 'list<string>'}).get_def_mappings()
+        mapping = ListField(**{'type': 'list-string'}).get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # link
         mapping = LinkField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # links
         mapping = LinksField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # map
         mapping = MapField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
         # map-list
         mapping = MapListField().get_def_mappings()
         self.assertTrue(len(mapping) != 0)
+        # pprint.PrettyPrinter(indent=4).pprint(mapping)
 
     def test_string(self):
         from document.fields import StringField
@@ -761,8 +771,7 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'status'
         field = StringField(**field_data)
         physical = field.get_def_physical()
-        """import pprint
-        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
 
     def test_number(self):
@@ -774,8 +783,7 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'number_tries'
         field = NumberField(**field_data)
         physical = field.get_def_physical()
-        """import pprint
-        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
 
     def test_list(self):
@@ -787,8 +795,7 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'status'
         field = ListField(**field_data)
         physical = field.get_def_physical()
-        """import pprint
-        pprint.PrettyPrinter(indent=4).pprint(physical)"""
+        pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
 
     def test_map(self):
@@ -800,7 +807,6 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'settings'
         field = MapField(**field_data)
         physical = field.get_def_physical()
-        import pprint
         pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)
         with open('ximpia_api/apps/document/tests/data/doc_map.json') as f:
@@ -810,6 +816,5 @@ class FieldDocDefTest(XimpiaTestCase):
         field_data['name'] = 'settings'
         field = MapField(**field_data)
         physical = field.get_def_physical()
-        import pprint
         pprint.PrettyPrinter(indent=4).pprint(physical)
         self.assertTrue(len(physical) != 0)

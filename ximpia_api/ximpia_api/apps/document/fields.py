@@ -31,26 +31,26 @@ class Field(object):
 
         Example for StringField document definition physical:
         {
-          document-definition__fields__string__active__v1: True,
-          document-definition__fields__string__validations__v1: [
-            document-definition__fields__string__validations__type__v1: ,
-            document-definition__fields__string__validations__path__v1: ,
-            document-definition__fields__string__validations__value__v1: ,
-            document-definition__fields__string__validations__modes__v1: ,
-            document-definition__fields__string__validations__context__v1:
+          fields__string__active__v1: True,
+          fields__string__validations__v1: [
+            fields__string__validations__type__v1: ,
+            fields__string__validations__path__v1: ,
+            fields__string__validations__value__v1: ,
+            fields__string__validations__modes__v1: ,
+            fields__string__validations__context__v1:
           ],
-          document-definition__fields__string__choices__v1: {
-            document-definition__fields__string__choices__choice_name__v1: '',
-            document-definition__fields__string__choices__default_value__v1: '',
+          fields__string__choices__v1: {
+            fields__string__choices__choice_name__v1: '',
+            fields__string__choices__default_value__v1: '',
           },
-          document-definition__fields__string__default__v1: '',
-          document-definition__fields__string__add_summary__v1: True,
-          document-definition__fields__string__hint__v1: '',
-          document-definition__fields__string__comment__v1: '',
-          document-definition__fields__string__display_name__v1: '',
-          document-definition__fields__string__max_length__v1: None,
-          document-definition__fields__string__min_length__v1: None,
-          document-definition__fields__string__is_autocomplete__v1: False
+          fields__string__default__v1: '',
+          fields__string__add_summary__v1: True,
+          fields__string__hint__v1: '',
+          fields__string__comment__v1: '',
+          fields__string__display_name__v1: '',
+          fields__string__max_length__v1: None,
+          fields__string__min_length__v1: None,
+          fields__string__is_autocomplete__v1: False
         }
 
         mappings is the fields mappings for document definition
@@ -153,6 +153,25 @@ class Field(object):
                 # MapField: dict MapListField: list
                 if self.type == 'map':
                     items_node = physical[u'items']
+                    """
+                    "items":
+                        {
+                          "string": [
+                            {
+                            },
+                            {
+                            },
+                            ...
+                          ],
+                          "number": [
+                            {
+                            },
+                            {
+                            },
+                            ...
+                          ]
+                        }
+                    """
                     for map_field in self.field_data[key]:
                         # We need to instance field
                         key_instance_data = self.field_data[key][map_field]
@@ -176,10 +195,25 @@ class Field(object):
                         else:
                             key_instance_data[u'embedded_into'] = self.name
                         key_field_instance = field_class(**key_instance_data)
-                        items_node[u'fields__{type}__items__{field}__v1'.format(
-                            type=self.type,
-                            field=map_field
-                        )] = key_field_instance.get_def_physical()
+                        items_node.setdefault(field_type, [])
+                        field_physical = key_field_instance.get_def_physical()
+                        items = []
+                        if 'items' in field_physical:
+                            items = field_physical.pop('items')
+                        items_node[field_type].append(field_physical)
+                        for item_key in items:
+                            items_node.setdefault(item_key, [])
+                            data_list = items[item_key]
+                            # update embedded_into
+                            for data in data_list:
+                                embedded_field_name = u'fields__{type}__embedded_into__v1'.format(
+                                    type=item_key
+                                )
+                                data[embedded_field_name] = u'{}.{}'.format(
+                                    key_instance_data[u'embedded_into'],
+                                    data[embedded_field_name]
+                                )
+                            items_node[item_key].extend(data_list)
                 if self.type == 'map-list':
                     items_node = physical[u'items']
                     for map_dict in self.field_data[key]:
@@ -286,7 +320,7 @@ class Field(object):
                         u"fields__{type}__choices__choice_name__v1".format(type=self.type): {
                             u"type": u"string",
                             u"fields": {
-                                u"document-definition__fields__{type}__choices__choice_name__v1".format(
+                                u"fields__{type}__choices__choice_name__v1".format(
                                     type=self.type): {
                                     u"type": u"string"
                                 },
