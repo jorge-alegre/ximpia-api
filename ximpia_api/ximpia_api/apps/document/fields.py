@@ -254,36 +254,36 @@ class Field(object):
         mappings = {}
         for key in self.allowed_attributes:
             if key == 'validations':
-                mappings[u"document-definition__fields__{type}__validations__v1".format(type=self.type)] = {
+                mappings[u"fields__{type}__validations__v1".format(type=self.type)] = {
                     u"type": u"nested",
                     u"properties": {
-                        u"document-definition__fields__{type}__validations__type__v1".format(type=self.type): {
+                        u"fields__{type}__validations__type__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__{type}__validations__path__v1".format(type=self.type): {
+                        u"fields__{type}__validations__path__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__{type}__validations__value__v1".format(type=self.type): {
+                        u"fields__{type}__validations__value__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"no"
                         },
-                        u"document-definition__fields__{type}__validations__modes__v1".format(type=self.type): {
+                        u"fields__{type}__validations__modes__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         },
-                        u"document-definition__fields__{type}__validations__context__v1".format(type=self.type): {
+                        u"fields__{type}__validations__context__v1".format(type=self.type): {
                             u"type": u"string",
                             u"index": u"not_analyzed"
                         }
                     }
                 }
             elif key == 'choices':
-                mappings[u"document-definition__fields__{type}__choices__v1".format(type=self.type)] = {
+                mappings[u"fields__{type}__choices__v1".format(type=self.type)] = {
                     u"type": u"object",
                     u"properties": {
-                        u"document-definition__fields__{type}__choices__choice_name__v1".format(type=self.type): {
+                        u"fields__{type}__choices__choice_name__v1".format(type=self.type): {
                             u"type": u"string",
                             u"fields": {
                                 u"document-definition__fields__{type}__choices__choice_name__v1".format(
@@ -296,10 +296,10 @@ class Field(object):
                                 }
                             }
                         },
-                        u"document-definition__fields__{type}__choices__default_value__v1".format(type=self.type): {
+                        u"fields__{type}__choices__default_value__v1".format(type=self.type): {
                             u"type": u"string",
                             u"fields": {
-                                u"document-definition__fields__{type}__choices__default_value__v1".format(
+                                u"fields__{type}__choices__default_value__v1".format(
                                     type=self.type): {
                                     u"type": u"string"
                                 },
@@ -312,7 +312,7 @@ class Field(object):
                     }
                 }
             else:
-                field_name = u'document-definition__fields__{type}__{field}__v1'.format(
+                field_name = u'fields__{type}__{field}__v1'.format(
                     type=self.type,
                     field=key
                 )
