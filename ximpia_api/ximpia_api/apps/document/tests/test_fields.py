@@ -565,6 +565,7 @@ class DocumentDefinitionTest(XimpiaTestCase):
         index = 'my-site__base'
         document_definition = DocumentDefinition(doc_string, doc_type, user, index=index)
         logger.debug(u'DocumentDefinitionTest.test_mappings :: {}'.format(document_definition))
+        mappings = document_definition.get_mappings()
 
 
 class DocDefAllCreateTest(XimpiaTestCase):

@@ -634,7 +634,7 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
         ##################
 
         # Build data
-        doc_mapping = doc_def.get_mapping()
+        doc_mapping = doc_def.get_mappings()
         fields_version_str = doc_def.get_field_versions(index, user)
         # Create document definition document
         es_response_raw = requests.post(

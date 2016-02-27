@@ -930,7 +930,7 @@ class DocumentDefinition(object):
 
         :return:
         """
-        from base import get_mapping
+        from base import get_mappings
         # We need the document definition, doc_type and tag would be enough
         # We would need the physical data, that we inject into Link and Links field types
         # We do bulk query for this
@@ -942,7 +942,7 @@ class DocumentDefinition(object):
         print
         print
         pprint.PrettyPrinter(indent=2).pprint(self.logical)
-        for field_name in self.logical.keys():
+        for field_name in self.logical['fields'].keys():
             logger.debug(u'DocumentDefinition._get_documents :: field_name: {}'.format(field_name))
             if field_name == '_meta':
                 continue
@@ -955,7 +955,7 @@ class DocumentDefinition(object):
                 index = self._get_field_index(field_instance)
                 # mappings
                 if field_instance.type_remote not in self.mappings:
-                    self.mappings[field_instance.type_remote] = get_mapping(
+                    self.mappings[field_instance.type_remote] = get_mappings(
                         field_instance.type_remote,
                         index=index
                     )
@@ -1028,6 +1028,7 @@ class DocumentDefinition(object):
             )
             )
         # Make ES request
+        pprint.PrettyPrinter(indent=2).pprint(bulk_queries)
         bulk_queries_request = map(lambda x: bulk_queries[x], bulk_queries_keys)
         es_response_raw = requests.get(
             '{host}/_msearch'.format(
@@ -1079,7 +1080,7 @@ class DocumentDefinition(object):
         :param field_name:
         :return:
         """
-        instance_data = self.logical[field_name]
+        instance_data = self.logical['fields'][field_name]
         logger.debug(u'DocumentDefinition._do_field_instance :: field_name: {} instance_data: {}'.format(
             field_name, instance_data
         ))
@@ -1102,7 +1103,7 @@ class DocumentDefinition(object):
         self.field_map[field_name] = field_instance
         logger.debug(u'DocumentDefinition._do_field_instance :: field_map: {}'.format(self.field_map))
 
-    def get_mapping(self):
+    def get_mappings(self):
         """
         Would generate mappings for document. No mapping generated for document definition.
 

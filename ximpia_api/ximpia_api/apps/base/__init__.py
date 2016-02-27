@@ -472,7 +472,7 @@ def get_version(request):
     return getattr(request, 'version', settings.DEFAULT_VERSION)
 
 
-def get_mapping(doc_type, index=settings.SITE_BASE_INDEX):
+def get_mappings(doc_type, index=settings.SITE_BASE_INDEX):
     """
     Get mapping
 
@@ -487,7 +487,7 @@ def get_mapping(doc_type, index=settings.SITE_BASE_INDEX):
             type=doc_type
         )
     )
-    logger.info(u'get_mapping :: response: {}'.format(
+    logger.info(u'get_mappings :: response: {}'.format(
         response_raw
     ))
     response = response_raw.json()
