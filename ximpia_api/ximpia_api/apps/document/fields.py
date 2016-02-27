@@ -484,8 +484,8 @@ class StringField(Field):
         # We could set analyzer. Default analyzer??? International chars???
         # How we set version fields??? We get field versions for name
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): self.build_mapping(u'{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version))
@@ -512,7 +512,7 @@ class StringField(Field):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 

@@ -1122,7 +1122,7 @@ class DocumentDefinition(object):
         # travel fields and get mapping for whole document
         if not self.logical:
             self.logical = self.get_logical()
-        for field_name in self.logical.keys():
+        for field_name in self.logical['fields'].keys():
             if field_name == '_meta':
                 continue
             if field_name in self.field_map:
