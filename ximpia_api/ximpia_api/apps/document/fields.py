@@ -178,13 +178,7 @@ class Field(object):
                     for map_field in self.field_data[key]:
                         # We need to instance field
                         key_instance_data = self.field_data[key][map_field]
-                        module = 'document.fields'
-                        key_instance = __import__(module)
-                        for comp in module.split('.')[1:]:
-                            key_instance = getattr(key_instance, comp)
-                        logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
-                                                                                         dir(key_instance)))
-                        field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
+                        field_class = DocumentDefinition.get_field_class(key_instance_data)
                         logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
                         field_type_raw = key_instance_data['type']
                         field_type = field_type_raw
@@ -218,46 +212,47 @@ class Field(object):
                                 )
                             items_node[item_key].extend(data_list)
                 if self.type == 'map-list':
+                    # 1. field_data[key] has map-list definition, dict with fields inside each list item
+                    # 2. items_node has a list of map list items physical to insert
+                    # Keep in mind you are not writing actual doc physical, list of lists, you are writing
+                    # document definition nested
                     items_node = physical[u'items']
-                    logger.debug(u'Field.get_def_physical :: field_data[items]: {}'.format(self.field_data[key]))
-                    for map_dict_key in self.field_data[key]:
-                        map_dict = self.field_data[key][map_dict_key]
-                        logger.debug(u'Field.get_def_physical :: map_dict: {}'.format(map_dict))
-                        for map_field in map_dict:
-                            key_instance_data = map_dict[map_field]
-                            field_class = DocumentDefinition.get_field_class(key_instance_data)
-                            logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
-                            field_type_raw = key_instance_data['type']
-                            field_type = field_type_raw
-                            if '<' in field_type_raw:
-                                field_type = field_type_raw.split('<'[0])
-                            logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
-                            key_instance_data[u'name'] = map_field
-                            key_instance_data[u'doc_type'] = None
-                            if u'embedded_into' in key_instance_data:
-                                key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
-                            else:
-                                key_instance_data[u'embedded_into'] = self.name
-                            key_field_instance = field_class(**key_instance_data)
-                            items_node.setdefault(field_type, [])
-                            field_physical = key_field_instance.get_def_physical()
-                            items = []
-                            if 'items' in field_physical:
-                                items = field_physical.pop('items')
-                            items_node[field_type].append(field_physical)
-                            for item_key in items:
-                                items_node.setdefault(item_key, [])
-                                data_list = items[item_key]
-                                # update embedded_into
-                                for data in data_list:
-                                    embedded_field_name = u'fields__{type}__embedded_into__v1'.format(
-                                        type=item_key
-                                    )
-                                    data[embedded_field_name] = u'{}.{}'.format(
-                                        key_instance_data[u'embedded_into'],
-                                        data[embedded_field_name]
-                                    )
-                                items_node[item_key].extend(data_list)
+                    for map_field in self.field_data[key]:
+                        # We need to instance field
+                        key_instance_data = self.field_data[key][map_field]
+                        field_class = DocumentDefinition.get_field_class(key_instance_data)
+                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                        field_type_raw = key_instance_data['type']
+                        field_type = field_type_raw
+                        if '<' in field_type_raw:
+                            field_type = field_type_raw.split('<'[0])
+                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                        key_instance_data[u'name'] = map_field
+                        key_instance_data[u'doc_type'] = None
+                        if u'embedded_into' in key_instance_data:
+                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                        else:
+                            key_instance_data[u'embedded_into'] = self.name
+                        key_field_instance = field_class(**key_instance_data)
+                        items_node.setdefault(field_type, [])
+                        field_physical = key_field_instance.get_def_physical()
+                        items = []
+                        if 'items' in field_physical:
+                            items = field_physical.pop('items')
+                        items_node[field_type].append(field_physical)
+                        for item_key in items:
+                            items_node.setdefault(item_key, [])
+                            data_list = items[item_key]
+                            # update embedded_into
+                            for data in data_list:
+                                embedded_field_name = u'fields__{type}__embedded_into__v1'.format(
+                                    type=item_key
+                                )
+                                data[embedded_field_name] = u'{}.{}'.format(
+                                    key_instance_data[u'embedded_into'],
+                                    data[embedded_field_name]
+                                )
+                            items_node[item_key].extend(data_list)
             else:
                 if key in self.field_data and self.field_data[key]:
                     field_name = u'fields__{type}__{field}__v1'.format(

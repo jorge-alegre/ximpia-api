@@ -1275,7 +1275,12 @@ class DocumentDefinition(object):
             )
             fields_node = self.physical['fields__v1']
             type_field = u'fields__{}__v1'.format(field_instance.type)
-            fields_node[type_field].append(field_instance.get_def_physical())
+            field_physical = field_instance.get_def_physical()
+            if 'items' in field_physical:
+                items = field_physical.pop('items')
+                for item_key_type in items:
+                    fields_node[u'fields__{}__v1'.format(item_key_type)].extend(items[item_key_type])
+            fields_node[type_field].append(field_physical)
         return self.physical
 
     def get_field_versions(self, index, user):
