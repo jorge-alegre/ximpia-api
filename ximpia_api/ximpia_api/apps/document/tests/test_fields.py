@@ -546,6 +546,27 @@ class LinksFieldTest(XimpiaTestCase):
         logger.debug(u'LinkFieldTest :: check: {}'.format(check))"""
 
 
+class DocumentDefinitionTest(XimpiaTestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.req_factory = RequestFactory()
+
+    def tearDown(self):
+        pass
+
+    def test_mappings(self):
+        from document import DocumentDefinition
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
+            doc_string_str = f.read()
+        doc_string = json.loads(doc_string_str)
+        doc_type = 'test-string-field'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_string, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_mappings :: {}'.format(document_definition))
+
+
 class DocDefAllCreateTest(XimpiaTestCase):
 
     def setUp(self):

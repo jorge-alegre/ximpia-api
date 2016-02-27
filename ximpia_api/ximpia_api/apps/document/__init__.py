@@ -2,6 +2,7 @@ import requests
 import json
 import datetime
 import logging
+import pprint
 from requests.adapters import HTTPAdapter
 
 from django.utils.translation import ugettext as _
@@ -896,6 +897,7 @@ class DocumentDefinition(object):
         :return:
         """
         self.logical_source = logical
+        pprint.PrettyPrinter(indent=2).pprint(logical)
         self.doc_type = doc_type
         self.branch_name = branch_name
         self.tag_name = tag_name
@@ -937,7 +939,11 @@ class DocumentDefinition(object):
         bulk_queries_keys = []
         if not self.logical:
             self.logical = self.get_logical()
+        print
+        print
+        pprint.PrettyPrinter(indent=2).pprint(self.logical)
         for field_name in self.logical.keys():
+            logger.debug(u'DocumentDefinition._get_documents :: field_name: {}'.format(field_name))
             if field_name == '_meta':
                 continue
             if field_name in self.field_map:
@@ -1074,23 +1080,27 @@ class DocumentDefinition(object):
         :return:
         """
         instance_data = self.logical[field_name]
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_name: {} instance_data: {}'.format(
+            field_name, instance_data
+        ))
         module = 'document.fields'
         instance = __import__(module)
         for comp in module.split('.')[1:]:
             instance = getattr(instance, comp)
-        logger.debug(u'DocumentDefinition.create :: instance: {} {}'.format(instance,
-                                                                            dir(instance)))
+        logger.debug(u'DocumentDefinition._do_field_instance :: instance: {} {}'.format(instance,
+                                                                                        dir(instance)))
         field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
-        logger.debug(u'DocumentDefinition.create :: field_class: {}'.format(field_class))
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_class: {}'.format(field_class))
         field_type_raw = instance_data['type']
         field_type = field_type_raw
         if '<' in field_type_raw:
             field_type = field_type_raw.split('<'[0])
-        logger.debug(u'DocumentDefinition.create :: field type: {}'.format(field_type))
+        logger.debug(u'DocumentDefinition._do_field_instance :: field type: {}'.format(field_type))
         instance_data['name'] = field_name
         instance_data['doc_type'] = self.doc_type
         field_instance = field_class(**instance_data)
         self.field_map[field_name] = field_instance
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_map: {}'.format(self.field_map))
 
     def get_mapping(self):
         """
@@ -1154,7 +1164,7 @@ class DocumentDefinition(object):
                         )
                     input_document['_meta']['choices'].append(
                         {
-                            'choice_name': choice_list
+                            choice_name: choice_list
                         }
                     )
             elif doc_field == 'messages':
@@ -1199,7 +1209,7 @@ class DocumentDefinition(object):
                             }
                             validations_new.append(validation_data_item)
                     field_data['validations'] = validations_new
-                input_document[field] = field_data
+                input_document['fields'][field] = field_data
         return input_document
 
     def put_timestamp(self, user):
