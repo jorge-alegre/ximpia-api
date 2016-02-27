@@ -578,6 +578,30 @@ class DocumentDefinitionTest(XimpiaTestCase):
         mappings = document_definition.get_mappings()
         pprint.PrettyPrinter(indent=2).pprint(mappings)
 
+    def test_physical(self):
+        from document import DocumentDefinition
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_string.json') as f:
+            doc_string_str = f.read()
+        doc_string = json.loads(doc_string_str)
+        doc_type = 'test-string-field'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_string, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_physical :: {}'.format(document_definition))
+        physical = document_definition.get_physical()
+        # pprint.PrettyPrinter(indent=2).pprint(physical)
+        self.assertTrue(len(physical['fields__v1']) > 0)
+        with open('ximpia_api/apps/document/tests/data/doc_all.json') as f:
+            doc_all_str = f.read()
+        doc_all = json.loads(doc_all_str)
+        doc_type = 'test-all'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_all, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_physical :: {}'.format(document_definition))
+        physical = document_definition.get_physical()
+        pprint.PrettyPrinter(indent=2).pprint(physical)
+        self.assertTrue(len(physical['fields__v1']) > 0)
+
 
 class DocDefAllCreateTest(XimpiaTestCase):
 

@@ -61,6 +61,7 @@ class Field(object):
             "mappings": ...
         }
         """
+        from . import DocumentDefinition
         physical = {}
         for key in self.allowed_attributes:
             # We catch complex structures for all fields
@@ -87,16 +88,18 @@ class Field(object):
                 prefix = u'fields__{type}__validations'.format(
                     type=self.type
                 )
-                if key in self.field_data and self.field_data[key]:
+                logger.debug(u'Field.get_def_physical :: validations_node: {}'.format(validations_node))
+                logger.debug(u'Field.get_def_physical :: prefix: {}'.format(prefix))
+                if validations_node and key in self.field_data and self.field_data[key]:
                     physical[u'fields__{type}__{field}__v1'.format(
                         type=self.type,
                         field=key
                     )] = {}
-                    validations_node[u'{}prefix__type__v1'.format(prefix=prefix)] = None
-                    validations_node[u'{}prefix__path__v1'.format(prefix=prefix)] = None
-                    validations_node[u'{}prefix__value__v1'.format(prefix=prefix)] = None
-                    validations_node[u'{}prefix__modes__v1'.format(prefix=prefix)] = None
-                    validations_node[u'{}prefix__context__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__type__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__path__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__value__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__modes__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__context__v1'.format(prefix=prefix)] = None
                     if self.field_data[key]['type']:
                         validations_node[u'{}prefix__type__v1'.format(
                             prefix=prefix
@@ -216,17 +219,13 @@ class Field(object):
                             items_node[item_key].extend(data_list)
                 if self.type == 'map-list':
                     items_node = physical[u'items']
-                    for map_dict in self.field_data[key]:
+                    logger.debug(u'Field.get_def_physical :: field_data[items]: {}'.format(self.field_data[key]))
+                    for map_dict_key in self.field_data[key]:
+                        map_dict = self.field_data[key][map_dict_key]
                         logger.debug(u'Field.get_def_physical :: map_dict: {}'.format(map_dict))
                         for map_field in map_dict:
                             key_instance_data = map_dict[map_field]
-                            module = 'document.fields'
-                            key_instance = __import__(module)
-                            for comp in module.split('.')[1:]:
-                                key_instance = getattr(key_instance, comp)
-                            logger.debug(u'Field.get_def_physical :: instance: {} {}'.format(key_instance,
-                                                                                             dir(key_instance)))
-                            field_class = getattr(key_instance, '{}Field'.format(key_instance_data['type'].capitalize()))
+                            field_class = DocumentDefinition.get_field_class(key_instance_data)
                             logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
                             field_type_raw = key_instance_data['type']
                             field_type = field_type_raw

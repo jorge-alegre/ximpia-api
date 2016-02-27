@@ -1073,6 +1073,27 @@ class DocumentDefinition(object):
                     self.docs[field_name] = values
         return documents
 
+    @classmethod
+    def get_field_class(cls, instance_data):
+        """
+        Get field class giving field data
+
+        :param instance_data:
+        :return:
+        """
+        from .fields import field_mapper
+        module = 'document.fields'
+        instance = __import__(module)
+        for comp in module.split('.')[1:]:
+            instance = getattr(instance, comp)
+        logger.debug(u'DocumentDefinition.get_field_class :: instance: {} {}'.format(instance,
+                                                                                     dir(instance)))
+        if instance_data['type'] in field_mapper:
+            field_class = field_mapper[instance_data['type']]
+        else:
+            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+        return field_class
+
     def _do_field_instance(self, field_name):
         """
         Process field instance
@@ -1080,23 +1101,11 @@ class DocumentDefinition(object):
         :param field_name:
         :return:
         """
-        from .fields import field_mapper
         instance_data = self.logical['fields'][field_name]
         logger.debug(u'DocumentDefinition._do_field_instance :: field_name: {} instance_data: {}'.format(
             field_name, instance_data
         ))
-        module = 'document.fields'
-        instance = __import__(module)
-        for comp in module.split('.')[1:]:
-            instance = getattr(instance, comp)
-        logger.debug(u'DocumentDefinition._do_field_instance :: instance: {} {}'.format(instance,
-                                                                                        dir(instance)))
-        # field_type = 'DateTime' if instance_data['type'] == 'datetime' else
-        # field_class = getattr(instance, '{}Field'.format(field_type))
-        if instance_data['type'] in field_mapper:
-            field_class = field_mapper[instance_data['type']]
-        else:
-            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+        field_class = self.get_field_class(instance_data)
         logger.debug(u'DocumentDefinition._do_field_instance :: field_class: {}'.format(field_class))
         field_type_raw = instance_data['type']
         field_type = field_type_raw
@@ -1249,7 +1258,10 @@ class DocumentDefinition(object):
                 field=meta_item
             )
             self.physical[meta_field] = self.logical['_meta'][meta_item]
-        for field_name in self.logical:
+        self.physical['fields__v1'] = {}
+        logger.debug(u'DocumentDefinition.get_physical :: physical: {}'.format(self.physical))
+        for field_name in self.logical['fields']:
+            logger.debug(u'DocumentDefinition.get_physical :: field_name: {}'.format(field_name))
             if field_name == '_meta':
                 continue
             if field_name in self.field_map:
@@ -1257,11 +1269,11 @@ class DocumentDefinition(object):
             else:
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
-            self.physical['document-definition__fields__v1'].setdefault(
+            self.physical['fields__v1'].setdefault(
                 u'fields__{}__v1'.format(field_instance.type),
                 []
             )
-            fields_node = self.physical['document-definition__fields__v1']
+            fields_node = self.physical['fields__v1']
             type_field = u'fields__{}__v1'.format(field_instance.type)
             fields_node[type_field].append(field_instance.get_def_physical())
         return self.physical
