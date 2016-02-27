@@ -1080,6 +1080,7 @@ class DocumentDefinition(object):
         :param field_name:
         :return:
         """
+        from .fields import field_mapper
         instance_data = self.logical['fields'][field_name]
         logger.debug(u'DocumentDefinition._do_field_instance :: field_name: {} instance_data: {}'.format(
             field_name, instance_data
@@ -1090,7 +1091,12 @@ class DocumentDefinition(object):
             instance = getattr(instance, comp)
         logger.debug(u'DocumentDefinition._do_field_instance :: instance: {} {}'.format(instance,
                                                                                         dir(instance)))
-        field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+        # field_type = 'DateTime' if instance_data['type'] == 'datetime' else
+        # field_class = getattr(instance, '{}Field'.format(field_type))
+        if instance_data['type'] in field_mapper:
+            field_class = field_mapper[instance_data['type']]
+        else:
+            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
         logger.debug(u'DocumentDefinition._do_field_instance :: field_class: {}'.format(field_class))
         field_type_raw = instance_data['type']
         field_type = field_type_raw

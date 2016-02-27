@@ -462,18 +462,28 @@ class StringField(Field):
         :param field_name:
         :return:
         """
-        return {
-            'type': 'string',
-            'fields': {
-                field_name: {
-                    'type': 'string'
-                },
-                'raw__v1': {
-                    'type': 'string',
-                    'index': 'not_analyzed'
+        try:
+            field = field_name.split('__')[0]
+        except IndexError:
+            return {}
+        if field == 'id':
+            return {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        else:
+            return {
+                'type': 'string',
+                'fields': {
+                    field_name: {
+                        'type': 'string'
+                    },
+                    'raw__v1': {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                    }
                 }
             }
-        }
 
     def make_mapping(self):
         """
@@ -609,6 +619,7 @@ class NumberField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'default',
         u'hint',
         u'comment',
@@ -802,6 +813,7 @@ class TextField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'default',
         u'hint',
         u'comment',
@@ -944,6 +956,7 @@ class CheckField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'default',
         u'display_name',
@@ -1066,6 +1079,7 @@ class DateTimeField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -1221,6 +1235,7 @@ class MapField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -1482,6 +1497,7 @@ class MapListField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -1769,6 +1785,7 @@ class ListField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -1967,6 +1984,7 @@ class LinkField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -2107,6 +2125,7 @@ class LinksField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -2249,3 +2268,12 @@ class LinksField(Field):
             if not value:
                 check.add_error(name, u'Error in validation {}'.format('exists'))
         return check
+
+field_mapper = {
+    'datetime': DateTimeField,
+    'map-list': MapListField,
+    'list-string': ListField,
+    'list-number': ListField,
+    'list-check': ListField,
+    'list-datetime': ListField,
+}

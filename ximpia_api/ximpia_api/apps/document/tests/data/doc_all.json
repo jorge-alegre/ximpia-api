@@ -100,8 +100,8 @@
       }
     }
   },
-  "is_pro": {"type": "boolean"},
-  "is_featured": {"type": "boolean"},
+  "is_pro": {"type": "check"},
+  "is_featured": {"type": "check"},
   "country": {
     "type": "map",
     "items": {
@@ -110,7 +110,7 @@
       "name": {"type": "string"}
     }
   },
-  "has_geo": {"type": "boolean"},
+  "has_geo": {"type": "check"},
   "geo_location": {"type": "string"},
   "geo_zoom": {"type": "number"},
   "geo_lat": {"type": "number"},

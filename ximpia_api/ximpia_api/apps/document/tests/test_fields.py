@@ -568,6 +568,15 @@ class DocumentDefinitionTest(XimpiaTestCase):
         mappings = document_definition.get_mappings()
         # pprint.PrettyPrinter(indent=4).pprint(mappings)
         self.assertTrue('name__v1' in mappings[doc_type]['properties'])
+        with open('ximpia_api/apps/document/tests/data/doc_all.json') as f:
+            doc_all_str = f.read()
+        doc_all = json.loads(doc_all_str)
+        doc_type = 'test-all'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_all, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_mappings :: {}'.format(document_definition))
+        mappings = document_definition.get_mappings()
+        pprint.PrettyPrinter(indent=2).pprint(mappings)
 
 
 class DocDefAllCreateTest(XimpiaTestCase):
