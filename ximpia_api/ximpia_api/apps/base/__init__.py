@@ -480,15 +480,20 @@ def get_mappings(doc_type, index=settings.SITE_BASE_INDEX):
     :param index:
     :return:
     """
+    logger.debug(u'get_mappings :: doc_type: {} index: {}'.format(doc_type, index))
     response_raw = req_session.get(
-        '{host}/{index}_mapping/{type}'.format(
+        '{host}/{index}/_mapping/{type}'.format(
             host=settings.ELASTIC_SEARCH_HOST,
             index=index,
             type=doc_type
         )
     )
+    if response_raw.status_code not in [200, 201]:
+        logger.info(u'get_mappings :: error response: {}'.format(
+            response_raw.content
+        ))
     logger.info(u'get_mappings :: response: {}'.format(
-        response_raw
+        response_raw.content
     ))
     response = response_raw.json()
     return response

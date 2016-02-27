@@ -2050,7 +2050,7 @@ class LinkField(Field):
             ): {
                 'type': 'object',
                 'properties': {
-                    'id': {
+                    '{}__id'.format(self.doc_type): {
                         'type': 'string',
                         'index': 'not_analyzed'
                     }

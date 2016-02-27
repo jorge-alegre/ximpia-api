@@ -577,6 +577,16 @@ class DocumentDefinitionTest(XimpiaTestCase):
         logger.debug(u'DocumentDefinitionTest.test_mappings :: {}'.format(document_definition))
         mappings = document_definition.get_mappings()
         pprint.PrettyPrinter(indent=2).pprint(mappings)
+        # link
+        with open('ximpia_api/apps/document/tests/data/doc_link.json') as f:
+            doc_link_str = f.read()
+        doc_link = json.loads(doc_link_str)
+        doc_type = 'test-link'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_link, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_physical :: {}'.format(document_definition))
+        mappings = document_definition.get_mappings()
+        pprint.PrettyPrinter(indent=2).pprint(mappings)
 
     def test_physical(self):
         from document import DocumentDefinition
@@ -601,6 +611,35 @@ class DocumentDefinitionTest(XimpiaTestCase):
         physical = document_definition.get_physical()
         pprint.PrettyPrinter(indent=2).pprint(physical)
         self.assertTrue(len(physical['fields__v1']) > 0)
+        # link
+        with open('ximpia_api/apps/document/tests/data/doc_link.json') as f:
+            doc_link_str = f.read()
+        doc_link = json.loads(doc_link_str)
+        doc_type = 'test-link'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_link, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_physical :: {}'.format(document_definition))
+        physical = document_definition.get_physical()
+        pprint.PrettyPrinter(indent=2).pprint(physical)
+        self.assertTrue(len(physical['fields__v1']) > 0)
+
+    def test_field_versions(self):
+        from document import DocumentDefinition
+        from xp_user.backends import XimpiaAuthBackend
+        user_response = self.connect_user(user='my_site_admin', is_admin=True)
+        user = XimpiaAuthBackend.get_user(user_response['id'])
+        with open('ximpia_api/apps/document/tests/data/doc_all.json') as f:
+            doc_all_str = f.read()
+        doc_all = json.loads(doc_all_str)
+        doc_type = 'test-all'
+        index = 'my-site__base'
+        document_definition = DocumentDefinition(doc_all, doc_type, user, index=index)
+        logger.debug(u'DocumentDefinitionTest.test_field_versions :: {}'.format(document_definition))
+        field_versions = document_definition.get_field_versions(index, user)
+        # pprint.PrettyPrinter(indent=2).pprint(physical)
+        logger.debug(u'DocumentDefinitionTest.test_field_versions :: field_versions: {}'.format(
+            field_versions
+        ))
 
 
 class DocDefAllCreateTest(XimpiaTestCase):

@@ -916,7 +916,7 @@ class DocumentDefinition(object):
         :param field_instance:
         :return:
         """
-        if 'app' in field_instance and field_instance['app']:
+        if 'app' in field_instance.field_data and field_instance.field_data['app']:
             index = u'{app}'.format(
                 app=field_instance['app']
             )
@@ -953,6 +953,7 @@ class DocumentDefinition(object):
                 field_instance = self.field_map[field_name]
             if field_instance.type in ['link', 'links']:
                 index = self._get_field_index(field_instance)
+                logger.debug(u'DocumentDefinition._get_documents :: index: {}'.format(index))
                 # mappings
                 if field_instance.type_remote not in self.mappings:
                     self.mappings[field_instance.type_remote] = get_mappings(
@@ -960,14 +961,15 @@ class DocumentDefinition(object):
                         index=index
                     )
                 # data
-                query_key = u'{doc_type}-{field_name}'.format(
+                """query_key = u'{doc_type}-{field_name}'.format(
                     doc_type=field_instance.type_remote,
                     field_name=field_instance.name
                 )
+                link_id = u'{}__{}'.format(field_instance.name, field_instance.version)
                 if field_instance.type == 'link':
-                    values = [self.logical[field_instance['name']]['id']]
+                    values = [self.logical[link_id]['id']]
                 else:
-                    values = [self.logical[field_instance['name']]['ids']]
+                    values = [self.logical[link_id]['ids']]
                 bulk_queries_keys.append(query_key)
                 # query by id
                 bulk_queries[query_key] = (json.dumps(
@@ -985,7 +987,7 @@ class DocumentDefinition(object):
                         }
                     }
                 )
-                )
+                )"""
         if self.tag_name:
             # We need data for tag, so insert into field-version tag embedded object
             bulk_queries_keys.append('tag_data')
@@ -1146,12 +1148,25 @@ class DocumentDefinition(object):
                 self._do_field_instance(field_name)
                 field_instance = self.field_map[field_name]
             field_mapping = field_instance.make_mapping()
+            logger.debug(u'DocumentDefinition.get_mappings :: field_mapping: {}'.format(
+                field_mapping
+            ))
             if field_instance.type in ['link', 'links']:
                 if field_instance.type_remote in self.mappings:
                     doc_type = field_instance.type_remote
                     index = self._get_field_index(field_instance)
-                    field_mapping.update(
-                        self.mappings[field_instance.type_remote][index]['mappings'][doc_type]['properties']
+                    logger.debug(u'DocumentDefinition.get_mappings :: doc_type: {} index: {}'.format(
+                        doc_type, index
+                    ))
+                    logger.debug(u'DocumentDefinition.get_mappings :: {}'.format(
+                        self.mappings[field_instance.type_remote]
+                    ))
+                    link_mappings = self.mappings[field_instance.type_remote]
+                    mapping_index = link_mappings.keys()[0]
+                    field_mapping[u'{}__{}'.format(
+                        field_instance.name, field_instance.version
+                    )]['properties'].update(
+                        self.mappings[field_instance.type_remote][mapping_index]['mappings'][doc_type]['properties']
                     )
             doc_mapping[self.doc_type]['properties'].update(field_mapping)
         return doc_mapping
@@ -1296,7 +1311,7 @@ class DocumentDefinition(object):
         now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         if not self.logical:
             self.logical = self.get_logical()
-        for field_name in self.logical.keys():
+        for field_name in self.logical['fields']:
             if field_name == '_meta':
                 continue
             if field_name in self.field_map:
@@ -1314,13 +1329,13 @@ class DocumentDefinition(object):
                     'field-version__field_name__v1': field_items['field_name'],
                     'field-version__type__v1': field_instance.type,
                     'field-version__version__v1': settings.REST_FRAMEWORK['DEFAULT_VERSION'],
-                    'tag__v1': self.logical['_meta']['tag'],
-                    'branch__v1': self.logical['_meta']['branch'],
+                    'tag__v1': self.docs.get('tag', None),
+                    'branch__v1': self.docs.get('branch', None),
                     'field-version__is_active__v1': True,
                     'field-version__created_on__v1': now_es,
                     'field-version__created_by__v1': {
                         'field-version__created_by__id': user.id,
-                        'field-version__created_by__user_name__v1': user.username
+                        'field-version__created_by__user_name__v1': user.username,
                     }
                 }
             ) + '\n'
