@@ -652,7 +652,7 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
         logger.info(u'DocumentDefinition.create :: response create document definition: {}'.format(
             es_response
         ))
-        if 'errors' in es_response and es_response['errors']:
+        if es_response['status'] not in [200, 201]:
             raise exceptions.XimpiaAPIException(u'Error creating document definition')
         # Bulk insert for all fields
         # print fields_version_str

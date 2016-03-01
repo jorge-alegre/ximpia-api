@@ -1296,6 +1296,9 @@ class DocumentDefinition(object):
                 for item_key_type in items:
                     fields_node[u'fields__{}__v1'.format(item_key_type)].extend(items[item_key_type])
             fields_node[type_field].append(field_physical)
+        logger.info(u'DocumentDefinition.get_physical :: physical: {}'.format(
+            pprint.PrettyPrinter(indent=2).pformat(self.physical)
+        ))
         return self.physical
 
     def get_field_versions(self, index, user):

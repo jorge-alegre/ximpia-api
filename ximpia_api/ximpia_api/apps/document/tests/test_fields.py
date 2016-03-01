@@ -49,10 +49,10 @@ class StringFieldTest(XimpiaTestCase):
             content_type="application/json",
         )
         response_data = json.loads(response.content)
-        """import pprint
+        import pprint
         logger.debug(u'test_string:: create document: {}'.format(
             pprint.PrettyPrinter(indent=4).pformat(response_data)
-        ))"""
+        ))
         refresh_index('ximpia-api__base')
         refresh_index('my-site__base')
         # Check document definition created
