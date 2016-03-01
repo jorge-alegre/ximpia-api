@@ -19,7 +19,7 @@ from . import SocialNetworkResolution
 import exceptions
 
 from document import to_physical_doc, to_logical_doc, Document, save_field_versions_from_mapping
-from base import refresh_index, get_resource
+from base import refresh_index, get_resource, create_doc_index
 
 __author__ = 'jorgealegre'
 
@@ -98,6 +98,7 @@ class SetupSite(generics.CreateAPIView):
 
         with open('{}/document-definition.json'.format(document_path)) as f:
             document_definition_dict = json.loads(f.read())
+        create_doc_index(u'{}__document-definition'.format(index_name), document_definition_dict)
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
@@ -114,7 +115,6 @@ class SetupSite(generics.CreateAPIView):
                                                 'field-version': field_version_dict,
                                                 'invite': invite_dict,
                                                 'session': session_dict,
-                                                'document-definition': document_definition_dict,
                                             },
                                             'aliases': {
                                                 alias: {}
