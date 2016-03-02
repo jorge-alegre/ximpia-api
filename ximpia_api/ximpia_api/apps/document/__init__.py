@@ -1270,10 +1270,99 @@ class DocumentDefinition(object):
             self.logical = self.get_logical()
         # Write physical meta fields into main root node
         for meta_item in self.logical['_meta']:
-            meta_field = u'{field}__v1'.format(
-                field=meta_item
-            )
-            self.physical[meta_field] = self.logical['_meta'][meta_item]
+            # messages
+            if meta_item == 'messages':
+                self.physical['messages__v1'] = []
+                for message_data in self.logical['_meta']['messages']:
+                    data_dict = {
+                        'messages__name__v1': message_data['name'],
+                        'messages__value__v1': message_data['value'],
+                    }
+                    self.physical['messages__v1'].append(data_dict)
+            # validations
+            elif meta_item == 'validations':
+                self.physical['validations__v1'] = []
+                for validation_data in self.logical['_meta']['validations']:
+                    self.physical['validations__v1'].append(
+                        {
+                            'validations__path__v1': validation_data.get('path', None),
+                            'validations__type__v1': validation_data.get('type', None),
+                            'validations__value__v1': validation_data.get('value', None),
+                            'validations__modes__v1': validation_data.get('modes', None),
+                            'validations__context__v1': validation_data.get('context', None),
+                        }
+                    )
+            # permissions
+            elif meta_item == 'permissions':
+                for permission_data in self.logical['_meta']['permissions']:
+                    permission_item = {
+                        'permissions__id': permission_data.get('id', ''),
+                        'permissions__name__v1': permission_data.get('name', None),
+                        'permissions__user__v1': None,
+                        'permissions__type__v1': permission_data.get('type', None),
+                        'permissions__locations__v1': [],
+                        'permissions__modes__v1': permission_data['modes'],
+                    }
+                    if 'locations' in permission_data and permission_data['locations']:
+                        for item_data in permission_data['locations']:
+                            permission_item['permissions__locations__v1'].append(
+                                {
+                                    'permissions__locations__type__v1': item_data.get('type', None),
+                                    'permissions__locations__name__v1': item_data.get('name', None),
+                                    'permissions__locations__value__v1': item_data.get('value', None),
+                                }
+                            )
+                    if 'user' in self.logical['_meta']['permissions']:
+                        user_node = permission_item['permissions__user__v1']
+                        user_node['permissions__user__id'] = self.logical['_meta']['permissions']['user']['id']
+                        user_node['permissions__user__user_name__v1'] = \
+                            self.logical['_meta']['permissions']['user']['user_name']
+                    self.physical.setdefault('permissions__v1', [])
+                    self.physical['permissions__v1'].append(permission_item)
+            # choices
+            elif meta_item == 'choices':
+                """
+                [
+                    {
+                        name: '',
+                        items: [
+                            {
+                                name: '',
+                                value: ''
+                            }
+                        ]
+                    }
+                ]
+                to
+                [
+                    {
+                        choices__name__v1: '',
+                        choices__items__v1: [
+                            {
+                                choices__items__name__v1: '',
+                                choices__items__value__v1: ''
+                            }
+                        ]
+                    }
+                ]
+                """
+                choice_list = []
+                for choice_data in self.logical['_meta']['choices']:
+                    items = []
+                    for choice_item in choice_data['items']:
+                        items.append(
+                            {
+                                'choices__items__name__v1': choice_item['name'],
+                                'choices__items__value__v1': choice_item['value'],
+                            }
+                        )
+                    choice_list.append(
+                        {
+                            'choices__name__v1': choice_data['name'],
+                            'choices__items__v1': items,
+                        }
+                    )
+                self.physical['choices__v1'] = choice_list
         self.physical['fields__v1'] = {}
         logger.debug(u'DocumentDefinition.get_physical :: physical: {}'.format(self.physical))
         for field_name in self.logical['fields']:
