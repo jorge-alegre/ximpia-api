@@ -1189,14 +1189,14 @@ class DocumentDefinition(object):
                     for choice_items in request_list:
                         choice_list.append(
                             {
-                                'choices__items__name__v1': choice_items[0],
-                                'choices__items__value__v1': choice_items[1]
+                                'name': choice_items[0],
+                                'value': choice_items[1]
                             }
                         )
                     input_document['_meta']['choices'].append(
                         {
-                            'choices__name__v1': choice_name,
-                            'choices__items__v1': choice_list,
+                            'name': choice_name,
+                            'items': choice_list,
                         }
                     )
             elif doc_field == 'messages':
@@ -1204,8 +1204,8 @@ class DocumentDefinition(object):
                 for message_name in input_document_request['_meta']['messages']:
                     input_document['_meta']['messages'].append(
                         {
-                            'messages__name__v1': message_name,
-                            'messages__value__v1': input_document_request['_meta']['messages'][message_name]
+                            'name': message_name,
+                            'value': input_document_request['_meta']['messages'][message_name]
                         }
                     )
             elif doc_field == 'validations':
@@ -1273,7 +1273,7 @@ class DocumentDefinition(object):
             meta_field = u'{field}__v1'.format(
                 field=meta_item
             )
-            # self.physical[meta_field] = self.logical['_meta'][meta_item]
+            self.physical[meta_field] = self.logical['_meta'][meta_item]
         self.physical['fields__v1'] = {}
         logger.debug(u'DocumentDefinition.get_physical :: physical: {}'.format(self.physical))
         for field_name in self.logical['fields']:
