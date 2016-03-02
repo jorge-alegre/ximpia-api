@@ -210,7 +210,7 @@ class XimpiaAuthBackend(authentication.BaseAuthentication):
         )
         if not es_response['found']:
             raise exceptions.DocumentNotFound(_(u'User document not found for "{}"'.format(user_id)))
-        db_data = es_response['hits']['hits'][0]
+        db_data = es_response
         user_data = to_logical_doc('user', db_data['_source'])
         user = User()
         user.id = db_data['_id']

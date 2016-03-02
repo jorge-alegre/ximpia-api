@@ -2,9 +2,11 @@ import requests
 import json
 import datetime
 import logging
+import pprint
 from requests.adapters import HTTPAdapter
 
 from django.utils.translation import ugettext as _
+from django.utils.text import slugify
 from django.conf import settings
 
 from base import exceptions, get_es_response, get_path_search
@@ -838,7 +840,7 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
 class Validator(object):
 
     check = False
-    errors = []
+    errors = {}
 
     def __init__(self, check, errors):
         self.check = check
@@ -850,8 +852,9 @@ class Validator(object):
     def __str__(self, *args, **kwargs):
         return 'true' if self.check else 'false : {}'.format(self.errors)
 
-    def add_error(self, error):
-        self.errors.append(error)
+    def add_error(self, field, error):
+        self.errors.setdefault(field, [])
+        self.errors[field].append(error)
         self.check = False
 
     def valid(self):
@@ -859,3 +862,600 @@ class Validator(object):
 
     def invalid(self):
         self.check = False
+
+
+class DocumentDefinition(object):
+
+    logical_source = {}
+    doc_type = None
+    branch_name = None
+    tag_name = None
+    field_map = {}
+    docs = {}
+    mappings = {}
+    physical = {}
+    user = None
+
+    def __init__(self, logical, doc_type, user, tag_name=settings.REST_FRAMEWORK['DEFAULT_VERSION'],
+                 branch_name=None, index=settings.SITE_BASE_INDEX):
+        """
+        Document definition entity that generates all data associated with a document definition
+
+        * Mapping: For new document we generate mapping that later allows writing data into document
+        * Physical Definition: Physical data for document definition mapping, with "_meta" as normal fields
+          and fields inside a nested "fields" node.
+        * Logical Definition: Logical document with some injections for tag, branch and _meta having same
+        physical structure
+        * Logical Source: Access to source logical document received (logical_source class attribute)
+
+        :param logical:
+        :param doc_type:
+        :param user:
+        :param tag_name:
+        :param branch_name:
+        :param index:
+        :return:
+        """
+        self.logical_source = logical
+        pprint.PrettyPrinter(indent=2).pprint(logical)
+        self.doc_type = doc_type
+        self.branch_name = branch_name
+        self.tag_name = tag_name
+        self.field_map = {}
+        self.logical = None
+        self.index = index
+        self.docs = {}
+        self._get_documents()
+        self.user = user
+        self.physical = {}
+
+    def _get_field_index(self, field_instance):
+        """
+        Get field index, for link and links fields
+
+        :param field_instance:
+        :return:
+        """
+        if 'app' in field_instance.field_data and field_instance.field_data['app']:
+            index = u'{app}'.format(
+                app=field_instance['app']
+            )
+        else:
+            index = self.index
+        return index
+
+    def _get_documents(self):
+        """
+        We can get documents like tag, branch and also link field, links field
+
+        :return:
+        """
+        from base import get_mappings
+        # We need the document definition, doc_type and tag would be enough
+        # We would need the physical data, that we inject into Link and Links field types
+        # We do bulk query for this
+        documents = {}
+        bulk_queries = {}
+        bulk_queries_keys = []
+        if not self.logical:
+            self.logical = self.get_logical()
+        print
+        print
+        pprint.PrettyPrinter(indent=2).pprint(self.logical)
+        for field_name in self.logical['fields'].keys():
+            logger.debug(u'DocumentDefinition._get_documents :: field_name: {}'.format(field_name))
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            if field_instance.type in ['link', 'links']:
+                index = self._get_field_index(field_instance)
+                logger.debug(u'DocumentDefinition._get_documents :: index: {}'.format(index))
+                # mappings
+                if field_instance.type_remote not in self.mappings:
+                    self.mappings[field_instance.type_remote] = get_mappings(
+                        field_instance.type_remote,
+                        index=index
+                    )
+                # data
+                """query_key = u'{doc_type}-{field_name}'.format(
+                    doc_type=field_instance.type_remote,
+                    field_name=field_instance.name
+                )
+                link_id = u'{}__{}'.format(field_instance.name, field_instance.version)
+                if field_instance.type == 'link':
+                    values = [self.logical[link_id]['id']]
+                else:
+                    values = [self.logical[link_id]['ids']]
+                bulk_queries_keys.append(query_key)
+                # query by id
+                bulk_queries[query_key] = (json.dumps(
+                    {
+                        'index': index,
+                        'type': field_instance.type_remote
+                    }
+                ), json.dumps(
+                    {
+                        'query': {
+                            'ids': {
+                                'type': field_instance.type_remote,
+                                'values': values
+                            }
+                        }
+                    }
+                )
+                )"""
+        if self.tag_name:
+            # We need data for tag, so insert into field-version tag embedded object
+            bulk_queries_keys.append('tag_data')
+            bulk_queries['tag_data'] = (json.dumps(
+                {
+                    'index': settings.SITE_BASE_INDEX,
+                    'type': 'tag'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'tag__slug__v1.raw__v1': slugify(self.tag_name)
+                        }
+                    }
+                }
+            )
+            )
+        if self.branch_name:
+            bulk_queries_keys.append('branch_data')
+            bulk_queries['branch_data'] = (json.dumps(
+                {
+                    'index': settings.SITE_BASE_INDEX,
+                    'type': 'branch'
+                }
+            ), json.dumps(
+                {
+                    'query': {
+                        'match_all': {}
+                    },
+                    'filter': {
+                        'term': {
+                            'branch__slug__v1.raw__v1': slugify(self.branch_name)
+                        }
+                    }
+                }
+            )
+            )
+        # Make ES request
+        pprint.PrettyPrinter(indent=2).pprint(bulk_queries)
+        bulk_queries_request = map(lambda x: bulk_queries[x], bulk_queries_keys)
+        es_response_raw = requests.get(
+            '{host}/_msearch'.format(
+                host=settings.ELASTIC_SEARCH_HOST
+            ),
+            data=''.join(map(lambda x: '{}\n'.format(x[0]) + '{}\n'.format(x[1]), bulk_queries_request))
+        )
+        es_response = es_response_raw.json()
+        logger.info(u'DocumentDefinition._get_documents :: response validations: {}'.format(
+            es_response
+        ))
+        responses = es_response.get('responses', [])
+        # update self.logical with tag and branch
+        if 'tag_data' in bulk_queries_keys:
+            try:
+                response = responses[bulk_queries_keys.index('tag_data')]['hits']['hits'][0]
+                self.docs['tag'] = response['_source']
+                self.docs['tag']['tag__id'] = response['_id']
+            except IndexError:
+                pass
+        if 'branch_data' in bulk_queries_keys:
+            try:
+                response = responses[bulk_queries_keys.index('branch_data')]['hits']['hits'][0]
+                self.docs['branch'] = response['_source']
+                self.docs['branch']['branch__id'] = response['_id']
+            except IndexError:
+                pass
+        # parse link and links
+        for key in bulk_queries_keys:
+            if key not in ['tag_data', 'branch_data']:
+                response = responses[bulk_queries_keys.index(key)]['hits']['hits']
+                doc_type, field_name = key.split('-')
+                if doc_type == 'link':
+                    self.docs[field_name] = response[0]['_source']
+                    self.docs[field_name][u'{}__id'.format(doc_type)] = response[0]['_id']
+                elif doc_type == 'links':
+                    values = []
+                    for value_raw in response['hits']['hits']:
+                        value = {'id': value_raw['_id']}
+                        value.update(value_raw['_source'])
+                        values.append(value)
+                    self.docs[field_name] = values
+        return documents
+
+    @classmethod
+    def get_field_class(cls, instance_data):
+        """
+        Get field class giving field data
+
+        :param instance_data:
+        :return:
+        """
+        from .fields import field_mapper
+        module = 'document.fields'
+        instance = __import__(module)
+        for comp in module.split('.')[1:]:
+            instance = getattr(instance, comp)
+        logger.debug(u'DocumentDefinition.get_field_class :: instance: {} {}'.format(instance,
+                                                                                     dir(instance)))
+        if instance_data['type'] in field_mapper:
+            field_class = field_mapper[instance_data['type']]
+        else:
+            field_class = getattr(instance, '{}Field'.format(instance_data['type'].capitalize()))
+        return field_class
+
+    def _do_field_instance(self, field_name):
+        """
+        Process field instance
+
+        :param field_name:
+        :return:
+        """
+        instance_data = self.logical['fields'][field_name]
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_name: {} instance_data: {}'.format(
+            field_name, instance_data
+        ))
+        field_class = self.get_field_class(instance_data)
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_class: {}'.format(field_class))
+        field_type_raw = instance_data['type']
+        field_type = field_type_raw
+        if '<' in field_type_raw:
+            field_type = field_type_raw.split('<'[0])
+        logger.debug(u'DocumentDefinition._do_field_instance :: field type: {}'.format(field_type))
+        instance_data['name'] = field_name
+        instance_data['doc_type'] = self.doc_type
+        field_instance = field_class(**instance_data)
+        self.field_map[field_name] = field_instance
+        logger.debug(u'DocumentDefinition._do_field_instance :: field_map: {}'.format(self.field_map))
+
+    def get_mappings(self):
+        """
+        Would generate mappings for document. No mapping generated for document definition.
+
+        :return:
+        """
+        doc_mapping = {
+            self.doc_type: {
+                'dynamic': 'strict',
+                '_timestamp': {
+                    "enabled": True
+                },
+                "properties": {
+                }
+            }
+        }
+        # travel fields and get mapping for whole document
+        if not self.logical:
+            self.logical = self.get_logical()
+        for field_name in self.logical['fields'].keys():
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            field_mapping = field_instance.make_mapping()
+            logger.debug(u'DocumentDefinition.get_mappings :: field_mapping: {}'.format(
+                field_mapping
+            ))
+            if field_instance.type in ['link', 'links']:
+                if field_instance.type_remote in self.mappings:
+                    doc_type = field_instance.type_remote
+                    index = self._get_field_index(field_instance)
+                    logger.debug(u'DocumentDefinition.get_mappings :: doc_type: {} index: {}'.format(
+                        doc_type, index
+                    ))
+                    logger.debug(u'DocumentDefinition.get_mappings :: {}'.format(
+                        self.mappings[field_instance.type_remote]
+                    ))
+                    link_mappings = self.mappings[field_instance.type_remote]
+                    mapping_index = link_mappings.keys()[0]
+                    field_mapping[u'{}__{}'.format(
+                        field_instance.name, field_instance.version
+                    )]['properties'].update(
+                        self.mappings[field_instance.type_remote][mapping_index]['mappings'][doc_type]['properties']
+                    )
+            doc_mapping[self.doc_type]['properties'].update(field_mapping)
+        return doc_mapping
+
+    def get_logical(self):
+        """
+        Get parsed logical
+
+        :return:
+        """
+        input_document = dict()
+        input_document['_meta'] = {}
+        input_document_request = self.logical_source
+        for doc_field in input_document_request['_meta']:
+            if doc_field == 'choices':
+                input_document['_meta']['choices'] = []
+                for choice_name in input_document_request['_meta']['choices']:
+                    request_list = input_document_request['_meta']['choices'][choice_name]
+                    choice_list = []
+                    for choice_items in request_list:
+                        choice_list.append(
+                            {
+                                'name': choice_items[0],
+                                'value': choice_items[1]
+                            }
+                        )
+                    input_document['_meta']['choices'].append(
+                        {
+                            'name': choice_name,
+                            'items': choice_list,
+                        }
+                    )
+            elif doc_field == 'messages':
+                input_document['_meta']['messages'] = []
+                for message_name in input_document_request['_meta']['messages']:
+                    input_document['_meta']['messages'].append(
+                        {
+                            'name': message_name,
+                            'value': input_document_request['_meta']['messages'][message_name]
+                        }
+                    )
+            elif doc_field == 'validations':
+                # We need to generate from pattern class
+                # So far, exists, not-exists have same structure
+                input_document['_meta']['validations'] = []
+                for validation_data in input_document_request['_meta']['validations']:
+                        input_document['_meta']['validations'].append(
+                            validation_data
+                        )
+            else:
+                input_document['_meta'][doc_field] = input_document_request['_meta'][doc_field]
+        input_document['fields'] = {}
+        for field in input_document_request:
+            if field != '_meta':
+                # we check validations. Only support is-unique, exists and not-exists
+                field_data = input_document_request[field]
+                if 'active' not in field_data:
+                    field_data['active'] = True
+                field_data['name'] = field
+                if 'validations' in field_data and filter(lambda x: x['type'] == 'is-unique',
+                                                          field_data['validations']):
+                    validations_new = []
+                    for validation_data in field_data['validations']:
+                        if validation_data['type'] == 'is-unique':
+                            validation_data_item = {
+                                'type': 'not-exists',
+                                'path': '{doc_type}.{field}'.format(
+                                    doc_type=self.doc_type,
+                                    field=field
+                                ),
+                                'value': 'self'
+                            }
+                            validations_new.append(validation_data_item)
+                    field_data['validations'] = validations_new
+                input_document['fields'][field] = field_data
+        return input_document
+
+    def put_timestamp(self, user):
+        """
+        Put timestamp for document definition and user data into physical doc for db writing.
+        Physical could have been created or not yet.
+
+        :param user:
+        :return:
+        """
+        from datetime import datetime
+        self.physical[u'created_on__v1'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        if self.user:
+            self.physical[u'created_by__v1'] = {
+                u'created_by__id': user.id,
+                u'created_by__user_name__v1': user.username
+                }
+
+    def get_physical(self):
+        """
+        Get physical for document definition doc-type
+
+        :return:
+        """
+        if not self.logical:
+            self.logical = self.get_logical()
+        # Write physical meta fields into main root node
+        for meta_item in self.logical['_meta']:
+            # messages
+            if meta_item == 'messages':
+                self.physical['messages__v1'] = []
+                for message_data in self.logical['_meta']['messages']:
+                    data_dict = {
+                        'messages__name__v1': message_data['name'],
+                        'messages__value__v1': message_data['value'],
+                    }
+                    self.physical['messages__v1'].append(data_dict)
+            # validations
+            elif meta_item == 'validations':
+                self.physical['validations__v1'] = []
+                for validation_data in self.logical['_meta']['validations']:
+                    self.physical['validations__v1'].append(
+                        {
+                            'validations__path__v1': validation_data.get('path', None),
+                            'validations__type__v1': validation_data.get('type', None),
+                            'validations__value__v1': validation_data.get('value', None),
+                            'validations__modes__v1': validation_data.get('modes', None),
+                            'validations__context__v1': validation_data.get('context', None),
+                        }
+                    )
+            # permissions
+            elif meta_item == 'permissions':
+                for permission_data in self.logical['_meta']['permissions']:
+                    permission_item = {
+                        'permissions__id': permission_data.get('id', ''),
+                        'permissions__name__v1': permission_data.get('name', None),
+                        'permissions__user__v1': None,
+                        'permissions__type__v1': permission_data.get('type', None),
+                        'permissions__locations__v1': [],
+                        'permissions__modes__v1': permission_data['modes'],
+                    }
+                    if 'locations' in permission_data and permission_data['locations']:
+                        for item_data in permission_data['locations']:
+                            permission_item['permissions__locations__v1'].append(
+                                {
+                                    'permissions__locations__type__v1': item_data.get('type', None),
+                                    'permissions__locations__name__v1': item_data.get('name', None),
+                                    'permissions__locations__value__v1': item_data.get('value', None),
+                                }
+                            )
+                    if 'user' in self.logical['_meta']['permissions']:
+                        user_node = permission_item['permissions__user__v1']
+                        user_node['permissions__user__id'] = self.logical['_meta']['permissions']['user']['id']
+                        user_node['permissions__user__user_name__v1'] = \
+                            self.logical['_meta']['permissions']['user']['user_name']
+                    self.physical.setdefault('permissions__v1', [])
+                    self.physical['permissions__v1'].append(permission_item)
+            # choices
+            elif meta_item == 'choices':
+                """
+                [
+                    {
+                        name: '',
+                        items: [
+                            {
+                                name: '',
+                                value: ''
+                            }
+                        ]
+                    }
+                ]
+                to
+                [
+                    {
+                        choices__name__v1: '',
+                        choices__items__v1: [
+                            {
+                                choices__items__name__v1: '',
+                                choices__items__value__v1: ''
+                            }
+                        ]
+                    }
+                ]
+                """
+                choice_list = []
+                for choice_data in self.logical['_meta']['choices']:
+                    items = []
+                    for choice_item in choice_data['items']:
+                        items.append(
+                            {
+                                'choices__items__name__v1': choice_item['name'],
+                                'choices__items__value__v1': choice_item['value'],
+                            }
+                        )
+                    choice_list.append(
+                        {
+                            'choices__name__v1': choice_data['name'],
+                            'choices__items__v1': items,
+                        }
+                    )
+                self.physical['choices__v1'] = choice_list
+        self.physical['fields__v1'] = {}
+        logger.debug(u'DocumentDefinition.get_physical :: physical: {}'.format(self.physical))
+        for field_name in self.logical['fields']:
+            logger.debug(u'DocumentDefinition.get_physical :: field_name: {}'.format(field_name))
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            self.physical['fields__v1'].setdefault(
+                u'fields__{}__v1'.format(field_instance.type),
+                []
+            )
+            fields_node = self.physical['fields__v1']
+            type_field = u'fields__{}__v1'.format(field_instance.type)
+            field_physical = field_instance.get_def_physical()
+            if 'items' in field_physical:
+                items = field_physical.pop('items')
+                for item_key_type in items:
+                    fields_node[u'fields__{}__v1'.format(item_key_type)].extend(items[item_key_type])
+            fields_node[type_field].append(field_physical)
+        logger.info(u'DocumentDefinition.get_physical :: physical: {}'.format(
+            pprint.PrettyPrinter(indent=2).pformat(self.physical)
+        ))
+        return self.physical
+
+    def get_field_versions(self, index, user):
+        """
+        Get field versions
+
+        :param index:
+        :param user:
+        :return:
+        """
+        from datetime import datetime
+        fields_version_str = ''
+        now_es = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        if not self.logical:
+            self.logical = self.get_logical()
+        for field_name in self.logical['fields']:
+            if field_name == '_meta':
+                continue
+            if field_name in self.field_map:
+                field_instance = self.field_map[field_name]
+            else:
+                self._do_field_instance(field_name)
+                field_instance = self.field_map[field_name]
+            field_items = field_instance.get_field_items()
+            bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
+            # Note: field__v1 would need to be generated by fields, since changes for links, string fields, etc...
+            bulk_data = json.dumps(
+                {
+                    'field-version__doc_type__v1': self.doc_type,
+                    'field-version__field__v1': field_items['field'],
+                    'field-version__field_name__v1': field_items['field_name'],
+                    'field-version__type__v1': field_instance.type,
+                    'field-version__version__v1': settings.REST_FRAMEWORK['DEFAULT_VERSION'],
+                    'tag__v1': self.docs.get('tag', None),
+                    'branch__v1': self.docs.get('branch', None),
+                    'field-version__is_active__v1': True,
+                    'field-version__created_on__v1': now_es,
+                    'field-version__created_by__v1': {
+                        'field-version__created_by__id': user.id,
+                        'field-version__created_by__user_name__v1': user.username,
+                    }
+                }
+            ) + '\n'
+            if not fields_version_str:
+                fields_version_str = bulk_header
+                fields_version_str += bulk_data
+            else:
+                fields_version_str += bulk_header
+                fields_version_str += bulk_data
+        return fields_version_str
+
+
+def get_document_definition_mapping():
+    """
+    Get mappings for document definition.
+
+    We generate mappings for fields and inject in order to get changes. So far only at create time when
+    we create ximpia site and setup site.
+
+    In future we would need a way to update mappings and deal with changes into fields.
+
+    :return:
+    """
+    from fields import fields_mappings
+    document_path = settings.BASE_DIR + 'apps/document/mappings'
+    with open('{}/document-definition.json'.format(document_path)) as f:
+        document_definition_dict = json.loads(f.read())
+    logger.debug(u'get_document_definition_mapping :: fields_mappings: {}'.format(fields_mappings))
+    document_definition_dict['document-definition']['properties']['fields__v1']['properties'] = fields_mappings
+    return document_definition_dict

@@ -470,3 +470,73 @@ def get_resource(request, path, method_type, data=None):
 
 def get_version(request):
     return getattr(request, 'version', settings.DEFAULT_VERSION)
+
+
+def get_mappings(doc_type, index=settings.SITE_BASE_INDEX):
+    """
+    Get mapping
+
+    :param doc_type:
+    :param index:
+    :return:
+    """
+    logger.debug(u'get_mappings :: doc_type: {} index: {}'.format(doc_type, index))
+    response_raw = req_session.get(
+        '{host}/{index}/_mapping/{type}'.format(
+            host=settings.ELASTIC_SEARCH_HOST,
+            index=index,
+            type=doc_type
+        )
+    )
+    if response_raw.status_code not in [200, 201]:
+        logger.info(u'get_mappings :: error response: {}'.format(
+            response_raw.content
+        ))
+    logger.info(u'get_mappings :: response: {}'.format(
+        response_raw.content
+    ))
+    response = response_raw.json()
+    return response
+
+
+def create_doc_index(index_name, mappings):
+    """
+    Create document index
+
+    Index name:
+    {site}__{app}__{doc_type}
+
+    :param index_name:
+    :param mappings:
+
+    :return:
+    """
+    from datetime import datetime
+    # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
+    index_name_physical = u'{}.{}'.format(
+        index_name,
+        datetime.now().strftime("%m-%d-%y.%H:%M:%S")
+    )
+    alias = index_name
+    with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
+        settings_dict = json.loads(f.read())
+    doc_type = index_name.split('__')[-1]
+    es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
+                                    data=json.dumps({
+                                        'settings': settings_dict,
+                                        'mappings': {
+                                            doc_type: mappings,
+                                        },
+                                        'aliases': {
+                                            alias: {}
+                                        }
+                                    })
+                                    )
+    if es_response_raw.status_code not in [200, 201]:
+        raise exceptions.XimpiaAPIException(_(u'Error creating index "{}" {}'.format(
+            index_name,
+            es_response_raw.content
+        )))
+    es_response = es_response_raw.json()
+    logger.debug(u'create_doc_index :: index: {} {}'.format(index_name, es_response))
+    return es_response

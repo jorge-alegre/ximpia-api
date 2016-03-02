@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from django.utils.crypto import get_random_string
 from django.conf import settings
 
-from base import SocialNetworkResolution, refresh_index
+from base import SocialNetworkResolution, refresh_index, create_doc_index
 from base.exceptions import XimpiaAPIException
 from document import to_logical_doc, get_fields_from_mapping, save_field_versions_from_mapping
 
@@ -36,6 +36,7 @@ class Command(BaseCommand):
         :param options:
         :return:
         """
+        from document import get_document_definition_mapping
         mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
@@ -89,8 +90,19 @@ class Command(BaseCommand):
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        with open('{}/document-definition.json'.format(document_path)) as f:
-            document_definition_dict = json.loads(f.read())
+        """with open('{}/document-definition.json'.format(document_path)) as f:
+            document_definition_dict = json.loads(f.read())"""
+        # 'document-definition': document_definition_dict,
+        # We need to complete mappings for fields
+        import pprint
+        document_definition_dict = get_document_definition_mapping()
+        """with open('{}/document-definition-generated.json'.format(document_path), 'w') as f:
+            f.write(json.dumps(document_definition_dict))"""
+        logger.debug(u'_create_index :: mappings: {}'.format(
+            pprint.PrettyPrinter(indent=4).pformat(document_definition_dict))
+        )
+        create_doc_index(u'{}__document-definition'.format(index_name), document_definition_dict)
+        # logger.debug(u'create_ximpia :: doc_response: {}'.format(doc_response))
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
@@ -109,7 +121,6 @@ class Command(BaseCommand):
                                                 'field-version': field_version_dict,
                                                 'invite': invite_dict,
                                                 'session': session_dict,
-                                                'document-definition': document_definition_dict,
                                             },
                                             'aliases': {
                                                 alias: {}

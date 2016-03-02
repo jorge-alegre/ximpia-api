@@ -1,0 +1,97 @@
+{
+  "slug": "welcome",
+  "name": "Welcome",
+  "description": "Welcome refugees",
+  "category": {
+    "id": "i112343ddd",
+    "slug": "social",
+    "name": "Social"
+  },
+  "community": {
+    "id": "i1fdfd22sss",
+    "slug": "market",
+    "name": "Market"
+  },
+  "license_type": {
+    "id": "i1ssdsds223ssaa",
+    "slug": "unlimited",
+    "name": "Unlimited"
+  },
+  "type": "",
+  "begin_date": "2016-01-01",
+  "day_durations": 30,
+  "end_date": "2016-02-01",
+  "created_on": "2016-01-01",
+  "updated_on": "2016-01-01",
+  "status": "draft",
+  "tags": [
+    {
+      "id": "i1t1442567sss",
+      "slug": "refugees",
+      "name": "Refugees"
+    },
+    {
+      "id": "i2t2sfghsss",
+      "slug": "race",
+      "name": "Race"
+    }
+  ],
+  "photos": {
+    "source": {
+      "id": "i1p1ffssksusthj",
+      "url": "https://s3.amazonaws.com/photos/23-source.jpg",
+      "width": 4000,
+      "height": 2000,
+      "size": 8,
+      "type": "photo"
+    },
+    "web": {
+      "id": "sshshjhsuuuhhjj789",
+      "url": "https://s3.amazonaws.com/photos/23-web.jpg",
+      "width": 1000,
+      "height": 800,
+      "size": 4,
+      "type": "photo"
+    },
+    "thumb": {
+      "id": "sshhj789sss888",
+      "url": "https://s3.amazonaws.com/photos/23-thumb.jpg",
+      "width": 100,
+      "height": 50,
+      "size": 2,
+      "type": "photo"
+    },
+    "miniature": {
+      "id": "ss789sshj765",
+      "url": "https://s3.amazonaws.com/photos/23-miniature.jpg",
+      "width": 50,
+      "height": 30,
+      "size": 1,
+      "type": "photo"
+    }
+  },
+  "is_pro": false,
+  "is_featured": false,
+  "country": {
+    "id": "i1country1sdfgt",
+    "code": "us",
+    "name": "United States"
+  },
+  "has_geo": false,
+  "geo_location": "madrid",
+  "geo_zoom": 0,
+  "geo_lat": 2234.23,
+  "geo_long": 223.98,
+  "background_photo": {
+    "id": "asd877778sssdg",
+    "url": "https://s3.amazonaws.com/photos/23-background.jpg",
+    "width": 4000,
+    "height": 2000,
+    "size": 10
+  },
+  "contribution_count": 123,
+  "comment_count": 22,
+  "favourite_count": 12,
+  "latest_contribution": "2016-02-10",
+  "rating": 2
+}

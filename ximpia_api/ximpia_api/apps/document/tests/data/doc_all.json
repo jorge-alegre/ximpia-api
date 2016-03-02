@@ -1,0 +1,133 @@
+{
+  "_meta": {
+    "choices": {
+      "status": [
+        ["draft", "Draft"],
+        ["pending-review", "Pending Review"],
+        ["published", "Published"],
+        ["ended", "Ended"]
+      ]
+    }
+  },
+  "slug": {"type": "string"},
+  "name": {"type": "string"},
+  "description": {"type": "text"},
+  "category": {
+    "type": "map",
+    "items": {
+      "id": {"type": "string"},
+      "slug": {"type": "string"},
+      "name": {"type": "string"}
+    }
+  },
+  "community": {
+    "type": "map",
+    "items": {
+      "id": {"type": "string"},
+      "slug": {"type": "string"},
+      "name": {"type": "string"}
+    }
+  },
+  "license_type": {
+    "type": "map",
+    "items": {
+      "id": {"type": "string"},
+      "slug": {"type": "string"},
+      "name": {"type": "string"}
+    }
+  },
+  "type": {"type": "string"},
+  "begin_date": {"type": "datetime"},
+  "day_durations": {"type": "number"},
+  "end_date": {"type": "datetime"},
+  "created_on": {"type": "datetime"},
+  "updated_on": {"type": "datetime"},
+  "status": {"type": "string"},
+  "tags": {
+    "type": "map-list",
+    "items": {
+      "id": {"type": "string"},
+      "slug": {"type": "string"},
+      "name": {"type": "string"}
+    }
+  },
+  "photos": {
+    "type": "map",
+    "items": {
+      "source": {
+        "type": "map",
+        "items": {
+          "id": {"type": "string"},
+          "url": {"type": "string"},
+          "width": {"type": "number"},
+          "height": {"type": "number"},
+          "size": {"type": "number"},
+          "type": {"type": "string"}
+        }
+      },
+      "web": {
+        "type": "map",
+        "items": {
+          "id": {"type": "string"},
+          "url": {"type": "string"},
+          "width": {"type": "number"},
+          "height": {"type": "number"},
+          "size": {"type": "number"},
+          "type": {"type": "string"}
+        }
+      },
+      "thumb": {
+        "type": "map",
+        "items": {
+          "id": {"type": "string"},
+          "url": {"type": "string"},
+          "width": {"type": "number"},
+          "height": {"type": "number"},
+          "size": {"type": "number"},
+          "type": {"type": "string"}
+        }
+      },
+      "miniature": {
+        "type": "map",
+        "items": {
+          "id": {"type": "string"},
+          "url": {"type": "string"},
+          "width": {"type": "number"},
+          "height": {"type": "number"},
+          "size": {"type": "number"},
+          "type": {"type": "string"}
+        }
+      }
+    }
+  },
+  "is_pro": {"type": "check"},
+  "is_featured": {"type": "check"},
+  "country": {
+    "type": "map",
+    "items": {
+      "id": {"type": "string"},
+      "code": {"type": "string"},
+      "name": {"type": "string"}
+    }
+  },
+  "has_geo": {"type": "check"},
+  "geo_location": {"type": "string"},
+  "geo_zoom": {"type": "number"},
+  "geo_lat": {"type": "number"},
+  "geo_long": {"type": "number"},
+  "background_photo": {
+    "type": "map",
+    "items": {
+      "id": {"type": "string"},
+      "url": {"type": "string"},
+      "width": {"type": "number"},
+      "height": {"type": "number"},
+      "size": {"type": "number"}
+    }
+  },
+  "contribution_count": {"type": "number"},
+  "comment_count": {"type": "number"},
+  "favourite_count": {"type": "number"},
+  "latest_contribution": {"type": "datetime"},
+  "rating": {"type": "number"}
+}

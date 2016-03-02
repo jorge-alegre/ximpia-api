@@ -12,10 +12,379 @@ __author__ = 'jorgealegre'
 logger = logging.getLogger(__name__)
 
 
-class StringField(object):
+class Field(object):
+
+    allowed_attributes = {}
+    field_data = {}
+    type = None
+    name = None
+
+    boolean_attributes = {'add_summary', 'active', 'only_positive', 'only_negative'}
+    string_attributes = {'display_name', 'type', 'name', 'doc_type', 'mode',
+                         'type_remote', 'app', 'embedded_into'}
+    text_attributes = {'hint', 'comment'}
+    number_attributes = {'max_length', 'min_length', 'min_value', 'max_value'}
+
+    def get_def_physical(self):
+        """
+        Get physical for document-definition type
+
+        Example for StringField document definition physical:
+        {
+          fields__string__active__v1: True,
+          fields__string__validations__v1: [
+            fields__string__validations__type__v1: ,
+            fields__string__validations__path__v1: ,
+            fields__string__validations__value__v1: ,
+            fields__string__validations__modes__v1: ,
+            fields__string__validations__context__v1:
+          ],
+          fields__string__choices__v1: {
+            fields__string__choices__choice_name__v1: '',
+            fields__string__choices__default_value__v1: '',
+          },
+          fields__string__default__v1: '',
+          fields__string__add_summary__v1: True,
+          fields__string__hint__v1: '',
+          fields__string__comment__v1: '',
+          fields__string__display_name__v1: '',
+          fields__string__max_length__v1: None,
+          fields__string__min_length__v1: None,
+          fields__string__is_autocomplete__v1: False
+        }
+
+        mappings is the fields mappings for document definition
+
+        :return:
+        {
+            "physical": ...
+            "mappings": ...
+        }
+        """
+        from . import DocumentDefinition
+        physical = {}
+        for key in self.allowed_attributes:
+            # We catch complex structures for all fields
+            if key == 'items' and self.type == 'map':
+                physical[u'items'] = {}
+            elif key == 'items' and self.type == 'map-list':
+                physical[u'items'] = {}
+            else:
+                physical[u'fields__{type}__{field}__v1'.format(
+                    type=self.type,
+                    field=key
+                )] = None
+            if key == 'validations':
+                validations_node = physical[u'fields__{type}__validations__v1'.format(
+                    type=self.type
+                )]
+                """
+                "validations": [
+                    {
+                        "type": "is-unique"
+                    }
+                ]
+                """
+                prefix = u'fields__{type}__validations'.format(
+                    type=self.type
+                )
+                logger.debug(u'Field.get_def_physical :: validations_node: {}'.format(validations_node))
+                logger.debug(u'Field.get_def_physical :: prefix: {}'.format(prefix))
+                if validations_node and key in self.field_data and self.field_data[key]:
+                    physical[u'fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )] = {}
+                    validations_node[u'{prefix}__type__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__path__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__value__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__modes__v1'.format(prefix=prefix)] = None
+                    validations_node[u'{prefix}__context__v1'.format(prefix=prefix)] = None
+                    if self.field_data[key]['type']:
+                        validations_node[u'{}prefix__type__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['type']
+                    if self.field_data[key]['path']:
+                        validations_node[u'{}prefix__path__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['path']
+                    if self.field_data[key]['value']:
+                        validations_node[u'{}prefix__value__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['value']
+                    if self.field_data[key]['modes']:
+                        validations_node[u'{}prefix__modes__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['modes']
+                    if self.field_data[key]['context']:
+                        validations_node[u'{}prefix__context__v1'.format(
+                            prefix=prefix
+                        )] = self.field_data[key]['context']
+            elif key == 'choices':
+                """
+                "choices": {
+                    "name": "customer_status",
+                    "default": "created"
+                }
+                """
+                prefix = u'fields__{type}__choices'.format(
+                    type=self.type
+                )
+                if key in self.field_data and self.field_data[key]:
+                    physical[u'fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )] = {}
+                    choice_node = physical[u'fields__{type}__choices__v1'.format(
+                        type=self.type
+                    )]
+                    choice_node[u'{prefix}__choice_name__v1'.format(
+                        prefix=prefix
+                    )] = self.field_data[key]['name']
+                    choice_node[u'{prefix}__default_value__v1'.format(
+                        prefix=prefix
+                    )] = self.field_data[key]['default']
+            elif key == 'items':
+                """
+                "items": {
+                    "field": {
+                        "type": "string,
+                        ...
+                    }
+                }
+                """
+                # MapField: dict MapListField: list
+                if self.type == 'map':
+                    items_node = physical[u'items']
+                    """
+                    "items":
+                        {
+                          "string": [
+                            {
+                            },
+                            {
+                            },
+                            ...
+                          ],
+                          "number": [
+                            {
+                            },
+                            {
+                            },
+                            ...
+                          ]
+                        }
+                    """
+                    for map_field in self.field_data[key]:
+                        # We need to instance field
+                        key_instance_data = self.field_data[key][map_field]
+                        field_class = DocumentDefinition.get_field_class(key_instance_data)
+                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                        field_type_raw = key_instance_data['type']
+                        field_type = field_type_raw
+                        if '<' in field_type_raw:
+                            field_type = field_type_raw.split('<'[0])
+                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                        key_instance_data[u'name'] = map_field
+                        key_instance_data[u'doc_type'] = None
+                        if u'embedded_into' in key_instance_data:
+                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                        else:
+                            key_instance_data[u'embedded_into'] = self.name
+                        key_field_instance = field_class(**key_instance_data)
+                        items_node.setdefault(field_type, [])
+                        field_physical = key_field_instance.get_def_physical()
+                        items = []
+                        if 'items' in field_physical:
+                            items = field_physical.pop('items')
+                        items_node[field_type].append(field_physical)
+                        for item_key in items:
+                            items_node.setdefault(item_key, [])
+                            data_list = items[item_key]
+                            # update embedded_into
+                            for data in data_list:
+                                embedded_field_name = u'fields__{type}__embedded_into__v1'.format(
+                                    type=item_key
+                                )
+                                data[embedded_field_name] = u'{}.{}'.format(
+                                    key_instance_data[u'embedded_into'],
+                                    data[embedded_field_name]
+                                )
+                            items_node[item_key].extend(data_list)
+                if self.type == 'map-list':
+                    # 1. field_data[key] has map-list definition, dict with fields inside each list item
+                    # 2. items_node has a list of map list items physical to insert
+                    # Keep in mind you are not writing actual doc physical, list of lists, you are writing
+                    # document definition nested
+                    items_node = physical[u'items']
+                    for map_field in self.field_data[key]:
+                        # We need to instance field
+                        key_instance_data = self.field_data[key][map_field]
+                        field_class = DocumentDefinition.get_field_class(key_instance_data)
+                        logger.debug(u'Field.get_def_physical :: field_class: {}'.format(field_class))
+                        field_type_raw = key_instance_data['type']
+                        field_type = field_type_raw
+                        if '<' in field_type_raw:
+                            field_type = field_type_raw.split('<'[0])
+                        logger.debug(u'Field.get_def_physical :: field type: {}'.format(field_type))
+                        key_instance_data[u'name'] = map_field
+                        key_instance_data[u'doc_type'] = None
+                        if u'embedded_into' in key_instance_data:
+                            key_instance_data[u'embedded_into'] += u'.{}'.format(self.name)
+                        else:
+                            key_instance_data[u'embedded_into'] = self.name
+                        key_field_instance = field_class(**key_instance_data)
+                        items_node.setdefault(field_type, [])
+                        field_physical = key_field_instance.get_def_physical()
+                        items = []
+                        if 'items' in field_physical:
+                            items = field_physical.pop('items')
+                        items_node[field_type].append(field_physical)
+                        for item_key in items:
+                            items_node.setdefault(item_key, [])
+                            data_list = items[item_key]
+                            # update embedded_into
+                            for data in data_list:
+                                embedded_field_name = u'fields__{type}__embedded_into__v1'.format(
+                                    type=item_key
+                                )
+                                data[embedded_field_name] = u'{}.{}'.format(
+                                    key_instance_data[u'embedded_into'],
+                                    data[embedded_field_name]
+                                )
+                            items_node[item_key].extend(data_list)
+            else:
+                if key in self.field_data and self.field_data[key]:
+                    field_name = u'fields__{type}__{field}__v1'.format(
+                        type=self.type,
+                        field=key
+                    )
+                    physical[field_name] = self.field_data[key]
+        return physical
+
+    def get_def_mappings(self):
+        """
+        Get mapping for field for document definition
+
+        map
+        ===
+        We will write mapping for map attributes, not items. items inside would go into fields with
+        attribute embedded_into pointing to map. In case map inside map, would point map1.map2, etc...
+
+        map-list
+        ========
+        logical:
+        {
+            "values: [
+                {
+                  "name": StringField(...),
+                  "description": StringField(...),
+                  "counter": NumberField(...)
+                },
+                {
+                  "name": StringField(...),
+                  "description": StringField(...),
+                  "counter": NumberField(...)
+                }
+            ]
+        }
+        We would have map-list with attributes into doc def fields, but not items
+        How include items in doc def???
+
+        :return:
+        """
+        mappings = {}
+        for key in self.allowed_attributes:
+            if key == 'validations':
+                mappings[u"fields__{type}__validations__v1".format(type=self.type)] = {
+                    u"type": u"nested",
+                    u"properties": {
+                        u"fields__{type}__validations__type__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"fields__{type}__validations__path__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"fields__{type}__validations__value__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"index": u"no"
+                        },
+                        u"fields__{type}__validations__modes__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        },
+                        u"fields__{type}__validations__context__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"index": u"not_analyzed"
+                        }
+                    }
+                }
+            elif key == 'choices':
+                mappings[u"fields__{type}__choices__v1".format(type=self.type)] = {
+                    u"type": u"object",
+                    u"properties": {
+                        u"fields__{type}__choices__choice_name__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"fields": {
+                                u"fields__{type}__choices__choice_name__v1".format(
+                                    type=self.type): {
+                                    u"type": u"string"
+                                },
+                                u"raw__v1": {
+                                    u"type": u"string",
+                                    u"index": u"not_analyzed"
+                                }
+                            }
+                        },
+                        u"fields__{type}__choices__default_value__v1".format(type=self.type): {
+                            u"type": u"string",
+                            u"fields": {
+                                u"fields__{type}__choices__default_value__v1".format(
+                                    type=self.type): {
+                                    u"type": u"string"
+                                },
+                                u"raw__v1": {
+                                    u"type": u"string",
+                                    u"index": u"not_analyzed"
+                                }
+                            }
+                        }
+                    }
+                }
+            else:
+                field_name = u'fields__{type}__{field}__v1'.format(
+                    type=self.type,
+                    field=key
+                )
+                if key in self.string_attributes:
+                    mappings[field_name] = StringField.build_mapping(field_name)
+                elif key in self.text_attributes:
+                    mappings[field_name] = TextField.build_mapping()
+                elif key in self.boolean_attributes:
+                    mappings[field_name] = CheckField.build_mapping()
+                elif key in self.number_attributes:
+                    mappings[field_name] = NumberField.build_mapping(mode='integer')
+                elif key == 'default':
+                    if self.type == 'number':
+                        mappings[field_name] = NumberField.build_mapping(mode='integer')
+                    elif self.type == 'string':
+                        mappings[field_name] = StringField.build_mapping(field_name)
+                    elif self.type == 'text':
+                        mappings[field_name] = TextField.build_mapping()
+                    elif self.type == 'date':
+                        mappings[field_name] = DateTimeField.build_mapping()
+                    elif self.type == 'check':
+                        mappings[field_name] = CheckField.build_mapping()
+        return mappings
+
+
+class StringField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'choices',
         u'default',
         u'hint',
@@ -27,6 +396,7 @@ class StringField(object):
         u'name',
         u'doc_type',
         u'validations',
+        u'embedded_into',
     }
 
     name = None
@@ -44,6 +414,8 @@ class StringField(object):
     type = None
     version = None
     validation_errors = []
+    field_data = {}
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -64,7 +436,9 @@ class StringField(object):
         :param kwargs:
         :return:
         """
+        self.type = 'string'
         logger.debug(u'StringField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -73,39 +447,58 @@ class StringField(object):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
+    @classmethod
+    def build_mapping(cls, field_name):
+        """
+        Return mapping that corresponds to this field, no matter if goes for document definition
+        or structure for document
+
+        :param field_name:
+        :return:
+        """
+        try:
+            field = field_name.split('__')[0]
+        except IndexError:
+            return {}
+        if field == 'id':
+            return {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        else:
+            return {
+                'type': 'string',
+                'fields': {
+                    field_name: {
+                        'type': 'string'
+                    },
+                    'raw__v1': {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                    }
+                }
+            }
+
     def make_mapping(self):
         """
-        Create the mapping structure to create mappings and update mappings
+        Create the mapping structure for document to be created
 
         :return:
         """
         # We could set analyzer. Default analyzer??? International chars???
         # How we set version fields??? We get field versions for name
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
-            ): {
-                u'type': u'string',
-                u'fields': {
-                    u'{doc_type}__{field_name}__{version}'.format(
-                        doc_type=self.doc_type,
-                        field_name=self.name,
-                        version=self.version): {
-                            u'type': u'string'
-                    },
-                    u'raw__{version}'.format(version=self.version): {
-                        u'type': u'string',
-                        u'index': u'not_analyzed'
-                    }
-                }
+            u'{}__{}'.format(
+                self.name, self.version
+            ): self.build_mapping(u'{field_name}__{version}'.format(
+                field_name=self.name,
+                version=self.version))
             }
-        }
         if self.add_to_summary:
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
             mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
-                u"type": u"{doc_tyoe}__{field_name}_completion".format(
-                    doc_type=self.doc_type,
+                u"type": u"{field_name}_completion".format(
                     field_name=self.name
                 ),
                 u"analyzer": u"simple_whitespace",
@@ -123,14 +516,13 @@ class StringField(object):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -176,26 +568,30 @@ class StringField(object):
 
         :return:
         """
-        check = Validator(True, [])
+        logger.debug(u'StringField.validate :: value: {} field_config: {} doc_config: {}'.format(
+            value, field_config, doc_config
+        ))
+        check = Validator(True, {})
         # min_length and max_length for string
+        name = field_config.get('name', 'general')
         min_length = field_config.get('min_length', None)
         max_length = field_config.get('max_length', None)
         field_choices = field_config.get('choices', None)
         validations = field_config.get('validations', None)
         if min_length:
             if len(value) < min_length:
-                check.add_error(u'min length error')
+                check.add_error(name, u'min length error')
         if max_length:
             if len(value) > max_length:
-                check.add_error(u'max length error')
+                check.add_error(name, u'max length error')
         if field_choices and value != '':
             # If we have some value in field, validate with choices
-            choice_name = field_choices['choice_name']
+            choice_name = field_choices['name']
             choice_value = filter(lambda x: x['choice_item_name'] == value,
                                   doc_config['choices'][choice_name])
             if choice_value:
                 if choice_value[0]['choice_item_name'] != value:
-                    check.add_error(u'choice {} error'.format(choice_name))
+                    check.add_error(name, u'choice {} error'.format(choice_name))
             else:
                 check.invalid()
         # field validations
@@ -208,15 +604,16 @@ class StringField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check.add_error(u'Error in validation {}'.format(validation_name))
+                    check.add_error(name, u'Error in validation {}'.format(validation_name))
                     break
         return check
 
 
-class NumberField(object):
+class NumberField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'default',
         u'hint',
         u'comment',
@@ -230,6 +627,7 @@ class NumberField(object):
         u'doc_type',
         u'mode',
         u'validations',
+        u'embedded_into',
     }
 
     allowed_modes = {'long', 'integer', 'short', 'byte', 'double', 'float'}
@@ -251,6 +649,7 @@ class NumberField(object):
     mode = None
     version = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -273,6 +672,8 @@ class NumberField(object):
         :return:
         """
         logger.debug(u'NumberField :: kwargs: {}'.format(kwargs))
+        self.type = 'number'
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -280,10 +681,17 @@ class NumberField(object):
             setattr(self, attr_name, kwargs[attr_name])
         if not self.mode:
             self.mode = 'long'
+            self.field_data['mode'] = 'long'
         if self.mode not in self.allowed_modes:
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
+    @classmethod
+    def build_mapping(cls, mode='long'):
+        return {
+            'type': mode
+        }
 
     def make_mapping(self):
         """
@@ -292,8 +700,8 @@ class NumberField(object):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': self.mode,
             }
@@ -302,8 +710,7 @@ class NumberField(object):
             mappings[u'copy_to'] = u'text__v1'
         if self.is_autocomplete:
             mappings[u'{}__{}'.format(self.name, self.version)][u'fields'][u'completion__v1'] = {
-                u"type": u"{doc_tyoe}__{field_name}_completion".format(
-                    doc_type=self.doc_type,
+                u"type": u"{field_name}_completion".format(
                     field_name=self.name
                 ),
                 u"analyzer": u"simple_whitespace",
@@ -327,8 +734,7 @@ class NumberField(object):
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -368,20 +774,21 @@ class NumberField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         min_value = field_config.get('min_value', None)
         max_value = field_config.get('max_value', None)
         only_positive = field_config.get('only_positive', None)
         only_negative = field_config.get('only_negative', None)
         validations = field_config.get('validations', None)
         if max_value and value > max_value:
-            check.add_error(u'error max_value')
+            check.add_error(name, u'error max_value')
         if min_value and value < min_value:
-            check.add_error(u'error min_value')
+            check.add_error(name, u'error min_value')
         if only_positive and value < 0:
-            check.add_error(u'error only_positive')
+            check.add_error(name, u'error only_positive')
         if only_negative and value > 0:
-            check.add_error(u'error only_negative')
+            check.add_error(name, u'error only_negative')
         if validations:
             for validation_data in validations:
                 validation_name = validation_data.get('name',
@@ -391,15 +798,16 @@ class NumberField(object):
                                                       ))
                 value = patterns_data[validation_name]
                 if not value:
-                    check.add_error(u'error validation {}'.format(validation_name))
+                    check.add_error(name, u'error validation {}'.format(validation_name))
                     break
         return check
 
 
-class TextField(object):
+class TextField(Field):
 
     allowed_attributes = {
         u'add_summary',
+        u'active',
         u'default',
         u'hint',
         u'comment',
@@ -410,6 +818,7 @@ class TextField(object):
         u'validations',
         u'max_length',
         u'min_length',
+        u'embedded_into',
     }
 
     type = None
@@ -425,6 +834,7 @@ class TextField(object):
     doc_type = None
     version = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -434,6 +844,7 @@ class TextField(object):
         :return:
         """
         logger.debug(u'TextField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -441,6 +852,19 @@ class TextField(object):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'text'
+
+    @classmethod
+    def build_mapping(cls):
+        """
+        Return mapping that corresponds to this field, no matter if goes for document definition
+        or structure for document
+
+        :return:
+        """
+        return {
+            'type': 'string',
+        }
 
     def make_mapping(self):
         """
@@ -449,8 +873,8 @@ class TextField(object):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'string',
             }
@@ -472,8 +896,7 @@ class TextField(object):
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -513,26 +936,29 @@ class TextField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         max_length = field_config.get('max_length', None)
         min_length = field_config.get('min_length', None)
         if max_length and len(value) > max_length:
-            check.add_error(u'error max_length')
+            check.add_error(name, u'error max_length')
         if min_length and len(value) < min_length:
-            check.add_error(u'error min_length')
+            check.add_error(name, u'error min_length')
         return check
 
 
-class CheckField(object):
+class CheckField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'default',
         u'display_name',
         u'type',
         u'name',
         u'doc_type',
+        u'embedded_into',
     }
 
     type = None
@@ -546,6 +972,7 @@ class CheckField(object):
     doc_type = None
     version = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -555,6 +982,8 @@ class CheckField(object):
         :return:
         """
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.type = 'check'
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -563,6 +992,12 @@ class CheckField(object):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
+    @classmethod
+    def build_mapping(cls):
+        return {
+            'type': 'boolean'
+        }
+
     def make_mapping(self):
         """
         Make check mapping
@@ -570,8 +1005,8 @@ class CheckField(object):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'boolean',
             }
@@ -585,14 +1020,13 @@ class CheckField(object):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -632,14 +1066,15 @@ class CheckField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
         return check
 
 
-class DateTimeField(object):
+class DateTimeField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -651,6 +1086,7 @@ class DateTimeField(object):
         u'max_datetime',
         u'is_create_date',
         u'is_timestamp',
+        u'embedded_into',
     }
 
     type = None
@@ -668,6 +1104,7 @@ class DateTimeField(object):
     is_create_date = None
     is_timestamp = None
     validation_errors = []
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -677,6 +1114,8 @@ class DateTimeField(object):
         :return:
         """
         logger.debug(u'CheckField :: kwargs: {}'.format(kwargs))
+        self.type = 'datetime'
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -685,6 +1124,13 @@ class DateTimeField(object):
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
 
+    @classmethod
+    def build_mapping(cls):
+        return {
+            u'type': u'date',
+            u"format": u"dateOptionalTime"
+        }
+
     def make_mapping(self):
         """
         Make datetime mapping
@@ -692,8 +1138,8 @@ class DateTimeField(object):
         :return:
         """
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': u'date',
                 u"format": u"dateOptionalTime"
@@ -708,14 +1154,13 @@ class DateTimeField(object):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -755,14 +1200,16 @@ class DateTimeField(object):
         :param patterns_data:
         :return:
         """
-        check = Validator(True, [])
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
         min_datetime = field_config.get('min_datetime', None)
         max_datetime = field_config.get('max_datetime', None)
         is_create_date = field_config.get('is_create_date', None)
         is_timestamp = field_config.get('is_timestamp', None)
         default = field_config.get('default', None)
         if (default or value) and (is_timestamp or is_create_date):
-            check.add_error(u'Timestamp or create date defined and I receive also "default" or "value" for field')
+            check.add_error(name,
+                            u'Timestamp or create date defined and I receive also "default" or "value" for field')
         if not value:
             value = default
         # Check date ranges
@@ -771,18 +1218,19 @@ class DateTimeField(object):
         if min_datetime:
             min_obj = datetime.strptime(min_datetime, date_format)
             if value_obj < min_obj:
-                check.add_error(u'error min_datetime')
+                check.add_error(name, u'error min_datetime')
         if max_datetime:
             max_obj = datetime.strptime(max_datetime, date_format)
             if value_obj > max_obj:
-                check.add_error(u'error max_datetime')
+                check.add_error(name, u'error max_datetime')
         return check
 
 
-class MapField(object):
+class MapField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -790,6 +1238,7 @@ class MapField(object):
         u'doc_type',
         u'add_summary',
         u'items',
+        u'embedded_into',
     }
 
     type = None
@@ -801,6 +1250,7 @@ class MapField(object):
     doc_type = None
     version = None
     items = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -862,6 +1312,7 @@ class MapField(object):
         :return:
         """
         logger.debug(u'MapField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -869,6 +1320,7 @@ class MapField(object):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'map'
 
     def make_mapping(self):
         """
@@ -881,7 +1333,7 @@ class MapField(object):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapField.make_mapping :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -894,8 +1346,8 @@ class MapField(object):
             logger.debug(u'MapField.make_mapping :: field_mapping: {}'.format(field_mapping))
             object_properties.update(field_mapping)
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'object',
                 u'properties': object_properties
@@ -910,14 +1362,13 @@ class MapField(object):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -963,7 +1414,7 @@ class MapField(object):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapField.get_physical :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -998,13 +1449,13 @@ class MapField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, {})
         items = field_config.get('items', None)
-        name = field_config.get('name', None)
+        name = field_config.get('name', 'general')
         logger.debug(u'MapField.validate :: field_config: {}'.format(field_config))
         logger.debug(u'MapField.validate :: items: {}'.format(items))
         logger.debug(u'MapField.validate :: name: {}'.format(name))
-        doc_type = doc_config.get('', None)
+        doc_type = doc_config.get('doc_type', None)
         for field_data_key in items:
             field_data = items[field_data_key]
             field_data['name'] = field_data_key
@@ -1028,16 +1479,20 @@ class MapField(object):
             field_pattern_data = None
             if patterns_data and field_data_key in patterns_data:
                 field_pattern_data = patterns_data[field_data_key]
-            check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
+            check_item = field_instance.validate(value, field_data, doc_config,
+                                                 patterns_data=field_pattern_data)
+            if not check_item:
+                check.add_error(name, check_item.errors.values()[0])
             logger.debug(u'MapField.validate :: item check: {}'.format(check))
         logger.debug(u'MapField.validate :: return check: {}'.format(check))
         return check
 
 
-class MapListField(object):
+class MapListField(Field):
 
     allowed_attributes = {
         u'hint',
+        u'active',
         u'comment',
         u'display_name',
         u'type',
@@ -1045,6 +1500,7 @@ class MapListField(object):
         u'doc_type',
         u'add_summary',
         u'items',
+        u'embedded_into',
     }
 
     type = None
@@ -1056,6 +1512,7 @@ class MapListField(object):
     doc_type = None
     version = None
     items = None
+    embedded_into = None
 
     def __init__(self, **kwargs):
         """
@@ -1127,6 +1584,7 @@ class MapListField(object):
         :return:
         """
         logger.debug(u'MapListField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
         not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
         if not_validated_fields:
             raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
@@ -1134,6 +1592,7 @@ class MapListField(object):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'map-list'
 
     def make_mapping(self):
         """
@@ -1146,7 +1605,7 @@ class MapListField(object):
             field_data = self.items[field_data_key]
             field_data['name'] = field_data_key
             logger.debug(u'MapListField.make_mapping :: field_data: {}'.format(field_data))
-            item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+            item_doc_type = u'{}'.format(self.name)
             module = 'document.fields'
             instance = __import__(module)
             for comp in module.split('.')[1:]:
@@ -1159,8 +1618,8 @@ class MapListField(object):
             logger.debug(u'MapListField.make_mapping :: field_mapping: {}'.format(field_mapping))
             object_properties.update(field_mapping)
         mappings = {
-            u'{}__{}__{}'.format(
-                self.doc_type, self.name, self.version
+            u'{}__{}'.format(
+                self.name, self.version
             ): {
                 u'type': 'nested',
                 u"include_in_parent": True,
@@ -1177,14 +1636,13 @@ class MapListField(object):
         :return:
 
         {
-            'field': 'doc__field__v1',
+            'field': 'field__v1',
             'field_name': 'field'
         }
 
         """
         return {
-            'field': '{doc_type}__{field_name}__{version}'.format(
-                doc_type=self.doc_type,
+            'field': '{field_name}__{version}'.format(
                 field_name=self.name,
                 version=self.version
             ),
@@ -1243,7 +1701,7 @@ class MapListField(object):
                 field_data = self.items[field_data_key]
                 field_data['name'] = field_data_key
                 logger.debug(u'MapListField.get_physical :: field_data: {}'.format(field_data))
-                item_doc_type = u'{}__{}'.format(self.doc_type, self.name)
+                item_doc_type = u'{}'.format(self.name)
                 module = 'document.fields'
                 instance = __import__(module)
                 for comp in module.split('.')[1:]:
@@ -1279,15 +1737,13 @@ class MapListField(object):
         :param patterns_data:
         :return:
         """
-        check = True
+        check = Validator(True, {})
         items = field_config.get('items', None)
         name = field_config.get('name', None)
         logger.debug(u'MapListField.validate :: field_config: {}'.format(field_config))
         logger.debug(u'MapListField.validate :: items: {}'.format(items))
         logger.debug(u'MapListField.validate :: name: {}'.format(name))
         doc_type = doc_config.get('', None)
-
-        items_list = []
         for value_item in values[name]:
             for field_data_key in items:
                 field_data = items[field_data_key]
@@ -1311,7 +1767,565 @@ class MapListField(object):
                 field_pattern_data = None
                 if patterns_data and field_data_key in patterns_data:
                     field_pattern_data = patterns_data[field_data_key]
-                check = field_instance.validate(value, field_data, doc_config, patterns_data=field_pattern_data)
+                check_item = field_instance.validate(value, field_data, doc_config,
+                                                     patterns_data=field_pattern_data)
+                if not check_item:
+                    check.add_error(name, check_item.errors.values()[0])
                 logger.debug(u'MapListField.validate :: item check: {}'.format(check))
         logger.debug(u'MapListField.validate :: return check: {}'.format(check))
         return check
+
+
+class ListField(Field):
+
+    allowed_attributes = {
+        u'hint',
+        u'active',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'add_summary',
+        u'mode',
+        u'embedded_into',
+        u'validations',
+        u'choices',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    doc_type = None
+    version = None
+    mode = None
+    items = None
+    embedded_into = None
+    choices = None
+    validations = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'ListField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
+        item_type = kwargs['type'].split('-')[1]
+        if item_type == 'string':
+            allowed_attributes = StringField.allowed_attributes
+        elif item_type == 'datetime':
+            allowed_attributes = DateTimeField.allowed_attributes
+        elif item_type == 'number':
+            allowed_attributes = NumberField.allowed_attributes
+        elif item_type == 'check':
+            allowed_attributes = CheckField.allowed_attributes
+        else:
+            raise exceptions.XimpiaAPIException(_(u'Type not supported'))
+        self.allowed_attributes = allowed_attributes
+        not_validated_fields = filter(lambda x: x not in allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        if item_type == 'string':
+            self.type = 'list-string'
+        elif item_type == 'datetime':
+            self.type = 'list-datetime'
+        elif item_type == 'number':
+            self.type = 'list-number'
+        elif item_type == 'check':
+            self.type = 'list-check'
+        if not self.mode:
+            self.mode = 'long'
+
+    def make_mapping(self):
+        """
+        Make mapping
+
+        :return:
+        """
+        item_type = self.type.split('<')[1][:-1]
+        mappings = None
+        if item_type == 'date':
+            mappings = {
+                u'{}__{}'.format(
+                    self.name, self.version
+                ): {
+                    'type': 'date',
+                    "format": "dateOptionalTime"
+                }
+            }
+        elif item_type == 'string':
+            mappings = {
+                u'{}__{}'.format(
+                    self.name, self.version
+                ): {
+                    'type': 'string',
+                    'fields': {
+                        u'{}__{}'.format(
+                            self.name, self.version
+                        ): {
+                            'type': 'string'
+                        },
+                        'raw__v1': {
+                            'type': 'string',
+                            'index': 'not_analyzed'
+                        }
+                    }
+                }
+            }
+        elif item_type == 'number':
+            mappings = {
+                u'{}__{}'.format(
+                    self.name, self.version
+                ): {
+                    u'type': self.mode,
+                }
+            }
+        elif item_type == 'check':
+            mappings = {
+                u'{}__{}'.format(
+                    self.name, self.version
+                ): {
+                    u'type': 'boolean',
+                }
+            }
+        if mappings:
+            if self.add_to_summary:
+                mappings[u'copy_to'] = u'text__v1'
+            return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{field_name}__{version}'.format(
+                field_name=self.name,
+                version=self.version
+            ),
+            'field_name': self.name,
+        }
+
+    def get_physical(self, values):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param values:
+
+        :return:
+
+        """
+        return {
+            self.get_field_items()['field']: values
+        }
+
+    @classmethod
+    def validate(cls, values, field_config, doc_config, patterns_data=None):
+        """
+        Validate field: We call validate for all fields
+
+        :param values:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = Validator(True, {})
+        name = field_config.get('name', None)
+        type_ = field_config.get('type', None)
+        item_type = type_.split('<')[1][:-1]
+        if item_type == 'string':
+            for value in values:
+                logger.debug(u'ListField.validate :: value: {}'.format(value))
+                check_field = StringField.validate(value, field_config, doc_config,
+                                                   patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
+        elif item_type == 'number':
+            for value in values:
+                check_field = NumberField.validate(value, field_config, doc_config,
+                                                   patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
+        elif item_type == 'date':
+            for value in values:
+                check_field = DateTimeField.validate(value, field_config, doc_config,
+                                                     patterns_data=patterns_data)
+                if not check_field:
+                    check.add_error(name, check_field.errors.values()[0] + u' value: {}'.format(value))
+        return check
+
+
+class LinkField(Field):
+
+    allowed_attributes = {
+        u'hint',
+        u'active',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'doc_type',
+        u'add_summary',
+        u'type_remote',
+        u'app',
+        u'embedded_into',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    doc_type = None
+    version = None
+    type_remote = None
+    app = None
+    embedded_into = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        Logical
+        =======
+        {doc_type}: {
+          "id": "idshhjds77787LL"
+        }
+
+        Physical
+        ========
+        {doc_type}__v1: {
+          "id": "",
+          ... [ Rest of document fields ]
+        }
+
+        Mapping
+        =======
+        We get from document type mapping
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'LinkField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.doc_type = kwargs.get('name', None)
+        self.type = 'link'
+
+    def make_mapping(self):
+        """
+        Make mapping
+
+        :return:
+        """
+        mappings = {
+            u'{}__{}'.format(
+                self.doc_type, self.version
+            ): {
+                'type': 'object',
+                'properties': {
+                    '{}__id'.format(self.doc_type): {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                    }
+                }
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{doc_type}__{version}'.format(
+                doc_type=self.doc_type,
+                version=self.version
+            ),
+            'field_name': self.doc_type,
+        }
+
+    def get_physical(self, values):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param values:
+
+        :return:
+
+        """
+        return {
+            self.get_field_items()['field']: values
+        }
+
+    @classmethod
+    def validate(cls, value, field_config, doc_config, patterns_data=None):
+        """
+        Validate field: We check id exists for document type
+
+        :param value:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
+        value = patterns_data['exists']
+        if not value:
+            check.add_error(name, u'Error in validation {}'.format('exists'))
+        return check
+
+
+class LinksField(Field):
+
+    allowed_attributes = {
+        u'hint',
+        u'active',
+        u'comment',
+        u'display_name',
+        u'type',
+        u'name',
+        u'field_name',
+        u'doc_type',
+        u'add_summary',
+        u'type_remote',
+        u'app',
+        u'embedded_into',
+    }
+
+    type = None
+    name = None
+    add_to_summary = None
+    hint = None
+    comment = None
+    display_name = None
+    doc_type = None
+    version = None
+    field_name = None
+    type_remote = None
+    app = None
+    embedded_into = None
+
+    def __init__(self, **kwargs):
+        """
+        Constructor
+
+        Logical
+        =======
+        {doc_type}: {
+          "ids": ["idshhjds77787LL", "28982jjkKK"]
+        }
+
+        Physical
+        ========
+        {doc_type}__v1: [
+          {
+            "id": "",
+            ... [ Rest of document fields ]
+          }
+        ]
+
+        Mapping
+        =======
+        We get from document type mapping
+
+        :param kwargs:
+        :return:
+        """
+        logger.debug(u'LinkField :: kwargs: {}'.format(kwargs))
+        self.field_data = kwargs
+        not_validated_fields = filter(lambda x: x not in self.allowed_attributes, kwargs)
+        if not_validated_fields:
+            raise exceptions.XimpiaAPIException(_(u'Fields not validated: {}'.format(not_validated_fields)))
+        for attr_name in kwargs:
+            setattr(self, attr_name, kwargs[attr_name])
+        if 'version' not in kwargs:
+            self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.doc_type = kwargs.get('name', None)
+        self.type = 'links'
+
+    def make_mapping(self):
+        """
+        Make mapping
+
+        :return:
+        """
+        mappings = {
+            u'{}__{}'.format(
+                self.field_name, self.version
+            ): {
+                'type': 'nested',
+                "include_in_parent": True,
+                "dynamic": False,
+                'properties': {
+                    'id': {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                    }
+                }
+            }
+        }
+        return mappings
+
+    def get_field_items(self):
+        """
+        Get field items
+
+        :return:
+
+        {
+            'field': 'field__v1',
+            'field_name': 'field'
+        }
+
+        """
+        return {
+            'field': '{field_name}__{version}'.format(
+                field_name=self.field_name,
+                version=self.version
+            ),
+            'field_name': self.field_name,
+        }
+
+    def get_physical(self, values):
+        """
+        Get physical field
+
+        We need: logical -> physical
+
+        Return whole physical structure for all fields inside having logical
+
+        :param values:
+
+        :return:
+
+        """
+        return {
+            self.get_field_items()['field']: map(lambda x: {
+                'id': x
+            }, values['ids'])
+        }
+
+    @classmethod
+    def validate(cls, values, field_config, doc_config, patterns_data=None):
+        """
+        Validate field: We check id exists for document type
+
+        :param values:
+        :param field_config:
+        :param doc_config:
+        :param patterns_data:
+        :return:
+        """
+        check = Validator(True, {})
+        name = field_config.get('name', 'general')
+        for value in patterns_data['exists'].values():
+            if not value:
+                check.add_error(name, u'Error in validation {}'.format('exists'))
+        return check
+
+field_mapper = {
+    'datetime': DateTimeField,
+    'map-list': MapListField,
+    'list-string': ListField,
+    'list-number': ListField,
+    'list-check': ListField,
+    'list-datetime': ListField,
+}
+
+fields_mappings = {
+    'fields__check__v1': {
+        'type': 'nested',
+        'properties': CheckField().get_def_mappings()
+    },
+    'fields__datetime__v1': {
+        'type': 'nested',
+        'properties': DateTimeField().get_def_mappings()
+    },
+    'fields__link__v1': {
+        'type': 'nested',
+        'properties': LinkField().get_def_mappings()
+    },
+    'fields__links__v1': {
+        'type': 'nested',
+        'properties': LinksField().get_def_mappings()
+    },
+    'fields__list-string__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-string'}).get_def_mappings()
+    },
+    'fields__list-number__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'long'}).get_def_mappings()
+    },
+    'fields__list-datetime__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-datetime'}).get_def_mappings()
+    },
+    'fields__list-check__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-check'}).get_def_mappings()
+    },
+    'fields__map__v1': {
+        'type': 'nested',
+        'properties': MapField().get_def_mappings()
+    },
+    'fields__map-list__v1': {
+        'type': 'nested',
+        'properties': MapListField().get_def_mappings()
+    },
+    'fields__number__v1': {
+        'type': 'nested',
+        'properties': NumberField().get_def_mappings()
+    },
+    'fields__string__v1': {
+        'type': 'nested',
+        'properties': StringField().get_def_mappings()
+    },
+    'fields__text__v1': {
+        'type': 'nested',
+        'properties': TextField().get_def_mappings()
+    },
+}
