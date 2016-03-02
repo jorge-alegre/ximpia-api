@@ -1851,7 +1851,19 @@ class ListField(Field):
         elif item_type == 'datetime':
             self.type = 'list-datetime'
         elif item_type == 'number':
-            self.type = 'list-number'
+            if hasattr(self, 'mode'):
+                if self.mode == 'long':
+                    self.type = 'list-number-long'
+                elif self.mode == 'integer':
+                    self.type = 'list-number-integer'
+                elif self.mode == 'short':
+                    self.type = 'list-number-short'
+                elif self.mode == 'byte':
+                    self.type = 'list-number-byte'
+                elif self.mode == 'double':
+                    self.type = 'list-number-double'
+                elif self.mode == 'float':
+                    self.type = 'list-number-float'
         elif item_type == 'check':
             self.type = 'list-check'
         if not self.mode:
@@ -1863,7 +1875,12 @@ class ListField(Field):
 
         :return:
         """
-        item_type = self.type.split('<')[1][:-1]
+        logger.debug(u'make_mapping :: type: {}'.format(self.type))
+        # item_type = self.type.split('<')[1][:-1]
+        if 'number' in self.type:
+            item_type = 'number'
+        else:
+            item_type = self.type.split('list-')[1]
         mappings = None
         if item_type == 'date':
             mappings = {
@@ -1965,7 +1982,14 @@ class ListField(Field):
         check = Validator(True, {})
         name = field_config.get('name', None)
         type_ = field_config.get('type', None)
-        item_type = type_.split('<')[1][:-1]
+        logger.debug(u'ListField.validate :: field_config: {}'.format(field_config))
+        logger.debug(u'ListField.validate :: type_: {}'.format(type_))
+        if 'number' in type_:
+            item_type = 'number'
+            if 'mode' not in field_config:
+                field_config['mode'] = 'long'
+        else:
+            item_type = type_.split('list-')[1]
         if item_type == 'string':
             for value in values:
                 logger.debug(u'ListField.validate :: value: {}'.format(value))
@@ -2307,9 +2331,29 @@ fields_mappings = {
         'type': 'nested',
         'properties': ListField(**{'type': 'list-string'}).get_def_mappings()
     },
-    'fields__list-number__v1': {
+    'fields__list-number-long__v1': {
         'type': 'nested',
         'properties': ListField(**{'type': 'list-number', 'mode': 'long'}).get_def_mappings()
+    },
+    'fields__list-number-integer__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'integer'}).get_def_mappings()
+    },
+    'fields__list-number-short__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'short'}).get_def_mappings()
+    },
+    'fields__list-number-byte__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'byte'}).get_def_mappings()
+    },
+    'fields__list-number-double__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'double'}).get_def_mappings()
+    },
+    'fields__list-number-float__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'float'}).get_def_mappings()
     },
     'fields__list-datetime__v1': {
         'type': 'nested',
