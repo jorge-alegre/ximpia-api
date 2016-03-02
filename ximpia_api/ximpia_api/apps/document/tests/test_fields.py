@@ -154,8 +154,8 @@ class NumberFieldTest(XimpiaTestCase):
         es_response_raw = requests.get(
             '{host}/{index}/{doc_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=index,
-                doc_type=doc_type,
+                index=u'{}__document-definition'.format(index),
+                doc_type='document-definition',
                 id=response_data['_id']
             )
         )
@@ -405,6 +405,39 @@ class ListFieldTest(XimpiaTestCase):
 
     def tearDown(self):
         pass
+
+    def test_number(self):
+        from document.fields import ListField
+        print
+        print
+        print
+        user = self.connect_user(user='my_site_admin', is_admin=True)
+        with open('ximpia_api/apps/document/tests/data/doc_number_list.json') as f:
+            doc_map_str = f.read()
+        doc_map = json.loads(doc_map_str)
+        doc_type = 'test-list-number-field'
+        field_data = doc_map['codes']
+        field_data['name'] = 'codes'
+        field_data['doc_type'] = doc_type
+        doc_config = doc_map['_meta']
+        field = ListField(**field_data)
+        mappings = field.make_mapping()
+        import pprint
+        pprint.PrettyPrinter(indent=4).pprint(mappings)
+        physical = field.get_physical(
+            [
+                34123, 762232, 894455
+            ]
+        )
+        pprint.PrettyPrinter(indent=4).pprint(physical)
+        check = field.validate(
+            [
+                34123, 762232, 894455
+            ],
+            field_data,
+            doc_config
+        )
+        logger.debug(u'ListFieldTest.test_number :: check: {}'.format(check))
 
     def test_list(self):
         from document.fields import ListField
