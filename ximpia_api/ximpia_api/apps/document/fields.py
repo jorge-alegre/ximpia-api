@@ -367,8 +367,18 @@ class Field(object):
                 elif key in self.number_attributes:
                     mappings[field_name] = NumberField.build_mapping(mode='integer')
                 elif key == 'default':
-                    if self.type == 'number':
+                    if self.type == 'number-long':
+                        mappings[field_name] = NumberField.build_mapping(mode='long')
+                    elif self.type == 'number-integer':
                         mappings[field_name] = NumberField.build_mapping(mode='integer')
+                    elif self.type == 'number-short':
+                        mappings[field_name] = NumberField.build_mapping(mode='short')
+                    elif self.type == 'number-byte':
+                        mappings[field_name] = NumberField.build_mapping(mode='byte')
+                    elif self.type == 'number-double':
+                        mappings[field_name] = NumberField.build_mapping(mode='double')
+                    elif self.type == 'number-float':
+                        mappings[field_name] = NumberField.build_mapping(mode='float')
                     elif self.type == 'string':
                         mappings[field_name] = StringField.build_mapping(field_name)
                     elif self.type == 'text':
@@ -686,6 +696,7 @@ class NumberField(Field):
             raise exceptions.XimpiaAPIException(u'Number mode not allowed')
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = '{}-{}'.format(self.type, self.mode)
 
     @classmethod
     def build_mapping(cls, mode='long'):
@@ -2316,9 +2327,29 @@ fields_mappings = {
         'type': 'nested',
         'properties': MapListField().get_def_mappings()
     },
-    'fields__number__v1': {
+    'fields__number-long__v1': {
         'type': 'nested',
-        'properties': NumberField().get_def_mappings()
+        'properties': NumberField(**{'mode': 'long'}).get_def_mappings()
+    },
+    'fields__number-integer__v1': {
+        'type': 'nested',
+        'properties': NumberField(**{'mode': 'integer'}).get_def_mappings()
+    },
+    'fields__number-short__v1': {
+        'type': 'nested',
+        'properties': NumberField(**{'mode': 'short'}).get_def_mappings()
+    },
+    'fields__number-byte__v1': {
+        'type': 'nested',
+        'properties': NumberField(**{'mode': 'byte'}).get_def_mappings()
+    },
+    'fields__number-double__v1': {
+        'type': 'nested',
+        'properties': NumberField(**{'mode': 'double'}).get_def_mappings()
+    },
+    'fields__number-float__v1': {
+        'type': 'nested',
+        'properties': NumberField(**{'mode': 'float'}).get_def_mappings()
     },
     'fields__string__v1': {
         'type': 'nested',

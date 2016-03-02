@@ -154,8 +154,8 @@ class NumberFieldTest(XimpiaTestCase):
         es_response_raw = requests.get(
             '{host}/{index}/{doc_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=index,
-                doc_type=doc_type,
+                index=u'{}__document-definition'.format(index),
+                doc_type='document-definition',
                 id=response_data['_id']
             )
         )
