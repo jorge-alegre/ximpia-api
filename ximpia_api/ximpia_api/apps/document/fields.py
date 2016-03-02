@@ -852,6 +852,7 @@ class TextField(Field):
             setattr(self, attr_name, kwargs[attr_name])
         if 'version' not in kwargs:
             self.version = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+        self.type = 'text'
 
     @classmethod
     def build_mapping(cls):
@@ -994,7 +995,7 @@ class CheckField(Field):
     @classmethod
     def build_mapping(cls):
         return {
-            'type': 'bool'
+            'type': 'boolean'
         }
 
     def make_mapping(self):
@@ -1842,6 +1843,8 @@ class ListField(Field):
             self.type = 'list-number'
         elif item_type == 'check':
             self.type = 'list-check'
+        if not self.mode:
+            self.mode = 'long'
 
     def make_mapping(self):
         """
@@ -2270,4 +2273,59 @@ field_mapper = {
     'list-number': ListField,
     'list-check': ListField,
     'list-datetime': ListField,
+}
+
+fields_mappings = {
+    'fields__check__v1': {
+        'type': 'nested',
+        'properties': CheckField().get_def_mappings()
+    },
+    'fields__datetime__v1': {
+        'type': 'nested',
+        'properties': DateTimeField().get_def_mappings()
+    },
+    'fields__link__v1': {
+        'type': 'nested',
+        'properties': LinkField().get_def_mappings()
+    },
+    'fields__links__v1': {
+        'type': 'nested',
+        'properties': LinksField().get_def_mappings()
+    },
+    'fields__list-string__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-string'}).get_def_mappings()
+    },
+    'fields__list-number__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-number', 'mode': 'long'}).get_def_mappings()
+    },
+    'fields__list-datetime__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-datetime'}).get_def_mappings()
+    },
+    'fields__list-check__v1': {
+        'type': 'nested',
+        'properties': ListField(**{'type': 'list-check'}).get_def_mappings()
+    },
+    'fields__map__v1': {
+        'type': 'nested',
+        'properties': MapField().get_def_mappings()
+    },
+    'fields__map-list__v1': {
+        'type': 'nested',
+        'properties': MapListField().get_def_mappings()
+    },
+    'fields__number__v1': {
+        'type': 'nested',
+        'properties': NumberField().get_def_mappings()
+    },
+    'fields__string__v1': {
+        'type': 'nested',
+        'properties': StringField().get_def_mappings()
+    },
+    'fields__text__v1': {
+        'type': 'nested',
+        'properties': TextField().get_def_mappings()
+    },
 }

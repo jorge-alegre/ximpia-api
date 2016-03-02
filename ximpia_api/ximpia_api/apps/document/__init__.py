@@ -1189,13 +1189,14 @@ class DocumentDefinition(object):
                     for choice_items in request_list:
                         choice_list.append(
                             {
-                                'name': choice_items[0],
-                                'value': choice_items[1]
+                                'choices__items__name__v1': choice_items[0],
+                                'choices__items__value__v1': choice_items[1]
                             }
                         )
                     input_document['_meta']['choices'].append(
                         {
-                            choice_name: choice_list
+                            'choices__name__v1': choice_name,
+                            'choices__items__v1': choice_list,
                         }
                     )
             elif doc_field == 'messages':
@@ -1203,8 +1204,8 @@ class DocumentDefinition(object):
                 for message_name in input_document_request['_meta']['messages']:
                     input_document['_meta']['messages'].append(
                         {
-                            'name': message_name,
-                            'value': input_document_request['_meta']['messages'][message_name]
+                            'messages__name__v1': message_name,
+                            'messages__value__v1': input_document_request['_meta']['messages'][message_name]
                         }
                     )
             elif doc_field == 'validations':
@@ -1272,7 +1273,7 @@ class DocumentDefinition(object):
             meta_field = u'{field}__v1'.format(
                 field=meta_item
             )
-            self.physical[meta_field] = self.logical['_meta'][meta_item]
+            # self.physical[meta_field] = self.logical['_meta'][meta_item]
         self.physical['fields__v1'] = {}
         logger.debug(u'DocumentDefinition.get_physical :: physical: {}'.format(self.physical))
         for field_name in self.logical['fields']:
@@ -1349,3 +1350,23 @@ class DocumentDefinition(object):
                 fields_version_str += bulk_header
                 fields_version_str += bulk_data
         return fields_version_str
+
+
+def get_document_definition_mapping():
+    """
+    Get mappings for document definition.
+
+    We generate mappings for fields and inject in order to get changes. So far only at create time when
+    we create ximpia site and setup site.
+
+    In future we would need a way to update mappings and deal with changes into fields.
+
+    :return:
+    """
+    from fields import fields_mappings
+    document_path = settings.BASE_DIR + 'apps/document/mappings'
+    with open('{}/document-definition.json'.format(document_path)) as f:
+        document_definition_dict = json.loads(f.read())
+    logger.debug(u'get_document_definition_mapping :: fields_mappings: {}'.format(fields_mappings))
+    document_definition_dict['document-definition']['properties']['fields__v1']['properties'] = fields_mappings
+    return document_definition_dict

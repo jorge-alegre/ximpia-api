@@ -678,7 +678,7 @@ class DocDefAllCreateTest(XimpiaTestCase):
         logger.debug(u'DocDefCreate:: create document: {}'.format(
             pprint.PrettyPrinter(indent=4).pformat(response_data)
         ))
-        """refresh_index('ximpia-api__base')
+        refresh_index('ximpia-api__base')
         refresh_index('my-site__base')
         # Check document definition created
         es_response_raw = requests.get(
@@ -702,7 +702,7 @@ class DocDefAllCreateTest(XimpiaTestCase):
         )
         es_response = es_response_raw.json()
         self.assertTrue(es_response_raw.status_code == 200)
-        self.assertTrue('test-string-field' in es_response[es_response.keys()[0]]['mappings'])
+        self.assertTrue(doc_type in es_response[es_response.keys()[0]]['mappings'])
         # Check fields created
         response = Document.objects.filter(
             'field-version',
@@ -712,7 +712,7 @@ class DocDefAllCreateTest(XimpiaTestCase):
             }
         )
         self.assertTrue(response is not None)
-        self.assertTrue(len(response) > 0)"""
+        self.assertTrue(len(response) > 0)
 
 
 class DocDefAllLinkCreateTest(XimpiaTestCase):

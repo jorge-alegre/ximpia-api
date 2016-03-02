@@ -48,6 +48,7 @@ class SetupSite(generics.CreateAPIView):
         :param index_name:
         :return:
         """
+        from document import get_document_definition_mapping
         # base_mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         mappings_path = settings.BASE_DIR + 'apps/base/mappings'
         user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
@@ -96,8 +97,16 @@ class SetupSite(generics.CreateAPIView):
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        with open('{}/document-definition.json'.format(document_path)) as f:
-            document_definition_dict = json.loads(f.read())
+        """with open('{}/document-definition.json'.format(document_path)) as f:
+            document_definition_dict = json.loads(f.read())"""
+
+        document_definition_dict = get_document_definition_mapping()
+        import pprint
+        """with open('{}/document-definition-generated.json'.format(document_path), 'w') as f:
+            f.write(json.dumps(document_definition_dict))"""
+        """logger.debug(u'_create_index :: mappings: {}'.format(
+            pprint.PrettyPrinter(indent=4).pformat(document_definition_dict))
+        )"""
         create_doc_index(u'{}__document-definition'.format(index_name), document_definition_dict)
 
         es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),

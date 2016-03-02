@@ -637,14 +637,18 @@ class DocumentDefinitionView(viewsets.ModelViewSet):
         doc_mapping = doc_def.get_mappings()
         fields_version_str = doc_def.get_field_versions(index, user)
         # Create document definition document
+        physical = doc_def.get_physical()
+        logger.debug(u'_create_index :: document definition: {}'.format(
+            pprint.PrettyPrinter(indent=4).pformat(physical))
+        )
         es_response_raw = requests.post(
             '{host}/{index}/{doc_type}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=index,
-                doc_type=doc_type
+                index=u'{}__document-definition'.format(index),
+                doc_type='document-definition'
             ),
             data=json.dumps(
-                doc_def.get_physical()
+                physical
             )
         )
         es_response = es_response_raw.json()
