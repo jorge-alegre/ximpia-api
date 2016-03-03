@@ -41,7 +41,7 @@ class SessionStore(SessionBase):
         """
         # print u'SessionStore.load :: session_key: {}'.format(self.session_key)
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/_search?query_cache={query_cache}'.format(
+            '{host}/{index}__{document_type}/{document_type}/_search?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type='session',
@@ -92,7 +92,7 @@ class SessionStore(SessionBase):
         :return:
         """
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/_count?query_cache={query_cache}'.format(
+            '{host}/{index}__{document_type}/{document_type}/_count?query_cache={query_cache}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 index=settings.SITE_BASE_INDEX,
                 document_type='session',
@@ -144,16 +144,16 @@ class SessionStore(SessionBase):
             'expire_date': self.get_expiry_date().strftime("%Y-%m-%dT%H:%M:%S")
         }
         if must_create:
-            es_response_raw = requests.post('{}/{}/session/{id}'.format(
+            es_response_raw = requests.post('{}/{}__session/{id}'.format(
                 settings.ELASTIC_SEARCH_HOST,
                 settings.SITE_BASE_INDEX,
                 id=self.session_key
             ),
                 data=json.dumps(to_physical_doc('session', session_data)))
         else:
-            es_response_raw = requests.put('{}/{}/session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
-                                                                       settings.SITE_BASE_INDEX,
-                                                                       id=self.session_key),
+            es_response_raw = requests.put('{}/{}__session/{id}'.format(settings.ELASTIC_SEARCH_HOST,
+                                                                        settings.SITE_BASE_INDEX,
+                                                                        id=self.session_key),
                                            data=json.dumps(to_physical_doc('session', session_data)))
         if es_response_raw.status_code != 200:
             exceptions.XimpiaAPIException(_(u'SessionStore :: save() :: Could not write session'))
@@ -176,7 +176,7 @@ class SessionStore(SessionBase):
                 return
             session_key = self.session_key
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/{id}'.format(
+            '{host}/{index}__{document_type}/{document_type}/{id}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
@@ -189,7 +189,7 @@ class SessionStore(SessionBase):
         try:
             # id_ = es_response['hits']['hits'][0]['_id']
             id_ = es_response['_id']
-            es_response_raw = req_session.delete('{host}/{index}/{document_type}/{id_}'.format(
+            es_response_raw = req_session.delete('{host}/{index}__{document_type}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX,
@@ -210,7 +210,7 @@ class SessionStore(SessionBase):
         :return:
         """
         es_response_raw = req_session.get(
-            '{host}/{index}/{document_type}/_search?scroll=1m&search_type=scan'.format(
+            '{host}/{index}__{document_type}/{document_type}/_search?scroll=1m&search_type=scan'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
                 document_type='session',
                 index=settings.SITE_BASE_INDEX),
