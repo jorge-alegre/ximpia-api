@@ -109,7 +109,19 @@ class SetupSite(generics.CreateAPIView):
         )"""
         create_doc_index(u'{}__document-definition'.format(index_name), document_definition_dict)
 
-        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
+        create_doc_index(u'{}__urlconf'.format(index_name), urlconf_dict)
+        create_doc_index(u'{}__app'.format(index_name), app_dict)
+        create_doc_index(u'{}__settings'.format(index_name), settings__dict)
+        create_doc_index(u'{}__user'.format(index_name), user_dict)
+        create_doc_index(u'{}__group'.format(index_name), group_dict)
+        create_doc_index(u'{}__user-group'.format(index_name), user_group_dict)
+        create_doc_index(u'{}__permission'.format(index_name), permissions_dict)
+        create_doc_index(u'{}__tag'.format(index_name), tag_dict)
+        create_doc_index(u'{}__field-version'.format(index_name), field_version_dict)
+        create_doc_index(u'{}__invite'.format(index_name), invite_dict)
+        create_doc_index(u'{}__session'.format(index_name), session_dict)
+
+        """es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
                                             'settings': settings_dict,
                                             'mappings': {
@@ -142,7 +154,7 @@ class SetupSite(generics.CreateAPIView):
         logger.info(u'SetupSite :: created index {} response: {}'.format(
             index_name,
             es_response
-        ))
+        ))"""
 
     @classmethod
     def _create_site_app(cls, index_ximpia, index_name, site, app, now_es, languages, location,
@@ -162,9 +174,9 @@ class SetupSite(generics.CreateAPIView):
         counter = 0
         api_access_key = get_random_string(32, VALID_KEY_CHARS)
         while Document.objects.filter(
-                'site', **{''
-                           'site__api_access__v1.site__api_access__key__v1': api_access_key
-                           }):
+                '{}__site'.format(index_name), **{
+                    'site__api_access__v1.site__api_access__key__v1': api_access_key
+                }):
             api_access_key = get_random_string(32, VALID_KEY_CHARS)
             if counter > 10:
                 raise exceptions.XimpiaAPIException(_(
@@ -193,7 +205,7 @@ class SetupSite(generics.CreateAPIView):
                 u'site__invites__updated_on__v1': now_es,
             }
         es_response_raw = requests.post(
-            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
+            '{}/{}__site'.format(settings.ELASTIC_SEARCH_HOST, index_ximpia),
             data=json.dumps(site_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
@@ -233,7 +245,7 @@ class SetupSite(generics.CreateAPIView):
             u'app__created_on__v1': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(app_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
@@ -273,7 +285,7 @@ class SetupSite(generics.CreateAPIView):
                 u'settings__setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
-                '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(settings_data))
             if es_response_raw.status_code not in [200, 201]:
                 raise exceptions.XimpiaAPIException(_(u'Could not write settings for site "{}" :: {}'.format(
@@ -294,7 +306,7 @@ class SetupSite(generics.CreateAPIView):
             u'account__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
+            '{}/{}__account'.format(settings.ELASTIC_SEARCH_HOST, settings.SITE_BASE_INDEX),
             data=json.dumps(account_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write account "{}" :: {}'.format(
@@ -326,7 +338,7 @@ class SetupSite(generics.CreateAPIView):
             u'tag__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(tag_data))
         if es_response_raw.status_code not in [200, 201]:
             raise exceptions.XimpiaAPIException(_(u'Could not write tag v1 :: {} :: {}'.format(
@@ -407,7 +419,7 @@ class SetupSite(generics.CreateAPIView):
                 u'permission__created_on__v1': now_es
             }
             es_response_raw = requests.post(
-                '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
             if es_response_raw.status_code not in [200, 201]:
                 raise exceptions.XimpiaAPIException(_(u'Could not write permission "can-admin" :: {}'.format(
@@ -451,7 +463,7 @@ class SetupSite(generics.CreateAPIView):
                     }
                 ]
             es_response_raw = requests.post(
-                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(group_data))
             if es_response_raw.status_code not in [200, 201]:
                 raise exceptions.XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
