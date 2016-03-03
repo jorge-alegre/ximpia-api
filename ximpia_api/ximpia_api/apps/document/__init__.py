@@ -798,7 +798,7 @@ def save_field_versions_from_mapping(mapping, index='ximpia-api__base', user=Non
     for field in fields:
         if field in ['text', 'text__v1']:
             continue
-        bulk_header = '{ "create": { "_index": "' + index + '", "_type": "field-version"} }\n'
+        bulk_header = '{ "create": { "_index": "' + index + '__field-version' + '", "_type": "field-version"} }\n'
         bulk_data = json.dumps(
             {
                 'field-version__doc_type__v1': doc_type,

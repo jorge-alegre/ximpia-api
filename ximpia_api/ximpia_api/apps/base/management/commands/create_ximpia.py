@@ -4,6 +4,7 @@ import json
 import pprint
 import string
 import time
+import pprint
 
 from datetime import datetime, timedelta
 
@@ -41,15 +42,8 @@ class Command(BaseCommand):
         user_path = settings.BASE_DIR + 'apps/xp_user/mappings'
         document_path = settings.BASE_DIR + 'apps/document/mappings'
 
-        # my-index.mm-dd-yyyyTHH:MM:SS with alias my-index
-        index_name_physical = u'{}.{}'.format(
-            index_name,
-            datetime.now().strftime("%m-%d-%y.%H:%M:%S")
-        )
-        alias = index_name
-
-        with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
-            settings_dict = json.loads(f.read())
+        """with open(settings.BASE_DIR + 'settings/settings_test.json') as f:
+            settings_dict = json.loads(f.read())"""
 
         with open('{}/site.json'.format(mappings_path)) as f:
             site_dict = json.loads(f.read())
@@ -90,21 +84,29 @@ class Command(BaseCommand):
         with open('{}/session.json'.format(settings.BASE_DIR + 'apps/xp_sessions/mappings')) as f:
             session_dict = json.loads(f.read())
 
-        """with open('{}/document-definition.json'.format(document_path)) as f:
-            document_definition_dict = json.loads(f.read())"""
         # 'document-definition': document_definition_dict,
         # We need to complete mappings for fields
-        import pprint
         document_definition_dict = get_document_definition_mapping()
-        """with open('{}/document-definition-generated.json'.format(document_path), 'w') as f:
-            f.write(json.dumps(document_definition_dict))"""
         logger.debug(u'_create_index :: mappings: {}'.format(
             pprint.PrettyPrinter(indent=4).pformat(document_definition_dict))
         )
         create_doc_index(u'{}__document-definition'.format(index_name), document_definition_dict)
-        # logger.debug(u'create_ximpia :: doc_response: {}'.format(doc_response))
 
-        es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
+        create_doc_index(u'{}__account'.format(index_name), account_dict)
+        create_doc_index(u'{}__site'.format(index_name), site_dict)
+        create_doc_index(u'{}__urlconf'.format(index_name), urlconf_dict)
+        create_doc_index(u'{}__app'.format(index_name), app_dict)
+        create_doc_index(u'{}__settings'.format(index_name), settings__dict)
+        create_doc_index(u'{}__user'.format(index_name), user_dict)
+        create_doc_index(u'{}__group'.format(index_name), group_dict)
+        create_doc_index(u'{}__user-group'.format(index_name), user_group_dict)
+        create_doc_index(u'{}__permission'.format(index_name), permissions_dict)
+        create_doc_index(u'{}__tag'.format(index_name), tag_dict)
+        create_doc_index(u'{}__field-version'.format(index_name), field_version_dict)
+        create_doc_index(u'{}__invite'.format(index_name), invite_dict)
+        create_doc_index(u'{}__session'.format(index_name), session_dict)
+
+        """es_response_raw = requests.post('{}/{}'.format(settings.ELASTIC_SEARCH_HOST, index_name_physical),
                                         data=json.dumps({
                                             'settings': settings_dict,
                                             'mappings': {
@@ -142,10 +144,10 @@ class Command(BaseCommand):
         ))
 
         if 'verbosity' in options and options['verbosity'] == 2:
-            self.stdout.write(u'created index {} response: {}'.format(
+            self.stdout.write(u'created indices {} response: {}'.format(
                 index_name,
                 es_response
-            ))
+            ))"""
 
     @classmethod
     def _create_tag(cls, index_name, now_es, version=settings.DEFAULT_VERSION):
@@ -165,7 +167,7 @@ class Command(BaseCommand):
             u'tag__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__tag'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(tag_data))
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write tag v1 :: {} :: {}'.format(
@@ -284,7 +286,7 @@ class Command(BaseCommand):
                 u'site__invites__updated_on__v1': now_es,
             }
         es_response_raw = requests.post(
-            '{}/{}/site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__site'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(site_data))
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write site "{}" :: {}'.format(
@@ -316,7 +318,7 @@ class Command(BaseCommand):
             u'app__created_on__v1': now_es
         }
         es_response_raw = requests.post(
-            '{}/{}/app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__app'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(app_data))
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write app "{}" :: {}'.format(
@@ -352,7 +354,7 @@ class Command(BaseCommand):
                 u'settings__setting_value__v1': setting_item[1]
             })
             es_response_raw = requests.post(
-                '{}/{}/settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__settings'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(settings_data))
             if es_response_raw.status_code not in [200, 201]:
                 raise XimpiaAPIException(_(u'Could not write settings for site "{}" :: {}'.format(
@@ -372,7 +374,7 @@ class Command(BaseCommand):
             u'account__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__account'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(account_data))
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write account "{}" :: {}'.format(
@@ -413,7 +415,7 @@ class Command(BaseCommand):
                 u'permission__created_on__v1': now_es
             }
             es_response_raw = requests.post(
-                '{}/{}/permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__permission'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(db_permission))
             if es_response_raw.status_code not in [200, 201]:
                 raise XimpiaAPIException(_(u'Could not write permission "can-admin" :: {}'.format(
@@ -463,7 +465,7 @@ class Command(BaseCommand):
                     }
                 ]
             es_response_raw = requests.post(
-                '{}/{}/group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps(group_data))
             if es_response_raw.status_code not in [200, 201]:
                 raise XimpiaAPIException(_(u'Could not write group "{}" :: {}'.format(
@@ -527,7 +529,7 @@ class Command(BaseCommand):
             u'user__created_on__v1': now_es,
         }
         es_response_raw = requests.post(
-            '{}/{}/user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+            '{}/{}__user'.format(settings.ELASTIC_SEARCH_HOST, index_name),
             data=json.dumps(user_data))
         if es_response_raw.status_code not in [200, 201]:
             raise XimpiaAPIException(_(u'Could not write user "{}.{}" :: {}'.format(
@@ -544,7 +546,7 @@ class Command(BaseCommand):
         # users groups
         for group_data in groups_data:
             es_response_raw = requests.post(
-                '{}/{}/user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
+                '{}/{}__user-group'.format(settings.ELASTIC_SEARCH_HOST, index_name),
                 data=json.dumps({
                     u'user__v1': {
                         u'user__id': user_data_logical[u'id'],
