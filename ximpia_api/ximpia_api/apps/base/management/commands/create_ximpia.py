@@ -254,9 +254,9 @@ class Command(BaseCommand):
         counter = 0
         api_access_key = get_random_string(32, VALID_KEY_CHARS)
         while Document.objects.filter(
-                'site', **{''
-                           'site__api_access__v1.site__api_access__key__v1': api_access_key
-                           }):
+                '{}__site'.format(index_name), **{
+                    'site__api_access__v1.site__api_access__key__v1': api_access_key
+                }):
             api_access_key = get_random_string(32, VALID_KEY_CHARS)
             if counter > 10:
                 raise XimpiaAPIException(_(

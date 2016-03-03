@@ -555,9 +555,12 @@ class DocumentManager(object):
         if 'get_logical' in kwargs and kwargs['get_logical']:
             get_logical = True
             del kwargs['get_logical']
-        index = None
         if 'index' in kwargs:
             index = kwargs.pop('index')
+        else:
+            index = document_type
+            document_type = index.split('__')[-1]
+
         if 'es_path' in kwargs:
             es_path = kwargs.pop('es_path')
         else:
@@ -636,7 +639,7 @@ class DocumentManager(object):
         return output
 
     @classmethod
-    def update_partial(cls, document_type, id_, partial_document, index=settings.SITE_BASE_INDEX):
+    def update_partial(cls, document_type, id_, partial_document, **kwargs):
         """
         Update partial document
 
@@ -645,6 +648,11 @@ class DocumentManager(object):
         :param partial_document:
         :return:
         """
+        if 'index' in kwargs:
+            index = kwargs.pop('index')
+        else:
+            index = document_type
+            document_type = index.split('__')[-1]
         es_response_raw = req_session.post(
             '{host}/{index}/{document_type}/{id_}/_update'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
@@ -665,7 +673,7 @@ class DocumentManager(object):
         return es_response_raw.json()
 
     @classmethod
-    def update(cls, document_type, id_, document):
+    def update(cls, document_type, id_, document, **kwargs):
         """
         Update partial document
 
@@ -674,10 +682,15 @@ class DocumentManager(object):
         :param document:
         :return:
         """
+        if 'index' in kwargs:
+            index = kwargs.pop('index')
+        else:
+            index = document_type
+            document_type = index.split('__')[-1]
         es_response_raw = req_session.put(
             '{host}/{index}/{document_type}/{id_}'.format(
                 host=settings.ELASTIC_SEARCH_HOST,
-                index=settings.SITE_BASE_INDEX,
+                index=index,
                 document_type=document_type,
                 id_=id_),
             data=json.dumps(document)
